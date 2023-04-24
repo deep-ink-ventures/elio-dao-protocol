@@ -5,10 +5,10 @@ use crate::types::Dao;
 pub trait CoreTrait {
     
     /// Create a fresh DAO.
-	///
-	/// - `dao_id`: Unique identifier for the DAO, bounded by _MinLength_ & _MaxLengthId_
-	/// - `dao_name`: Name of the to-be-created DAO, bounded by _MinLength_ & _MaxLengthName_
-	/// - `dao_owner`: The owner of the freshly created dao
+    ///
+    /// - `dao_id`: Unique identifier for the DAO, bounded by _MinLength_ & _MaxLengthId_
+    /// - `dao_name`: Name of the to-be-created DAO, bounded by _MinLength_ & _MaxLengthName_
+    /// - `dao_owner`: The owner of the freshly created dao
     ///
     fn create_dao(env: Env, dao_id: Symbol, dao_name: Bytes, dao_owner: Address) -> Dao;
     
@@ -19,7 +19,7 @@ pub trait CoreTrait {
     
     /// Destroy a DAO.
     ///
-	/// - `dao_id`: The DAO to destroy
+    /// - `dao_id`: The DAO to destroy
     /// - `dao_owner`: The owner of to-be-destroyed dao
     fn destroy_dao(env: Env, dao_id: Symbol, dao_owner: Address);
     
@@ -35,16 +35,16 @@ pub trait CoreTrait {
     
     /// Set metadata
     ///
-	/// - `dao_id`: The DAO for which to set metadata
-	/// - `meta`: HTTP or IPFS address for the metadata about this DAO (description, logo)
-	/// - `hash`: SHA3 hash of the metadata to be found via `meta`
+    /// - `dao_id`: The DAO for which to set metadata
+    /// - `meta`: HTTP or IPFS address for the metadata about this DAO (description, logo)
+    /// - `hash`: SHA3 hash of the metadata to be found via `meta`
     /// - `dao_owner`: the current owner of the dao
     fn set_metadata(env: Env, dao_id: Symbol, meta: Bytes, hash: Bytes, dao_owner: Address);
     
     /// Change owner
 	///
-	/// - `dao_id`: the DAO to transfer ownership of
-	/// - `new_owner`: the new owner
+    /// - `dao_id`: the DAO to transfer ownership of
+    /// - `new_owner`: the new owner
     /// - `dao_owner`: the current owner of the dao
     fn change_owner(env: Env, dao_id: Symbol, new_owner: Address, dao_owner: Address) -> Dao;
 }
