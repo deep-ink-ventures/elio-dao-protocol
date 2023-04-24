@@ -44,6 +44,15 @@ fn destroy_a_dao() {
 }
 
 #[test]
+#[should_panic(expected = "Address not DAO Owner")]
+fn destroy_a_dao_only_as_owner() {
+    let client = create_client();
+
+    let dao = create_dao(&client);
+    client.destroy_dao(&dao.id, &Address::random(&client.env));
+}
+
+#[test]
 fn change_dao_owner() {
     let client = create_client();
     let new_owner = Address::random(&client.env);
@@ -51,4 +60,14 @@ fn change_dao_owner() {
 
     let dao = client.change_owner(&dao.id, &new_owner, &dao.owner);
     assert_eq!(client.get_dao(&dao.id).owner, new_owner);
+}
+
+#[test]
+#[should_panic(expected = "Address not DAO Owner")]
+fn change_dao_owner_only_as_owner() {
+    let client = create_client();
+    let new_owner = Address::random(&client.env);
+    let dao = create_dao(&client);
+
+    client.change_owner(&dao.id, &new_owner, &new_owner);
 }
