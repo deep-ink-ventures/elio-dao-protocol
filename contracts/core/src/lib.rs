@@ -11,7 +11,6 @@ use types::Dao;
 
 pub struct CoreContract;
 
-// + Event keys +++
 const DAO: Symbol = Symbol::short("DAO");
 
 #[contractimpl]
@@ -44,7 +43,8 @@ impl CoreTrait for CoreContract {
     }
     
     fn set_metadata(env: Env, dao_id: Symbol, meta: Bytes, hash: Bytes, dao_owner: Address) {
-        let dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
+        let mut dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
+        // set
         // todo: implement
     }
 
