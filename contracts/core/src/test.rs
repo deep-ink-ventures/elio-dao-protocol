@@ -52,5 +52,3 @@ fn change_dao_owner() {
     let dao = client.change_owner(&dao.id, &new_owner, &dao.owner);
     assert_eq!(client.get_dao(&dao.id).owner, new_owner);
 }
-
-
