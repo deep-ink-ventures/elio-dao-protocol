@@ -40,12 +40,13 @@ impl CoreTrait for CoreContract {
         // todo: initialize a new asset contract, set the name to the dao name and the id to the dao id
         // todo: mint the initial supply to the dao owner
         // todo: set the address to the asset address
+        env.events().publish((DAO, Symbol::short("token_iss")), dao.clone());
     }
     
     fn set_metadata(env: Env, dao_id: Symbol, meta: Bytes, hash: Bytes, dao_owner: Address) {
         let mut dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
-        // set
         // todo: implement
+        env.events().publish((DAO, Symbol::short("meta_set")), dao.clone());
     }
 
     fn change_owner(env: Env, dao_id: Symbol, new_owner: Address, dao_owner: Address) -> Dao {
