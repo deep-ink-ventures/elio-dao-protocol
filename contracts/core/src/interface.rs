@@ -42,7 +42,7 @@ pub trait CoreTrait {
     fn set_metadata(env: Env, dao_id: Symbol, meta: Bytes, hash: Bytes, dao_owner: Address);
     
     /// Change owner
-	///
+    ///
     /// - `dao_id`: the DAO to transfer ownership of
     /// - `new_owner`: the new owner
     /// - `dao_owner`: the current owner of the dao
