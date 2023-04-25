@@ -1,5 +1,6 @@
 use soroban_sdk::{Env, Address, Bytes};
 
+/// This follows the official specs w/o admin functionalities.
 pub trait AssetTrait {
   
     // --------------------------------------------------------------------------------
