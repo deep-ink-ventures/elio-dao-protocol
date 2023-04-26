@@ -5,7 +5,7 @@ use crate::types::Token;
 /// This follows the official specs w/o admin functionalities.
 pub trait AssetTrait {
 
-    fn initialize(env: Env, symbol: Bytes, name: Bytes);
+    fn initialize(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, initial_receiver: Address);
   
     // --------------------------------------------------------------------------------
     // Token interface

@@ -12,7 +12,6 @@ use types::Token;
 pub struct AssetContract;
 
 
-const TOKEN: Symbol = Symbol::short("TOKEN");
 
 fn check_nonnegative_amount(amount: i128) {
     if amount < 0 {
@@ -23,9 +22,13 @@ fn check_nonnegative_amount(amount: i128) {
 #[contractimpl]
 impl AssetTrait for AssetContract {
 
-    fn initialize(env: Env, symbol: Bytes, name: Bytes) {
-        let token = Token::create(&env, symbol, name);
-        env.events().publish((TOKEN, Symbol::short("created")), token.clone());
+    fn initialize(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, initial_receiver: Address) {
+        Token::create(&env, symbol.clone(), name);
+        Token::write_balance(&env, initial_receiver.clone(), initial_supply.clone());
+        env.events().publish(
+            (Symbol::short("created"), initial_receiver, symbol),
+            initial_supply
+        );
     }
 
     fn incr_allow(env: Env, from: Address, spender: Address, amount: i128) {
@@ -48,7 +51,20 @@ impl AssetTrait for AssetContract {
     }
 
     fn decr_allow(env: Env, from: Address, spender: Address, amount: i128) {
-        // todo: implement
+        from.require_auth();
+
+        check_nonnegative_amount(amount);
+
+        let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
+        if amount >= allowance {
+            Token::write_allowance(&env, from.clone(), spender.clone(), 0);
+        } else {
+            Token::write_allowance(&env, from.clone(), spender.clone(), allowance - amount);
+        }
+        env.events().publish(
+            (Symbol::new(&env, "decrease_allowance"), from, spender),
+            amount
+        );
     }
     fn xfer(env: Env, from: Address, to: Address, amount: i128) {
         // todo: implement
@@ -58,17 +74,16 @@ impl AssetTrait for AssetContract {
         // todo: implement
     }
 
-    fn balance(env: Env, id: Address) -> i128 {
-        // todo: implement
-        42
+    fn balance(env: Env, addr: Address) -> i128 {
+        Token::read_balance(&env, addr)
     }
 
-    fn spendable(env: Env, id: Address) -> i128 {
+    fn spendable(env: Env, addr: Address) -> i128 {
         // just the balance for our purposes
-        Self::balance(env, id)
+        Self::balance(env, addr)
     }
 
-    fn authorized(_env: Env, _id: Address) -> bool {
+    fn authorized(_env: Env, _addr: Address) -> bool {
         // this is always true
         true
     }
@@ -89,7 +104,7 @@ impl AssetTrait for AssetContract {
         Token::get_symbol(&env)
     }
     
-    fn get_balance_at(env: Env, id: Address, block_number: i128) -> i128 {
+    fn get_balance_at(env: Env, addr: Address, block_number: i128) -> i128 {
         42
     }
     

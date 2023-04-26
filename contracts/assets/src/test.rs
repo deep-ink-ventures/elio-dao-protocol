@@ -10,22 +10,27 @@ fn create_client() -> AssetContractClient {
     AssetContractClient::new(&env, &contract_id)
 }
 
-fn create_token(client: &AssetContractClient) {
+fn create_token(client: &AssetContractClient) -> Address {
     let symbol = "DIV".into_val(&client.env);
     let name = "Deep Ink Ventures".into_val(&client.env);
-    client.initialize(&symbol, &name);
+    let address = Address::random(&client.env);
+    let supply = 1_000_000;
+    client.initialize(&symbol, &name, &supply, &address);
+    address
 }
 
 #[test]
 fn create_a_token() {
     let client = create_client();
-
+    let address = Address::random(&client.env);
+    let supply = 1_000_000;
     let symbol = "DIV".into_val(&client.env);
     let name = "Deep Ink Ventures".into_val(&client.env);
-    client.initialize(&symbol, &name);
+    client.initialize(&symbol, &name, &supply, &address);
 
     assert_eq!(symbol, client.symbol());
     assert_eq!(name, client.name());
+    assert_eq!(supply, client.balance(&address));
 }
 
 #[test]
@@ -48,4 +53,11 @@ fn token_assets_are_always_authoritzed() {
     let client = create_client();
     let address = Address::random(&client.env);
     assert_eq!(client.authorized(&address), true);
+}
+
+#[test]
+fn allowances() {
+    let client = create_client();
+    let address = create_a_token();
+
 }
