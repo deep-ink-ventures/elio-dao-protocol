@@ -61,10 +61,6 @@ impl Dao {
     pub fn save(&self, env: &Env) {
         env.storage().set(&self.id, self);
     }
-    
-    pub fn refresh(&self, env: &Env) -> Dao {
-        Self::load(env, &self.id)
-    }
 }
 
 impl MetaData {

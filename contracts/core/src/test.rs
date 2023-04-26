@@ -33,6 +33,15 @@ fn create_a_dao() {
 }
 
 #[test]
+#[should_panic(expected = "DAO already exists")]
+fn cannot_create_a_dao_twice() {
+    let client = create_client();
+    create_dao(&client);
+    create_dao(&client);
+}
+
+
+#[test]
 #[should_panic(expected = "DAO does not exists")]
 fn destroy_a_dao() {
     let client = create_client();
