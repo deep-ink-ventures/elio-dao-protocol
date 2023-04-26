@@ -14,6 +14,11 @@ pub struct AssetContract;
 
 const TOKEN: Symbol = Symbol::short("TOKEN");
 
+fn check_nonnegative_amount(amount: i128) {
+    if amount < 0 {
+        panic!("negative amount is not allowed: {}", amount)
+    }
+}
 
 #[contractimpl]
 impl AssetTrait for AssetContract {
@@ -24,7 +29,22 @@ impl AssetTrait for AssetContract {
     }
 
     fn incr_allow(env: Env, from: Address, spender: Address, amount: i128) {
-        // todo: implement
+        from.require_auth();
+
+        check_nonnegative_amount(amount);
+
+        let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
+        let new_allowance = allowance
+            .checked_add(amount)
+            .expect("Updated allowance doesn't fit in an i128");
+
+        Token::write_allowance(&env, from.clone(), spender.clone(), new_allowance);
+        env.events().publish(
+            (Symbol::new(&env, "increase_allowance"), from, spender),
+            amount
+        );
+
+        // todo: add tests once allowance is fully implemented
     }
 
     fn decr_allow(env: Env, from: Address, spender: Address, amount: i128) {
@@ -54,8 +74,7 @@ impl AssetTrait for AssetContract {
     }
 
     fn allowance(env: Env, from: Address, spender: Address) -> i128 {
-        // todo: implement
-        42
+        Token::read_allowance(&env, from, spender)
     }
    
     fn decimals(_env: Env) -> u32 {
