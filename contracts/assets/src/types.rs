@@ -36,8 +36,6 @@ pub struct Checkpoint {
 }
 
 impl Token {
-    fn _get_checkpoints(&self, env: &Env, user: Address) -> Vec<Checkpoint> {
-        let key = Self::Checkpoints(user);
     pub fn get_checkpoints(env: &Env, user: Address) -> Vec<Checkpoint> {
         let key = Token::Checkpoints(user);
         if !env.storage().has(&key) {
@@ -64,18 +62,10 @@ impl Token {
             p1.id
             p1.ledger
         */
-
         checkpoints.push_back(Checkpoint {
-            balance,
+            balance: Token::read_balance(env, user),
             ledger: env.ledger().sequence(),
         });
-        checkpoints.push_back(
-            Checkpoint {
-                balance: Token::read_balance(env, user),
-                ledger: env.ledger().sequence()
-            }
-        );
->>>>>>> e780f035e9b9ea39d00f914d707eb29c28d2514f
         env.storage().set(&key, &checkpoints);
     }
 
