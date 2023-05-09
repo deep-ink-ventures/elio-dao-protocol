@@ -1,8 +1,4 @@
-use soroban_sdk::{contracttype, Bytes, Address, Env, BytesN, IntoVal};
-
-mod assets_contract {
-    soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
-}
+use soroban_sdk::{contracttype, Bytes, Address, Env, BytesN};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -73,8 +69,10 @@ impl Dao {
         }
 
         let asset_id = env.deployer().with_current_contract(&asset_salt).deploy(&assets_wasm_hash);
-        let asset = assets_contract::Client::new(&env, &asset_id);
-        asset.init(&self.id, &self.name, &supply, &self.owner, &env.current_contract_id());
+        // todo: initialize token correctly
+        // let init_fn = Symbol::short("init");
+        // let init_args = (self.id, self.name, supply, self.owner, env.current_contract_id()).into_val(env);
+        // env.invoke_contract::<Bytes>(&asset_id, &init_fn, init_args);
         env.storage().set(&key, &asset_id);
     }
 
