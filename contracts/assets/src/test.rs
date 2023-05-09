@@ -1,6 +1,18 @@
 #![cfg(test)]
 
-use soroban_sdk::{Env, testutils::Address as _, Address, IntoVal, Bytes};
+mod votes_contract {
+    soroban_sdk::contractimport!(
+        file = "../../wasm/elio_votes.wasm"
+    );
+}
+
+mod core_contract {
+    soroban_sdk::contractimport!(
+        file = "../../wasm/elio_core.wasm"
+    );
+}
+
+use soroban_sdk::{Env, testutils::Address as _, Address, IntoVal, Bytes, BytesN};
 
 use crate::{AssetContract, AssetContractClient};
 
@@ -18,6 +30,21 @@ fn create_token(client: &AssetContractClient) -> Address {
     let governance_id = Bytes::from_array(&client.env, &[0; 32]).try_into().unwrap();
     client.init(&symbol, &name, &supply, &address, &governance_id);
     address
+}
+
+fn wire_protocal(client: &AssetContractClient) -> (core_contract::Client, votes_contract::Client) {
+    let core_wasm_hash = &client.env.install_contract_wasm(core_contract::WASM);
+    let votes_wasm_hash = &client.env.install_contract_wasm(votes_contract::WASM);
+
+    let core_id = client.env.register_contract_wasm(None, core_contract::WASM);
+    let core_client = core_contract::Client::new(&client.env, &core_id);
+    let salt = Bytes::from_array(&client.env, &[0; 32]);
+
+    core_client.init(&votes_wasm_hash, &salt);
+
+    let vote_client = votes_contract::Client::new(&client.env, &core_client.get_votes_id());
+
+    (core_client, vote_client)
 }
 
 #[test]
@@ -107,4 +134,16 @@ fn token_assets_are_always_authoritzed() {
 fn allowances() {
     let client = create_client();
     let address = create_a_token();
+}
+
+#[test]
+fn checkpoints() {
+    let client = create_client();
+    let owner = create_token(&client);
+    let whoever = Address::random(&client.env);
+    let (core_client, votes_client) = wire_protocal(&client);
+
+    client.xfer(&owner, &whoever, &1_000);
+    votes_client.create_proposal(&"DIV".into_val(&client.env), &"P1".into_val(&client.env));
+    client.xfer(&owner, &whoever, &1_000);
 }
