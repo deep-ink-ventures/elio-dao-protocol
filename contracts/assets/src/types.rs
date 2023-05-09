@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Bytes, Address, Env, BytesN, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, BytesN, Env, Vec};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -36,11 +36,10 @@ pub struct Checkpoint {
 }
 
 impl Token {
-    
     fn _get_checkpoints(&self, env: &Env, user: Address) -> Vec<Checkpoint> {
         let key = Self::Checkpoints(user);
         if !env.storage().has(&key) {
-            return Vec::new(env)
+            return Vec::new(env);
         }
         env.storage().get_unchecked(&key).unwrap()
     }
@@ -64,11 +63,13 @@ impl Token {
             p1.ledger
         */
 
-        checkpoints.push_back(Checkpoint { balance, ledger: env.ledger().sequence() });
+        checkpoints.push_back(Checkpoint {
+            balance,
+            ledger: env.ledger().sequence(),
+        });
         env.storage().set(&key, &checkpoints);
     }
 
-impl Token {
     pub fn read_allowance(env: &Env, from: Address, spender: Address) -> i128 {
         let key = Self::Allowance(Allowances { from, spender });
         if let Some(allowance) = env.storage().get(&key) {
@@ -98,7 +99,7 @@ impl Token {
     pub fn get_name(env: &Env) -> Bytes {
         env.storage().get_unchecked(&Token::Name).unwrap()
     }
-    
+
     pub fn get_owner(env: &Env) -> Address {
         env.storage().get_unchecked(&Token::Owner).unwrap()
     }
@@ -108,7 +109,13 @@ impl Token {
     }
 
     /// Create a new token
-    pub fn create(env: &Env, symbol: &Bytes, name: &Bytes, owner: &Address, governance_id: &BytesN<32>) {
+    pub fn create(
+        env: &Env,
+        symbol: &Bytes,
+        name: &Bytes,
+        owner: &Address,
+        governance_id: &BytesN<32>,
+    ) {
         if !env.storage().has(&Token::Symbol) {
             env.storage().set(&Token::Symbol, symbol);
             env.storage().set(&Token::Name, name);
@@ -118,7 +125,7 @@ impl Token {
             panic!("DAO already issued a token")
         }
     }
-    
+
     pub fn set_owner(env: &Env, owner: &Address, new_owner: &Address) {
         Token::check_auth(env, owner);
         if owner != &Token::get_owner(env) {
@@ -152,7 +159,7 @@ impl Token {
             panic!("not Token owner")
         }
     }
-}
+
     pub fn spend_balance(env: &Env, addr: Address, amount: i128) {
         let balance = Token::read_balance(env, addr.clone());
         if balance < amount {
