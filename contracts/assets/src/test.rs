@@ -12,70 +12,73 @@ mod core_contract {
     );
 }
 
-use soroban_sdk::{Env, testutils::Address as _, Address, IntoVal, Bytes, BytesN};
+use soroban_sdk::{Env, testutils::{Address as _, LedgerInfo, Ledger}, Address, IntoVal};
 
-use crate::{AssetContract, AssetContractClient, Token};
+use crate::{AssetContract, AssetContractClient};
 
-fn create_client() -> AssetContractClient {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, AssetContract);
-    AssetContractClient::new(&env, &contract_id)
+fn wire_protocal(client: &AssetContractClient) -> (core_contract::Client, votes_contract::Client) {
+
+    let core_id = client.env.register_contract_wasm(None, core_contract::WASM);
+    let core_client = core_contract::Client::new(&client.env, &core_id);
+
+    let votes_salt = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".into_val(&client.env);
+    let votes_wasm_hash = &client.env.install_contract_wasm(votes_contract::WASM);
+
+    core_client.init(votes_wasm_hash, &votes_salt);
+
+    let vote_client = votes_contract::Client::new(&client.env, &core_client.get_votes_id());
+    (core_client, vote_client)
 }
 
-fn create_token(client: &AssetContractClient) -> Address {
+
+fn create_all_clients() -> (AssetContractClient, core_contract::Client, votes_contract::Client) {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, AssetContract);
+    let client = AssetContractClient::new(&env, &contract_id);
+    let (core_client, votes_client) = wire_protocal(&client);
+    (client, core_client, votes_client)
+}
+
+fn create_token(client: &AssetContractClient, core_client: &core_contract::Client) -> Address {
     let symbol = "DIV".into_val(&client.env);
     let name = "Deep Ink Ventures".into_val(&client.env);
     let address = Address::random(&client.env);
     let supply = 1_000_000;
-    let governance_id = Bytes::from_array(&client.env, &[0; 32]).try_into().unwrap();
+
+    let governance_id = &core_client.contract_id;
     client.init(&symbol, &name, &supply, &address, &governance_id);
     address
 }
 
-fn wire_protocal(client: &AssetContractClient) -> (core_contract::Client, votes_contract::Client) {
-    let core_wasm_hash = &client.env.install_contract_wasm(core_contract::WASM);
-    let votes_wasm_hash = &client.env.install_contract_wasm(votes_contract::WASM);
-
-    let core_id = client.env.register_contract_wasm(None, core_contract::WASM);
-    let core_client = core_contract::Client::new(&client.env, &core_id);
-    let salt = Bytes::from_array(&client.env, &[0; 32]);
-
-    core_client.init(&votes_wasm_hash, &salt);
-
-    let vote_client = votes_contract::Client::new(&client.env, &core_client.get_votes_id());
-
-    (core_client, vote_client)
-}
-
 #[test]
 fn create_a_token() {
-    let client = create_client();
+    let (client, core_client, _) = create_all_clients();
     let address = Address::random(&client.env);
     let supply = 1_000_000;
     let symbol = "DIV".into_val(&client.env);
     let name = "Deep Ink Ventures".into_val(&client.env);
-    let governance_id = Bytes::from_array(&client.env, &[0; 32]).try_into().unwrap();
+    let governance_id = &core_client.contract_id;
     client.init(&symbol, &name, &supply, &address, &governance_id);
 
     assert_eq!(symbol, client.symbol());
     assert_eq!(name, client.name());
     assert_eq!(supply, client.balance(&address));
     assert_eq!(address, client.owner());
-    assert_eq!(governance_id, client.governance_id());
+    assert_eq!(governance_id, &client.governance_id());
 }
 
 #[test]
 #[should_panic(expected = "DAO already issued a token")]
 fn create_a_token_only_once() {
-    let client = create_client();
-    create_token(&client);
-    create_token(&client);
+    let (client, core_client, _) = create_all_clients();
+    create_token(&client, &core_client);
+    create_token(&client, &core_client);
 }
 
 #[test]
 fn set_owner() {
-    let client = create_client();
-    create_token(&client);
+    let (client, core_client, __) = create_all_clients();
+    create_token(&client, &core_client);
     let address = Address::random(&client.env);
 
     let owner = client.owner();
@@ -89,16 +92,16 @@ fn set_owner() {
 #[test]
 #[should_panic(expected = "not Token owner")]
 fn set_owner_auth() {
-    let client = create_client();
-    create_token(&client);
+    let (client, core_client, __) = create_all_clients();
+    create_token(&client, &core_client);
     let address = Address::random(&client.env);
     client.set_owner(&address, &address);
 }
 
 #[test]
 fn set_governance_id() {
-    let client = create_client();
-    create_token(&client);
+    let (client, core_client, __) = create_all_clients();
+    create_token(&client, &core_client);
     let owner = client.owner();
 
     client.set_governance_id(&owner, &client.contract_id);
@@ -110,36 +113,32 @@ fn set_governance_id() {
 #[test]
 #[should_panic(expected = "not Token owner")]
 fn set_governance_id_auth() {
-    let client = create_client();
-    create_token(&client);
+    let (client, core_client, __) = create_all_clients();
+    create_token(&client, &core_client);
     let address = Address::random(&client.env);
     client.set_governance_id(&address, &client.contract_id);
 }
 
 #[test]
 fn spendable_equals_balance() {
-    let client = create_client();
+    let (client, _, __) = create_all_clients();
     let address = Address::random(&client.env);
     assert_eq!(client.balance(&address), client.spendable(&address));
 }
 
 #[test]
 fn token_assets_are_always_authoritzed() {
-    let client = create_client();
+    let (client, _, __) = create_all_clients();
     let address = Address::random(&client.env);
     assert_eq!(client.authorized(&address), true);
 }
 
-#[test]
-fn allowances() {
-    let client = create_client();
-    let address = create_a_token();
-}
 
 #[test]
 fn xfer() {
-    let client = create_client();
-    let from = create_token(&client);
+    let (client, core_client, __) = create_all_clients();
+    create_token(&client, &core_client);
+    let from = client.owner();
     let to = Address::random(&client.env);
 
     assert_eq!(client.balance(&from), 1_000_000);
@@ -153,8 +152,9 @@ fn xfer() {
 
 #[test]
 fn xfer_from() {
-    let client = create_client();
-    let from = create_token(&client);
+    let (client, core_client, __) = create_all_clients();
+    create_token(&client, &core_client);
+    let from = client.owner();
     let to = Address::random(&client.env);
     let spender = Address::random(&client.env);
     client.incr_allow(&from, &spender, &250_000);
@@ -169,13 +169,69 @@ fn xfer_from() {
     assert_eq!(client.balance(&to), 100_000);
     assert_eq!(client.allowance(&from, &spender), 150_000);
 }
-fn checkpoints() {
-    let client = create_client();
-    let owner = create_token(&client);
-    let whoever = Address::random(&client.env);
-    let (core_client, votes_client) = wire_protocal(&client);
 
-    client.xfer(&owner, &whoever, &1_000);
+#[test]
+fn checkpoints() {
+    let (client, core_client, votes_client) = create_all_clients();
+
+    let owner = create_token(&client, &core_client);
+    let whoever = Address::random(&client.env);
+    
+    // owner should have a checkpoint after issuance
+    assert_eq!(client.get_checkpoint_count(&owner), 1);
+    assert_eq!(client.get_checkpoint_count(&whoever), 0);
+    
+    let cp = client.get_checkpoint_at(&owner, &0);
+    
+    assert_eq!(cp.ledger, 0);
+    assert_eq!(cp.balance, 1_000_000);
+    
+    client.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 1,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+    
+    client.xfer(&owner, &whoever, &100_000);
+    
+    // Since there is no proposal, the owners first cp should be overridden
+    assert_eq!(client.get_checkpoint_count(&owner), 1);
+    assert_eq!(client.get_checkpoint_count(&whoever), 1);
+
+    let cp2 = client.get_checkpoint_at(&owner, &0);
+
+    assert_eq!(cp2.ledger, 1);
+    assert_eq!(cp2.balance, 900_000);
+    
+    let cp3 = client.get_checkpoint_at(&whoever, &0);
+
+    assert_eq!(cp3.ledger, 1);
+    assert_eq!(cp3.balance, 100_000);
+    
+    client.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 10,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+    
+    // let's create a proposal
     votes_client.create_proposal(&"DIV".into_val(&client.env), &"P1".into_val(&client.env));
-    client.xfer(&owner, &whoever, &1_000);
+    client.xfer(&owner, &whoever, &100_000);
+    
+    assert_eq!(client.get_checkpoint_count(&owner), 2);
+    assert_eq!(client.get_checkpoint_count(&whoever), 2);
+
+    let cp2 = client.get_checkpoint_at(&owner, &1);
+
+    assert_eq!(cp2.ledger, 10);
+    assert_eq!(cp2.balance, 800_000);
+
+    let cp3 = client.get_checkpoint_at(&whoever, &1);
+
+    assert_eq!(cp3.ledger, 10);
+    assert_eq!(cp3.balance, 200_000);
 }

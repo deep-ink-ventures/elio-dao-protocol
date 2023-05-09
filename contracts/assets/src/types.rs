@@ -44,9 +44,17 @@ impl Token {
         env.storage().get_unchecked(&key).unwrap()
     }
 
+    pub fn get_checkpoint_at(env: &Env, user: Address, i: u32) -> Checkpoint {
+        let checkpoints = Token::get_checkpoints(env, user);
+        if checkpoints.len() <= i {
+            panic!("Checkpoint index error");
+        }
+        checkpoints.get_unchecked(i).unwrap()
+    }
+
     pub fn write_checkpoint(env: &Env, user: Address) {
         let key = Self::Checkpoints(user.clone());
-        let mut checkpoints = Token::get_checkpoints(env, user.clone());
+        let checkpoints = Token::get_checkpoints(env, user.clone());
 
         let governance_id = Token::get_governance_id(env);
         let core_contract = core_contract::Client::new(&env, &governance_id);
@@ -55,23 +63,27 @@ impl Token {
 
         let active_proposals = votes_contract.get_active_proposals();
 
-        // todo: filter out inactive checkpoints
-        /*
-            assert_eq!(active_proposals.len(), 2);
-            let p1 = active_proposals.get_unchecked(0).unwrap();
-            p1.id
-            p1.ledger
-        */
-        checkpoints.push_back(Checkpoint {
+        let mut filtered_checkpoints: Vec<Checkpoint> = Vec::new(env);
+
+        for proposal in active_proposals.iter_unchecked() {
+            let mut cp_candidate = checkpoints.first_unchecked().unwrap();
+            for checkpoint in checkpoints.iter_unchecked() {
+                if checkpoint.ledger > proposal.ledger {
+                    break;
+                }
+                if checkpoint.ledger > cp_candidate.ledger {
+                    cp_candidate = checkpoint;
+                }
+            }
+            filtered_checkpoints.push_back(cp_candidate);
+        }
+            
+        let cp = Checkpoint {
             balance: Token::read_balance(env, user),
             ledger: env.ledger().sequence(),
-        });
-        env.storage().set(&key, &checkpoints);
-    }
-
-    pub fn transfer(env: &Env, from: Address, to: Address, amount: i128) {
-        Token::write_checkpoint(env, from);
-        Token::write_checkpoint(env, to);
+        };
+        filtered_checkpoints.push_back(cp);
+        env.storage().set(&key, &filtered_checkpoints);
     }
 
     pub fn read_allowance(env: &Env, from: Address, spender: Address) -> i128 {
@@ -144,8 +156,9 @@ impl Token {
     }
 
     pub fn write_balance(env: &Env, addr: Address, amount: i128) {
-        let key = Token::Balance(addr);
+        let key = Token::Balance(addr.clone());
         env.storage().set(&key, &amount);
+        Token::write_checkpoint(env, addr);
     }
 
     pub fn read_balance(env: &Env, addr: Address) -> i128 {

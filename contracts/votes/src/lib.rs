@@ -43,5 +43,4 @@ impl VotesTrait for VotesContract {
     fn get_active_proposals(env: Env) -> Vec<ActiveProposal> {
         ActiveProposal::get_all(&env)
     }
-
 }

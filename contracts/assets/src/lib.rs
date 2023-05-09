@@ -9,7 +9,7 @@ mod interface;
 use interface::AssetTrait;
 
 mod types;
-use types::Token;
+use types::{Token, Checkpoint};
 
 pub struct AssetContract;
 
@@ -122,6 +122,7 @@ impl AssetTrait for AssetContract {
     }
 
     fn allowance(env: Env, from: Address, spender: Address) -> i128 {
+        // todo: Test
         Token::read_allowance(&env, from, spender)
     }
 
@@ -136,8 +137,16 @@ impl AssetTrait for AssetContract {
     fn symbol(env: Env) -> Bytes {
         Token::get_symbol(&env)
     }
+    
+    fn get_checkpoint_count(env: Env, id: Address) -> u32 {
+        Token::get_checkpoints(&env, id).len()
+    }
+
+    fn get_checkpoint_at(env: Env, id: Address, i: u32) -> Checkpoint {
+        Token::get_checkpoint_at(&env, id, i)
+    }
 
     fn get_balance_at(env: Env, addr: Address, block_number: i128) -> i128 {
-        42
+        return 42
     }
 }

@@ -1,5 +1,7 @@
 use soroban_sdk::{Env, Address, Bytes, BytesN};
 
+use crate::types::Checkpoint;
+
 /// This follows the official specs w/o admin functionalities.
 pub trait AssetTrait {
 
@@ -11,6 +13,14 @@ pub trait AssetTrait {
     /// - `governance_id`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
     ///
     fn init(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, owner: Address, governance_id: BytesN<32>);
+    
+    /// Get the last recorded historical balance at or before the given block number
+    fn get_balance_at(env: Env, id: Address, block_number: i128) -> i128;
+
+    // Discovery Functions
+    fn get_checkpoint_count(env: Env, id: Address) -> u32;
+
+    fn get_checkpoint_at(env: Env, id: Address, i: u32) -> Checkpoint;
 
     // --------------------------------------------------------------------------------
     /// Admin functions
@@ -96,7 +106,4 @@ pub trait AssetTrait {
 
     // Get the symbol for this token.
     fn symbol(env: Env) -> Bytes;
-    
-    // Get the last recorded historical balance at or before the given block number
-    fn get_balance_at(env: Env, id: Address, block_number: i128) -> i128;
 }

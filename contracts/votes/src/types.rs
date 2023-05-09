@@ -8,6 +8,7 @@ pub struct ActiveProposal {
 }
 
 const ACTIVE: Symbol = Symbol::short("ACTIVE");
+const PROPOSAL_DURATION: u32 = 10_000;
 
 impl ActiveProposal {
     
