@@ -1,19 +1,40 @@
 use soroban_sdk::{Env, Address, Bytes, BytesN};
 
-use crate::types::Token;
-
 /// This follows the official specs w/o admin functionalities.
 pub trait AssetTrait {
 
+    /// Initializes the contract
+    ///
+    /// - `symbol`: The DAO ID
+    /// - `name`: Name of the DAO
+    /// - `initial_supply`: Total tokens minted on launch
+    /// - `governance_id`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
+    ///
     fn init(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, owner: Address, governance_id: BytesN<32>);
 
+    // --------------------------------------------------------------------------------
     /// Admin functions
+    // --------------------------------------------------------------------------------
+
+    /// Change the owner of this token
+    ///
+    /// - `owner`: The current owner (must be authed and the current owner, obviously)
+    /// - `new_owner`: The new owner
+    ///
     fn set_owner(env: Env, owner: Address, new_owner: Address);
 
+    /// Returns the current owner.
     fn owner(env: Env) -> Address;
 
+    /// Change the governance id of this token to either a different implementation or to upgrade to
+    /// a newer version of elio DAO.
+    ///
+    /// - `owner`: The current owner (must be authed and the current owner, obviously)
+    /// - `governance_id`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
+    ///
     fn set_governance_id(env: Env, owner: Address, governance_id: BytesN<32>);
 
+    /// Returns the current governance id.
     fn governance_id(env: Env) -> BytesN<32>;
   
     // --------------------------------------------------------------------------------
