@@ -1,3 +1,5 @@
+#![no_std]
+
 use soroban_sdk::{contractimpl, Env, Bytes, Address, Symbol};
 
 #[cfg(test)]

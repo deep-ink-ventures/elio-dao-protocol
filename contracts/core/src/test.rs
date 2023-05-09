@@ -1,6 +1,12 @@
 #![cfg(test)]
 
-use soroban_sdk::{Env, testutils::Address as _, Address, IntoVal};
+mod votes_contract {
+    soroban_sdk::contractimport!(
+        file = "../../wasm/elio_votes.wasm"
+    );
+}
+
+use soroban_sdk::{Env, testutils::Address as _, Address, IntoVal, Bytes, Symbol};
 
 use crate::{CoreContract, CoreContractClient, types::Dao};
 
@@ -8,6 +14,12 @@ fn create_client() -> CoreContractClient {
     let env = Env::default();
     let contract_id = env.register_contract(None, CoreContract);
     CoreContractClient::new(&env, &contract_id)
+}
+
+fn install_votes(client: &CoreContractClient) {
+    // install votes
+    let wasm_hash = &client.env.install_contract_wasm(votes_contract::WASM);
+    client.init(&wasm_hash);
 }
 
 fn create_dao(client: &CoreContractClient) -> Dao {
@@ -18,14 +30,22 @@ fn create_dao(client: &CoreContractClient) -> Dao {
 }
 
 #[test]
+#[should_panic(expected = "Already initialized")]
+fn cannot_initialize_twice() {
+    let client = create_client();
+    install_votes(&client);
+    install_votes(&client);
+}
+
+#[test]
 fn create_a_dao() {
     let client = create_client();
-    
+
     let id = "DIV".into_val(&client.env);
     let name = "Deep Ink Ventures".into_val(&client.env);
     let owner = Address::random(&client.env);
     client.create_dao(&id, &name, &owner);
-    
+
     let dao = client.get_dao(&"DIV".into_val(&client.env));
     assert_eq!(dao.id, id);
     assert_eq!(dao.name, name);
@@ -40,14 +60,13 @@ fn cannot_create_a_dao_twice() {
     create_dao(&client);
 }
 
-
 #[test]
 #[should_panic(expected = "DAO does not exists")]
 fn destroy_a_dao() {
     let client = create_client();
-    
+
     let dao = create_dao(&client);
-    
+
     client.destroy_dao(&dao.id, &dao.owner);
     client.get_dao(&dao.id);
 }

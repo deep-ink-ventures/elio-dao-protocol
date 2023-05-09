@@ -1,3 +1,5 @@
+#![no_std]
+
 use soroban_sdk::{contractimpl, Env, Bytes, Address, IntoVal, Symbol};
 
 #[cfg(test)]
@@ -66,6 +68,7 @@ impl AssetTrait for AssetContract {
             amount
         );
     }
+
     fn xfer(env: Env, from: Address, to: Address, amount: i128) {
         // todo: implement
     }

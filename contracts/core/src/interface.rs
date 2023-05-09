@@ -1,13 +1,21 @@
-use soroban_sdk::{Env, Bytes, Address};
+use soroban_sdk::{Env, Bytes, Address, BytesN};
 
 use crate::types::{Dao, MetaData};
 
 pub trait CoreTrait {
     
+    /// Initialize the contract
+    ///
+    /// - `votes_wasm_hash`: The wasm hash of the votes contract
+    ///
+    fn init(env: Env, votes_wasm_hash: BytesN<32>);
+
+    fn get_votes_id(env: Env) -> BytesN<32>;
+
     /// Create a fresh DAO.
     ///
-    /// - `dao_id`: Unique identifier for the DAO, bounded by _MinLength_ & _MaxLengthId_
-    /// - `dao_name`: Name of the to-be-created DAO, bounded by _MinLength_ & _MaxLengthName_
+    /// - `dao_id`: Unique identifier for the DAO
+    /// - `dao_name`: Name of the to-be-created DAO
     /// - `dao_owner`: The owner of the freshly created dao
     ///
     fn create_dao(env: Env, dao_id: Bytes, dao_name: Bytes, dao_owner: Address) -> Dao;

@@ -1,6 +1,7 @@
-use soroban_sdk::{contractimpl, Env, Symbol, Bytes, Address};
+#![no_std]
 
-#[cfg(test)]
+use soroban_sdk::{contractimpl, Env, Symbol, Bytes, Address, RawVal, BytesN};
+
 mod test;
 
 
@@ -13,13 +14,27 @@ use types::{Dao, MetaData};
 pub struct CoreContract;
 
 const DAO: Symbol = Symbol::short("DAO");
+const VOTES: Symbol = Symbol::short("VOTES");
 
 #[contractimpl]
 impl CoreTrait for CoreContract {
 
+    fn init(env: Env, votes_wasm_hash: BytesN<32>) {
+        if env.storage().has(&VOTES) {
+            panic!("Already initialized")
+        }
+
+        let salt = Bytes::from_array(&env, &[0; 32]);
+        let votes_id = env.deployer().with_current_contract(&salt).deploy(&votes_wasm_hash);
+        env.storage().set(&VOTES, &votes_id);
+    }
+
+    fn get_votes_id(env: Env) -> BytesN<32> {
+        env.storage().get_unchecked(&VOTES).unwrap()
+    }
+
     fn create_dao(env: Env, dao_id: Bytes, dao_name: Bytes, dao_owner: Address) -> Dao  {
         // todo: reserve
-        
         let dao = Dao::create(&env, dao_id.clone(), dao_name, dao_owner);
         env.events().publish((DAO, Symbol::short("created")), dao.clone());
         dao

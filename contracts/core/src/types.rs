@@ -15,9 +15,16 @@ pub struct MetaData {
     pub hash: Bytes,
 }
 
+#[derive(Clone)]
+#[contracttype]
+pub enum Meta {
+    Key(Bytes),
+}
+
 impl Dao {
     /// Create a new dao for the owner
     pub fn create(env: &Env, id: Bytes, name: Bytes, owner: Address) -> Self {
+
         if !Self::exists(&env, &id) {
             let dao = Dao { id: id.clone(), name, owner };
             env.storage().set(&id, &dao);
@@ -65,17 +72,10 @@ impl Dao {
 
 impl MetaData {
 
-    /// Create a unique storage key for the meta data
-    fn storage_key(env: &Env, dao_id: &Bytes) -> Bytes {
-        let mut prefix: Bytes = "m_".into_val(env);
-        prefix.append(dao_id);
-        prefix
-    }
-
     /// Create a new metad ata for the dao
     pub fn create(env: &Env, dao_id: Bytes, url: Bytes, hash: Bytes) -> Self {
         let meta = MetaData { url, hash };
-        env.storage().set(&Self::storage_key(env, &dao_id), &meta);
+        env.storage().set(&Meta::Key(dao_id), &meta);
         meta
     }
 
@@ -84,11 +84,11 @@ impl MetaData {
         if !Self::exists(env, dao_id) {
             panic!("MetaData does not exists")
         }
-        env.storage().get_unchecked(&Self::storage_key(env, &dao_id)).unwrap()
+        env.storage().get_unchecked(&Meta::Key(dao_id.clone())).unwrap()
     }
 
     /// Checks if a meta data for the dao_id exists
     pub fn exists(env: &Env, dao_id: &Bytes) -> bool {
-        env.storage().has(&Self::storage_key(env, dao_id))
+        env.storage().has(&Meta::Key(dao_id.clone()))
     }
 }
