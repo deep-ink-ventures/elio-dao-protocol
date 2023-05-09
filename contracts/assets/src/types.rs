@@ -37,17 +37,17 @@ pub struct Checkpoint {
 
 impl Token {
     
-    fn _get_checkpoints(&self, env: &Env, user: Address) -> Vec<Checkpoint> {
-        let key = Self::Checkpoints(user);
+    pub fn get_checkpoints(env: &Env, user: Address) -> Vec<Checkpoint> {
+        let key = Token::Checkpoints(user);
         if !env.storage().has(&key) {
             return Vec::new(env)
         }
         env.storage().get_unchecked(&key).unwrap()
     }
 
-    fn _write_checkpoint(&self, env: &Env, user: Address, balance: i128) {
+    pub fn write_checkpoint(env: &Env, user: Address) {
         let key = Self::Checkpoints(user.clone());
-        let mut checkpoints = self._get_checkpoints(env, user);
+        let mut checkpoints = Token::get_checkpoints(env, user.clone());
 
         let governance_id = Token::get_governance_id(env);
         let core_contract = core_contract::Client::new(&env, &governance_id);
@@ -64,8 +64,18 @@ impl Token {
             p1.ledger
         */
 
-        checkpoints.push_back(Checkpoint { balance, ledger: env.ledger().sequence() });
+        checkpoints.push_back(
+            Checkpoint {
+                balance: Token::read_balance(env, user),
+                ledger: env.ledger().sequence()
+            }
+        );
         env.storage().set(&key, &checkpoints);
+    }
+
+    pub fn transfer(env: &Env, from: Address, to: Address, amount: i128) {
+        Token::write_checkpoint(env, from);
+        Token::write_checkpoint(env, to);
     }
 
     pub fn read_allowance(env: &Env, from: Address, spender: Address) -> i128 {

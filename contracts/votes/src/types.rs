@@ -13,6 +13,10 @@ impl ActiveProposal {
     
     pub fn add(env: &Env, id: Bytes) {
         let mut proposals = ActiveProposal::get_all(env);
+
+        if proposals.len() == 25 {
+            panic!("max number of proposals reached")
+        }
         proposals.push_back(ActiveProposal {id, ledger: env.ledger().sequence()});
         env.storage().set(&ACTIVE, &proposals);
     }
