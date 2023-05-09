@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Bytes, Address, Env, IntoVal};
+use soroban_sdk::{contracttype, Bytes, Address, Env, IntoVal, BytesN};
 
 #[derive(Clone)]
 #[contracttype]
@@ -15,6 +15,8 @@ pub enum Token {
     Nonce(Address),
     Name,
     Symbol,
+    Owner,
+    GovernanceId
 }
 
 
@@ -50,16 +52,39 @@ impl Token {
         env.storage().get_unchecked(&Token::Name).unwrap()
     }
     
+    pub fn get_owner(env: &Env) -> Address {
+        env.storage().get_unchecked(&Token::Owner).unwrap()
+    }
+
+    pub fn get_governance_id(env: &Env) -> BytesN<32> {
+        env.storage().get_unchecked(&Token::GovernanceId).unwrap()
+    }
+
     /// Create a new token
-    pub fn create(env: &Env, symbol: Bytes, name: Bytes) {
+    pub fn create(env: &Env, symbol: &Bytes, name: &Bytes, owner: &Address, governance_id: &BytesN<32>) {
         if !env.storage().has(&Token::Symbol) {
-            env.storage().set(&Token::Symbol, &symbol);
-            env.storage().set(&Token::Name, &name);
+            env.storage().set(&Token::Symbol, symbol);
+            env.storage().set(&Token::Name, name);
+            env.storage().set(&Token::Owner, owner);
+            env.storage().set(&Token::GovernanceId, governance_id);
         } else {
             panic!("DAO already issued a token")
         }
     }
     
+    pub fn set_owner(env: &Env, owner: &Address, new_owner: &Address) {
+        Token::check_auth(env, owner);
+        if owner != &Token::get_owner(env) {
+            panic!("not Token owner")
+        }
+        env.storage().set(&Token::Owner, &new_owner);
+    }
+
+    pub fn set_governance_id(env: &Env, owner: &Address, governance_id: &BytesN<32>) {
+        Token::check_auth(env, owner);
+        env.storage().set(&Token::GovernanceId, governance_id);
+    }
+
     pub fn write_balance(env: &Env, addr: Address, amount: i128) {
         let key = Token::Balance(addr);
         env.storage().set(&key, &amount);
@@ -71,6 +96,13 @@ impl Token {
             balance.unwrap()
         } else {
             0
+        }
+    }
+
+    pub fn check_auth(env: &Env, owner: &Address) {
+        owner.require_auth();
+        if owner != &Token::get_owner(env) {
+            panic!("not Token owner")
         }
     }
 }

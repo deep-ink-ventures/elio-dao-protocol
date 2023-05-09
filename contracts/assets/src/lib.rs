@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Env, Bytes, Address, IntoVal, Symbol};
+use soroban_sdk::{contractimpl, Env, Bytes, Address, Symbol, BytesN};
 
 #[cfg(test)]
 mod test;
@@ -24,13 +24,29 @@ fn check_nonnegative_amount(amount: i128) {
 #[contractimpl]
 impl AssetTrait for AssetContract {
 
-    fn initialize(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, initial_receiver: Address) {
-        Token::create(&env, symbol.clone(), name);
-        Token::write_balance(&env, initial_receiver.clone(), initial_supply.clone());
+    fn init(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, owner: Address, governance_id: BytesN<32>) {
+        Token::create(&env, &symbol.clone(), &name, &owner, &governance_id);
+        Token::write_balance(&env, owner.clone(), initial_supply.clone());
         env.events().publish(
-            (Symbol::short("created"), initial_receiver, symbol),
+            (Symbol::short("created"), owner, symbol),
             initial_supply
         );
+    }
+
+    fn set_owner(env: Env, owner: Address, new_owner: Address) {
+        Token::set_owner(&env, &owner, &new_owner);
+    }
+
+    fn owner(env: Env) -> Address {
+        Token::get_owner(&env)
+    }
+
+    fn set_governance_id(env: Env, owner: Address, governance_id: BytesN<32>) {
+        Token::set_governance_id(&env, &owner, &governance_id);
+    }
+
+    fn governance_id(env: Env) -> BytesN<32> {
+        Token::get_governance_id(&env)
     }
 
     fn incr_allow(env: Env, from: Address, spender: Address, amount: i128) {

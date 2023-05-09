@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Env, Symbol, Bytes, Address, RawVal, BytesN};
+use soroban_sdk::{contractimpl, Env, Symbol, Bytes, Address, BytesN};
 
 mod test;
 
@@ -43,6 +43,10 @@ impl CoreTrait for CoreContract {
     fn get_dao(env: Env, dao_id: Bytes) -> Dao {
         Dao::load(&env, &dao_id)
     }
+
+    fn get_dao_asset_id(env: Env, dao_id: Bytes) -> BytesN<32> {
+        Dao::load(&env, &dao_id).get_asset_id(&env)
+    }
     
     fn destroy_dao(env: Env, dao_id: Bytes, dao_owner: Address) {
         Dao::load_for_owner(&env, &dao_id, &dao_owner).destroy(&env);
@@ -51,11 +55,8 @@ impl CoreTrait for CoreContract {
         env.events().publish((DAO, Symbol::short("destroyed")), dao_id.clone());
     }
     
-    fn issue_token(env: Env, dao_id: Bytes, supply: i128, dao_owner: Address) {
-        let dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
-        // todo: initialize a new asset contract, set the name to the dao name and the id to the dao id
-        // todo: mint the initial supply to the dao owner
-        // todo: set the address to the asset address
+    fn issue_token(env: Env, dao_id: Bytes, supply: i128, dao_owner: Address, assets_wasm_hash: BytesN<32>, asset_salt: Bytes) {
+        Dao::load_for_owner(&env, &dao_id, &dao_owner).issue_token(&env, supply, assets_wasm_hash, asset_salt);
     }
     
     fn get_meta_data(env: Env, dao_id: Bytes) -> MetaData {

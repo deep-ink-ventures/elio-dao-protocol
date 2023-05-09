@@ -36,10 +36,18 @@ pub trait CoreTrait {
     /// - `dao_id`: The DAO for which to issue a token
     /// - `supply`: The total supply of the token to be issued
     /// - `dao_owner`: The owner of the dao about to issue a token
+    /// - `assets_wasm_hash`: The wasm hash of the assets contract
+    /// - `asset_salt`: a 32 bytes salt to derive the contract id
     ///
     /// Tokens can only be issued once and the signer of this TX needs to be the owner
     /// of the DAO.
-    fn issue_token(env: Env, dao_id: Bytes, supply: i128, dao_owner: Address);
+    fn issue_token(env: Env, dao_id: Bytes, supply: i128, dao_owner: Address, assets_wasm_hash: BytesN<32>, asset_salt: Bytes);
+
+    /// Returns the contract id of the dao asset (if exists).
+    ///
+    /// - `dao_id`: The id of the dao to load;
+    ///
+    fn get_dao_asset_id(env: Env, dao_id: Bytes) -> BytesN<32>;
     
     /// Set meta data
     ///

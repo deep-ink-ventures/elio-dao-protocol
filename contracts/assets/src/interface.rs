@@ -1,11 +1,20 @@
-use soroban_sdk::{Env, Address, Bytes};
+use soroban_sdk::{Env, Address, Bytes, BytesN};
 
 use crate::types::Token;
 
 /// This follows the official specs w/o admin functionalities.
 pub trait AssetTrait {
 
-    fn initialize(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, initial_receiver: Address);
+    fn init(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, owner: Address, governance_id: BytesN<32>);
+
+    /// Admin functions
+    fn set_owner(env: Env, owner: Address, new_owner: Address);
+
+    fn owner(env: Env) -> Address;
+
+    fn set_governance_id(env: Env, owner: Address, governance_id: BytesN<32>);
+
+    fn governance_id(env: Env) -> BytesN<32>;
   
     // --------------------------------------------------------------------------------
     // Token interface
