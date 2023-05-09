@@ -21,7 +21,7 @@ fn active_proposals_are_managed() {
     client.create_proposal(&dao_id, &proposal_1_id);
     client.create_proposal(&dao_id, &proposal_2_id);
 
-    let all_proposals = client.get_active_proposal_blocks();
+    let all_proposals = client.get_active_proposals();
     assert_eq!(all_proposals.len(), 2);
     let p1 = all_proposals.get_unchecked(0).unwrap();
     let p2 = all_proposals.get_unchecked(1).unwrap();

@@ -1,4 +1,12 @@
-use soroban_sdk::{contracttype, Bytes, Address, Env, BytesN};
+use soroban_sdk::{contracttype, Bytes, Address, Env, BytesN, Vec};
+
+mod core_contract {
+    soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
+}
+
+mod votes_contract {
+    soroban_sdk::contractimport!(file = "../../wasm/elio_votes.wasm");
+}
 
 #[derive(Clone)]
 #[contracttype]
@@ -16,12 +24,50 @@ pub enum Token {
     Name,
     Symbol,
     Owner,
-    GovernanceId
+    GovernanceId,
+    Checkpoints(Address),
 }
 
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Checkpoint {
+    pub ledger: u32,
+    pub balance: i128,
+}
 
 impl Token {
     
+    fn _get_checkpoints(&self, env: &Env, user: Address) -> Vec<Checkpoint> {
+        let key = Self::Checkpoints(user);
+        if !env.storage().has(&key) {
+            return Vec::new(env)
+        }
+        env.storage().get_unchecked(&key).unwrap()
+    }
+
+    fn _write_checkpoint(&self, env: &Env, user: Address, balance: i128) {
+        let key = Self::Checkpoints(user.clone());
+        let mut checkpoints = self._get_checkpoints(env, user);
+
+        let governance_id = Token::get_governance_id(env);
+        let core_contract = core_contract::Client::new(&env, &governance_id);
+        let vote_id = core_contract.get_votes_id();
+        let votes_contract = votes_contract::Client::new(&env, &vote_id);
+
+        let active_proposals = votes_contract.get_active_proposals();
+
+        // todo: filter out inactive checkpoints
+        /*
+            assert_eq!(active_proposals.len(), 2);
+            let p1 = active_proposals.get_unchecked(0).unwrap();
+            p1.id
+            p1.ledger
+        */
+
+        checkpoints.push_back(Checkpoint { balance, ledger: env.ledger().sequence() });
+        env.storage().set(&key, &checkpoints);
+    }
+
     pub fn read_allowance(env: &Env, from: Address, spender: Address) -> i128 {
         let key = Self::Allowance(Allowances { from, spender });
         if let Some(allowance) = env.storage().get(&key) {
