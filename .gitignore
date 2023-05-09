@@ -17,6 +17,7 @@
 
 .idea
 .vscode
+.fleet
 
 # emacs temp files
 *~
