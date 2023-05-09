@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Env, Bytes, Address, Symbol, BytesN};
+use soroban_sdk::{contractimpl, Address, Bytes, BytesN, Env, Symbol};
 
 #[cfg(test)]
 mod test;
@@ -13,7 +13,7 @@ use types::Token;
 
 pub struct AssetContract;
 
-fn check_nonnegative_amount(amount: i128) {
+fn check_non_negative_amount(amount: i128) {
     if amount < 0 {
         panic!("negative amount is not allowed: {}", amount)
     }
@@ -21,14 +21,18 @@ fn check_nonnegative_amount(amount: i128) {
 
 #[contractimpl]
 impl AssetTrait for AssetContract {
-
-    fn init(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, owner: Address, governance_id: BytesN<32>) {
+    fn init(
+        env: Env,
+        symbol: Bytes,
+        name: Bytes,
+        initial_supply: i128,
+        owner: Address,
+        governance_id: BytesN<32>,
+    ) {
         Token::create(&env, &symbol.clone(), &name, &owner, &governance_id);
         Token::write_balance(&env, owner.clone(), initial_supply.clone());
-        env.events().publish(
-            (Symbol::short("created"), owner, symbol),
-            initial_supply
-        );
+        env.events()
+            .publish((Symbol::short("created"), owner, symbol), initial_supply);
     }
 
     fn set_owner(env: Env, owner: Address, new_owner: Address) {
@@ -50,8 +54,7 @@ impl AssetTrait for AssetContract {
     fn incr_allow(env: Env, from: Address, spender: Address, amount: i128) {
         from.require_auth();
 
-        check_nonnegative_amount(amount);
-
+        check_non_negative_amount(amount);
         let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
         let new_allowance = allowance
             .checked_add(amount)
@@ -60,7 +63,7 @@ impl AssetTrait for AssetContract {
         Token::write_allowance(&env, from.clone(), spender.clone(), new_allowance);
         env.events().publish(
             (Symbol::new(&env, "increase_allowance"), from, spender),
-            amount
+            amount,
         );
 
         // todo: add tests once allowance is fully implemented
@@ -69,7 +72,7 @@ impl AssetTrait for AssetContract {
     fn decr_allow(env: Env, from: Address, spender: Address, amount: i128) {
         from.require_auth();
 
-        check_nonnegative_amount(amount);
+        check_non_negative_amount(amount);
 
         let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
         if amount >= allowance {
@@ -79,16 +82,29 @@ impl AssetTrait for AssetContract {
         }
         env.events().publish(
             (Symbol::new(&env, "decrease_allowance"), from, spender),
-            amount
+            amount,
         );
     }
 
     fn xfer(env: Env, from: Address, to: Address, amount: i128) {
-        // todo: implement
+        from.require_auth();
+
+        check_non_negative_amount(amount);
+        Token::spend_balance(&env, from.clone(), amount);
+        Token::receive_balance(&env, to.clone(), amount);
+        env.events()
+            .publish((Symbol::new(&env, "transfer"), from, to), amount)
     }
 
     fn xfer_from(env: Env, spender: Address, from: Address, to: Address, amount: i128) {
-        // todo: implement
+        spender.require_auth();
+
+        check_non_negative_amount(amount);
+        Token::spend_allowance(&env, from.clone(), spender, amount);
+        Token::spend_balance(&env, from.clone(), amount);
+        Token::receive_balance(&env, to.clone(), amount);
+        env.events()
+            .publish((Symbol::new(&env, "transfer"), from, to), amount)
     }
 
     fn balance(env: Env, addr: Address) -> i128 {
@@ -108,7 +124,7 @@ impl AssetTrait for AssetContract {
     fn allowance(env: Env, from: Address, spender: Address) -> i128 {
         Token::read_allowance(&env, from, spender)
     }
-   
+
     fn decimals(_env: Env) -> u32 {
         18
     }
@@ -120,9 +136,8 @@ impl AssetTrait for AssetContract {
     fn symbol(env: Env) -> Bytes {
         Token::get_symbol(&env)
     }
-    
+
     fn get_balance_at(env: Env, addr: Address, block_number: i128) -> i128 {
         42
     }
-    
 }

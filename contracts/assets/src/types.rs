@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Bytes, Address, Env, BytesN, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, BytesN, Env, Vec};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -36,11 +36,10 @@ pub struct Checkpoint {
 }
 
 impl Token {
-    
     pub fn get_checkpoints(env: &Env, user: Address) -> Vec<Checkpoint> {
         let key = Token::Checkpoints(user);
         if !env.storage().has(&key) {
-            return Vec::new(env)
+            return Vec::new(env);
         }
         env.storage().get_unchecked(&key).unwrap()
     }
@@ -63,13 +62,10 @@ impl Token {
             p1.id
             p1.ledger
         */
-
-        checkpoints.push_back(
-            Checkpoint {
-                balance: Token::read_balance(env, user),
-                ledger: env.ledger().sequence()
-            }
-        );
+        checkpoints.push_back(Checkpoint {
+            balance: Token::read_balance(env, user),
+            ledger: env.ledger().sequence(),
+        });
         env.storage().set(&key, &checkpoints);
     }
 
@@ -99,15 +95,15 @@ impl Token {
         }
         Self::write_allowance(env, from, spender, allowance - amount);
     }
-    
+
     pub fn get_symbol(env: &Env) -> Bytes {
         env.storage().get_unchecked(&Token::Symbol).unwrap()
     }
-    
+
     pub fn get_name(env: &Env) -> Bytes {
         env.storage().get_unchecked(&Token::Name).unwrap()
     }
-    
+
     pub fn get_owner(env: &Env) -> Address {
         env.storage().get_unchecked(&Token::Owner).unwrap()
     }
@@ -117,7 +113,13 @@ impl Token {
     }
 
     /// Create a new token
-    pub fn create(env: &Env, symbol: &Bytes, name: &Bytes, owner: &Address, governance_id: &BytesN<32>) {
+    pub fn create(
+        env: &Env,
+        symbol: &Bytes,
+        name: &Bytes,
+        owner: &Address,
+        governance_id: &BytesN<32>,
+    ) {
         if !env.storage().has(&Token::Symbol) {
             env.storage().set(&Token::Symbol, symbol);
             env.storage().set(&Token::Name, name);
@@ -127,7 +129,7 @@ impl Token {
             panic!("DAO already issued a token")
         }
     }
-    
+
     pub fn set_owner(env: &Env, owner: &Address, new_owner: &Address) {
         Token::check_auth(env, owner);
         if owner != &Token::get_owner(env) {
@@ -145,7 +147,7 @@ impl Token {
         let key = Token::Balance(addr);
         env.storage().set(&key, &amount);
     }
-    
+
     pub fn read_balance(env: &Env, addr: Address) -> i128 {
         let key = Token::Balance(addr);
         if let Some(balance) = env.storage().get(&key) {
@@ -160,5 +162,18 @@ impl Token {
         if owner != &Token::get_owner(env) {
             panic!("not Token owner")
         }
+    }
+
+    pub fn spend_balance(env: &Env, addr: Address, amount: i128) {
+        let balance = Token::read_balance(env, addr.clone());
+        if balance < amount {
+            panic!("insufficient balance")
+        }
+        Token::write_balance(env, addr, balance - amount);
+    }
+
+    pub fn receive_balance(env: &Env, addr: Address, amount: i128) {
+        let balance = Token::read_balance(env, addr.clone());
+        Token::write_balance(env, addr, balance + amount);
     }
 }
