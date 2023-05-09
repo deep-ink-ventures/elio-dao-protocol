@@ -1,8 +1,8 @@
 #![cfg(test)]
 
-use soroban_sdk::{Env, IntoVal};
+use soroban_sdk::{Env, IntoVal, testutils::{Ledger, LedgerInfo}};
 
-use crate::{VotesContract, VotesContractClient};
+use crate::{VotesContract, VotesContractClient, types::PROPOSAL_DURATION};
 
 fn create_client() -> VotesContractClient {
     let env = Env::default();
@@ -15,10 +15,25 @@ fn create_client() -> VotesContractClient {
 fn active_proposals_are_managed() {
     let client = create_client();
     let dao_id = "DIV".into_val(&client.env);
+    client.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
     let proposal_1_id = "P1".into_val(&client.env);
+    client.create_proposal(&dao_id, &proposal_1_id);
+    
+    client.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 200,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
     let proposal_2_id = "P2".into_val(&client.env);
 
-    client.create_proposal(&dao_id, &proposal_1_id);
     client.create_proposal(&dao_id, &proposal_2_id);
 
     let all_proposals = client.get_active_proposals();
@@ -28,8 +43,22 @@ fn active_proposals_are_managed() {
     assert_eq!(p1.id, proposal_1_id);
     assert_eq!(p2.id, proposal_2_id);
 
-    assert_eq!(p1.ledger, client.env.ledger().sequence());
-    assert_eq!(p2.ledger, client.env.ledger().sequence());
+    assert_eq!(p1.ledger, 100);
+    assert_eq!(p2.ledger, 200);
+    
+    // outdate the first
+    client.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100 + PROPOSAL_DURATION + 1,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+    
+    let all_proposals = client.get_active_proposals();
+    assert_eq!(all_proposals.len(), 1);
+    let p = all_proposals.get_unchecked(0).unwrap();
+    assert_eq!(p.id, proposal_2_id);
 }
 
 

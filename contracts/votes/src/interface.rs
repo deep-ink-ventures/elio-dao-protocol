@@ -16,6 +16,4 @@ pub trait VotesTrait {
   
   fn get_active_proposals(env: Env) -> Vec<ActiveProposal>;
   
-  fn get_proposal_duration(env: Env) -> u32;
-
 }

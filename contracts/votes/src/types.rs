@@ -8,7 +8,7 @@ pub struct ActiveProposal {
 }
 
 const ACTIVE: Symbol = Symbol::short("ACTIVE");
-const PROPOSAL_DURATION: u32 = 10_000;
+pub const PROPOSAL_DURATION: u32 = 10_000;
 
 impl ActiveProposal {
     
@@ -26,7 +26,20 @@ impl ActiveProposal {
         if !env.storage().has(&ACTIVE) {
             return Vec::new(env)
         }
-        env.storage().get_unchecked(&ACTIVE).unwrap()
+        let active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&ACTIVE).unwrap();
+        let mut filtered_proposals: Vec<ActiveProposal> = Vec::new(env);
+
+        // filter out oudated proposals
+        for proposal in active_proposals.iter_unchecked() {
+            if env.ledger().sequence() <= proposal.ledger + PROPOSAL_DURATION {
+                filtered_proposals.push_back(proposal);
+            }
+        }
+        if filtered_proposals.len() < active_proposals.len() {
+            env.storage().set(&ACTIVE, &filtered_proposals);
+        }
+        
+        filtered_proposals
     }        
 }
 

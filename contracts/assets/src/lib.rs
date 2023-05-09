@@ -146,7 +146,7 @@ impl AssetTrait for AssetContract {
         Token::get_checkpoint_at(&env, id, i)
     }
 
-    fn get_balance_at(env: Env, addr: Address, block_number: i128) -> i128 {
-        return 42
+    fn get_balance_at(env: Env, addr: Address, block_number: u32) -> i128 {
+        Token::get_checkpoint_for_block(&env, addr, block_number).balance
     }
 }

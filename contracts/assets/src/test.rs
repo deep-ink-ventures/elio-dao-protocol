@@ -234,4 +234,51 @@ fn checkpoints() {
 
     assert_eq!(cp3.ledger, 10);
     assert_eq!(cp3.balance, 200_000);
+    
+    // a second one
+    client.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 20,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+    votes_client.create_proposal(&"DIV".into_val(&client.env), &"P2".into_val(&client.env));
+    client.xfer(&owner, &whoever, &100_000);
+
+    assert_eq!(client.get_checkpoint_count(&owner), 3);
+    assert_eq!(client.get_checkpoint_count(&whoever), 3);
+
+    let cp2 = client.get_checkpoint_at(&owner, &2);
+
+    assert_eq!(cp2.ledger, 20);
+    assert_eq!(cp2.balance, 700_000);
+
+    let cp3 = client.get_checkpoint_at(&whoever, &2);
+
+    assert_eq!(cp3.ledger, 20);
+    assert_eq!(cp3.balance, 300_000);
+    
+    // now let's outdate the first one
+    client.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 10 + 10_000 + 1,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+    client.xfer(&owner, &whoever, &100_000);
+    
+    assert_eq!(client.get_checkpoint_count(&owner), 2);
+    assert_eq!(client.get_checkpoint_count(&whoever), 2);
+    
+    // let's verify we are getting the correct checkpoints for each proposal!
+    assert_eq!(client.get_balance_at(&owner, &19), 700_000);
+    assert_eq!(client.get_balance_at(&owner, &20), 700_000);
+    assert_eq!(client.get_balance_at(&owner, &20_000), 600_000);
+    
+    assert_eq!(client.get_balance_at(&whoever, &19), 300_000);
+    assert_eq!(client.get_balance_at(&whoever, &20), 300_000);
+    assert_eq!(client.get_balance_at(&whoever, &20_000), 400_000);
 }
+

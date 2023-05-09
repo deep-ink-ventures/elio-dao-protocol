@@ -15,7 +15,7 @@ pub trait AssetTrait {
     fn init(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, owner: Address, governance_id: BytesN<32>);
     
     /// Get the last recorded historical balance at or before the given block number
-    fn get_balance_at(env: Env, id: Address, block_number: i128) -> i128;
+    fn get_balance_at(env: Env, id: Address, block_number: u32) -> i128;
 
     // Discovery Functions
     fn get_checkpoint_count(env: Env, id: Address) -> u32;

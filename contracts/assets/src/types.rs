@@ -51,10 +51,24 @@ impl Token {
         }
         checkpoints.get_unchecked(i).unwrap()
     }
+    
+    pub fn get_checkpoint_for_block(env: &Env, user: Address, block: u32) -> Checkpoint {
+        let checkpoints = Token::get_checkpoints(env, user.clone());
+        let mut cp_candidate = checkpoints.first_unchecked().unwrap();
+        
+        for checkpoint in checkpoints.iter_unchecked() {
+            if checkpoint.ledger > block {
+                break;
+            }
+            if checkpoint.ledger > cp_candidate.ledger {
+                cp_candidate = checkpoint;
+            }
+        }
+        cp_candidate
+    }
 
     pub fn write_checkpoint(env: &Env, user: Address) {
         let key = Self::Checkpoints(user.clone());
-        let checkpoints = Token::get_checkpoints(env, user.clone());
 
         let governance_id = Token::get_governance_id(env);
         let core_contract = core_contract::Client::new(&env, &governance_id);
@@ -66,23 +80,15 @@ impl Token {
         let mut filtered_checkpoints: Vec<Checkpoint> = Vec::new(env);
 
         for proposal in active_proposals.iter_unchecked() {
-            let mut cp_candidate = checkpoints.first_unchecked().unwrap();
-            for checkpoint in checkpoints.iter_unchecked() {
-                if checkpoint.ledger > proposal.ledger {
-                    break;
-                }
-                if checkpoint.ledger > cp_candidate.ledger {
-                    cp_candidate = checkpoint;
-                }
-            }
-            filtered_checkpoints.push_back(cp_candidate);
+            filtered_checkpoints.push_back(
+                Token::get_checkpoint_for_block(env, user.clone(), proposal.ledger)
+            );
         }
             
-        let cp = Checkpoint {
+        filtered_checkpoints.push_back(Checkpoint {
             balance: Token::read_balance(env, user),
             ledger: env.ledger().sequence(),
-        };
-        filtered_checkpoints.push_back(cp);
+        });
         env.storage().set(&key, &filtered_checkpoints);
     }
 
