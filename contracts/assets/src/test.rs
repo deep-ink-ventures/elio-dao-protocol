@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use soroban_sdk::{Env, testutils::Address as _, Address, IntoVal, Bytes};
+use soroban_sdk::{testutils::Address as _, Address, Env, IntoVal};
 
 use crate::{AssetContract, AssetContractClient};
 
@@ -107,4 +107,11 @@ fn token_assets_are_always_authoritzed() {
 fn allowances() {
     let client = create_client();
     let address = create_a_token();
+}
+#[test]
+fn xfer() {
+    let client_a = create_client();
+    let client_b = create_client();
+    create_token(&client_a);
+    client_a.xfer(from, to, amount)
 }

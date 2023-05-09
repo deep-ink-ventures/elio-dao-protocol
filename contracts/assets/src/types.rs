@@ -68,6 +68,7 @@ impl Token {
         env.storage().set(&key, &checkpoints);
     }
 
+impl Token {
     pub fn read_allowance(env: &Env, from: Address, spender: Address) -> i128 {
         let key = Self::Allowance(Allowances { from, spender });
         if let Some(allowance) = env.storage().get(&key) {
@@ -89,11 +90,11 @@ impl Token {
         }
         Self::write_allowance(env, from, spender, allowance - amount);
     }
-    
+
     pub fn get_symbol(env: &Env) -> Bytes {
         env.storage().get_unchecked(&Token::Symbol).unwrap()
     }
-    
+
     pub fn get_name(env: &Env) -> Bytes {
         env.storage().get_unchecked(&Token::Name).unwrap()
     }
@@ -135,7 +136,7 @@ impl Token {
         let key = Token::Balance(addr);
         env.storage().set(&key, &amount);
     }
-    
+
     pub fn read_balance(env: &Env, addr: Address) -> i128 {
         let key = Token::Balance(addr);
         if let Some(balance) = env.storage().get(&key) {
@@ -150,5 +151,18 @@ impl Token {
         if owner != &Token::get_owner(env) {
             panic!("not Token owner")
         }
+    }
+}
+    pub fn spend_balance(env: &Env, addr: Address, amount: i128) {
+        let balance = Token::read_balance(env, addr.clone());
+        if balance < amount {
+            panic!("insufficient balance")
+        }
+        Token::write_balance(env, addr, balance - amount);
+    }
+
+    pub fn receive_balance(env: &Env, addr: Address, amount: i128) {
+        let balance = Token::read_balance(env, addr.clone());
+        Token::write_balance(env, addr, balance + amount);
     }
 }
