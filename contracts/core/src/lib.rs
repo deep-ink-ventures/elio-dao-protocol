@@ -19,13 +19,12 @@ const VOTES: Symbol = Symbol::short("VOTES");
 #[contractimpl]
 impl CoreTrait for CoreContract {
 
-    fn init(env: Env, votes_wasm_hash: BytesN<32>) {
+    fn init(env: Env, votes_wasm_hash: BytesN<32>, votes_salt: Bytes) {
         if env.storage().has(&VOTES) {
             panic!("Already initialized")
         }
 
-        let salt = Bytes::from_array(&env, &[0; 32]);
-        let votes_id = env.deployer().with_current_contract(&salt).deploy(&votes_wasm_hash);
+        let votes_id = env.deployer().with_current_contract(&votes_salt).deploy(&votes_wasm_hash);
         env.storage().set(&VOTES, &votes_id);
     }
 

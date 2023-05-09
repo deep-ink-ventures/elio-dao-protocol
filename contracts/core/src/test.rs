@@ -12,7 +12,7 @@ mod assets_contract {
     );
 }
 
-use soroban_sdk::{Env, testutils::Address as _, Address, IntoVal, log};
+use soroban_sdk::{Env, testutils::Address as _, Address, IntoVal, log, Bytes};
 
 use crate::{CoreContract, CoreContractClient, types::Dao};
 
@@ -27,7 +27,8 @@ fn create_client() -> CoreContractClient {
 fn init_client(client: &CoreContractClient) {
     // install votes
     let votes_wasm_hash = &client.env.install_contract_wasm(votes_contract::WASM);
-    client.init(&votes_wasm_hash);
+    let salt = Bytes::from_array(&client.env, &[0; 32]);
+    client.init(&votes_wasm_hash, &salt);
 }
 
 fn create_dao(client: &CoreContractClient) -> Dao {
