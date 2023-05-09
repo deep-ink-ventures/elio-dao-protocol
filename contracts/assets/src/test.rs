@@ -2,7 +2,7 @@
 
 use soroban_sdk::{testutils::Address as _, Address, Bytes, Env, IntoVal};
 
-use crate::{AssetContract, AssetContractClient};
+use crate::{AssetContract, AssetContractClient, Token};
 
 fn create_client() -> AssetContractClient {
     let env = Env::default();
@@ -108,10 +108,37 @@ fn allowances() {
     let client = create_client();
     let address = create_a_token();
 }
+
 #[test]
 fn xfer() {
-    let client_a = create_client();
-    let client_b = create_client();
-    create_token(&client_a);
-    //    client_a.xfer(from, to, amount)
+    let client = create_client();
+    let from = create_token(&client);
+    let to = Address::random(&client.env);
+
+    assert_eq!(client.balance(&from), 1_000_000);
+    assert_eq!(client.balance(&to), 0);
+
+    client.xfer(&from, &to, &500_000);
+
+    assert_eq!(client.balance(&from), 500_000);
+    assert_eq!(client.balance(&to), 500_000);
+}
+
+#[test]
+fn xfer_from() {
+    let client = create_client();
+    let from = create_token(&client);
+    let to = Address::random(&client.env);
+    let spender = Address::random(&client.env);
+    client.incr_allow(&from, &spender, &250_000);
+
+    assert_eq!(client.balance(&from), 1_000_000);
+    assert_eq!(client.balance(&to), 0);
+    assert_eq!(client.allowance(&from, &spender), 250_000);
+
+    client.xfer_from(&spender, &from, &to, &100_000);
+
+    assert_eq!(client.balance(&from), 900_000);
+    assert_eq!(client.balance(&to), 100_000);
+    assert_eq!(client.allowance(&from, &spender), 150_000);
 }
