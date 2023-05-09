@@ -36,28 +36,29 @@ pub struct Checkpoint {
 }
 
 impl Token {
-    pub fn get_checkpoints(env: &Env, user: Address) -> Vec<Checkpoint> {
-        let key = Token::Checkpoints(user);
+    pub fn get_checkpoints(env: &Env, id: Address) -> Vec<Checkpoint> {
+        let key = Token::Checkpoints(id);
         if !env.storage().has(&key) {
             return Vec::new(env);
         }
         env.storage().get_unchecked(&key).unwrap()
     }
 
-    pub fn get_checkpoint_at(env: &Env, user: Address, i: u32) -> Checkpoint {
-        let checkpoints = Token::get_checkpoints(env, user);
+    pub fn get_checkpoint_at(env: &Env, id: Address, i: u32) -> Checkpoint {
+        let checkpoints = Token::get_checkpoints(env, id);
         if checkpoints.len() <= i {
             panic!("Checkpoint index error");
         }
         checkpoints.get_unchecked(i).unwrap()
     }
     
-    pub fn get_checkpoint_for_block(env: &Env, user: Address, block: u32) -> Checkpoint {
-        let checkpoints = Token::get_checkpoints(env, user.clone());
+    /// Returns the closest checkpoint at or BEFORE a given sequence
+    pub fn get_checkpoint_for_sequence(env: &Env, id: Address, sequence: u32) -> Checkpoint {
+        let checkpoints = Token::get_checkpoints(env, id);
         let mut cp_candidate = checkpoints.first_unchecked().unwrap();
         
         for checkpoint in checkpoints.iter_unchecked() {
-            if checkpoint.ledger > block {
+            if checkpoint.ledger > sequence {
                 break;
             }
             if checkpoint.ledger > cp_candidate.ledger {
@@ -67,13 +68,23 @@ impl Token {
         cp_candidate
     }
 
-    pub fn write_checkpoint(env: &Env, user: Address) {
-        let key = Self::Checkpoints(user.clone());
+    /// Writes a checkpoint for a given balance at the current sequence number
+    ///
+    /// This prevents double counting (e.g. you vote, sell your tokens and vote again) without
+    /// the requirement for staking the tokens during a proposal.
+    ///
+    /// If you roll your own implementation you need to have a strategy to keep the number of
+    /// checkpoints bounded, otherwise the required storage will escalate on busy tokens.
+    ///
+    /// Our strategy is to set the number of max concurrent proposal to 25 - to many concurrent
+    /// proposals create voters fatigue anyways.
+    pub fn write_checkpoint(env: &Env, id: Address) {
+        let key = Self::Checkpoints(id.clone());
 
         let governance_id = Token::get_governance_id(env);
-        let core_contract = core_contract::Client::new(&env, &governance_id);
+        let core_contract = core_contract::Client::new(env, &governance_id);
         let vote_id = core_contract.get_votes_id();
-        let votes_contract = votes_contract::Client::new(&env, &vote_id);
+        let votes_contract = votes_contract::Client::new(env, &vote_id);
 
         let active_proposals = votes_contract.get_active_proposals();
 
@@ -81,12 +92,12 @@ impl Token {
 
         for proposal in active_proposals.iter_unchecked() {
             filtered_checkpoints.push_back(
-                Token::get_checkpoint_for_block(env, user.clone(), proposal.ledger)
+                Token::get_checkpoint_for_sequence(env, id.clone(), proposal.ledger)
             );
         }
             
         filtered_checkpoints.push_back(Checkpoint {
-            balance: Token::read_balance(env, user),
+            balance: Token::read_balance(env, id),
             ledger: env.ledger().sequence(),
         });
         env.storage().set(&key, &filtered_checkpoints);

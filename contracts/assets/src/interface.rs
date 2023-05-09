@@ -14,12 +14,25 @@ pub trait AssetTrait {
     ///
     fn init(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, owner: Address, governance_id: BytesN<32>);
     
-    /// Get the last recorded historical balance at or before the given block number
-    fn get_balance_at(env: Env, id: Address, block_number: u32) -> i128;
+    /// Get the last recorded historical balance at or before the given ledger sequence number
+    /// This is required by the voting protocil. If you roll your own token, this is a must have.
+    ///
+    /// - `id`: The address that you want to know the balance of
+    /// - `sequence`: ledger sequence number (aka env.ledger().sequence)
+    ///
+    fn get_balance_at(env: Env, id: Address, sequence: u32) -> i128;
 
-    // Discovery Functions
+    /// Discovery Function: Get the number of checkpoints stored for a given id
+    ///
+    /// - `id`: The address that you want to know the count of
+    ///
     fn get_checkpoint_count(env: Env, id: Address) -> u32;
 
+    /// Discovery Function: Get a checkpoint at an index stored for a given id
+    ///
+    /// - `id`: The address that you want to get a checkpoint for
+    /// - `i`: Index position
+    ///
     fn get_checkpoint_at(env: Env, id: Address, i: u32) -> Checkpoint;
 
     // --------------------------------------------------------------------------------
@@ -45,11 +58,12 @@ pub trait AssetTrait {
     fn set_governance_id(env: Env, owner: Address, governance_id: BytesN<32>);
 
     /// Returns the current governance id.
+    ///
     fn governance_id(env: Env) -> BytesN<32>;
   
-    // --------------------------------------------------------------------------------
-    // Token interface
-    // --------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------
+    // Token interface -> Everything starting from here satisfies the soroban token interface
+    // ----------------------------------------------------------------------------------------
     // 
     // All the functions here have to be authorized by the token spender 
     // (usually named `from` here) using all the input arguments, i.e. they have

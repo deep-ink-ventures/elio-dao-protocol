@@ -29,8 +29,8 @@ impl AssetTrait for AssetContract {
         owner: Address,
         governance_id: BytesN<32>,
     ) {
-        Token::create(&env, &symbol.clone(), &name, &owner, &governance_id);
-        Token::write_balance(&env, owner.clone(), initial_supply.clone());
+        Token::create(&env, &symbol, &name, &owner, &governance_id);
+        Token::write_balance(&env, owner.clone(), initial_supply);
         env.events()
             .publish((Symbol::short("created"), owner, symbol), initial_supply);
     }
@@ -65,8 +65,6 @@ impl AssetTrait for AssetContract {
             (Symbol::new(&env, "increase_allowance"), from, spender),
             amount,
         );
-
-        // todo: add tests once allowance is fully implemented
     }
 
     fn decr_allow(env: Env, from: Address, spender: Address, amount: i128) {
@@ -122,7 +120,6 @@ impl AssetTrait for AssetContract {
     }
 
     fn allowance(env: Env, from: Address, spender: Address) -> i128 {
-        // todo: Test
         Token::read_allowance(&env, from, spender)
     }
 
@@ -146,7 +143,7 @@ impl AssetTrait for AssetContract {
         Token::get_checkpoint_at(&env, id, i)
     }
 
-    fn get_balance_at(env: Env, addr: Address, block_number: u32) -> i128 {
-        Token::get_checkpoint_for_block(&env, addr, block_number).balance
+    fn get_balance_at(env: Env, addr: Address, sequence: u32) -> i128 {
+        Token::get_checkpoint_for_sequence(&env, addr, sequence).balance
     }
 }

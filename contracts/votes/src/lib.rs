@@ -18,9 +18,10 @@ pub struct VotesContract;
 impl VotesTrait for VotesContract {
 
     fn create_proposal(env: Env, dao_id: Bytes, proposal_id: Bytes) {
-        // todo: https://github.com/users/deep-ink-ventures/projects/2?pane=issue&itemId=26775445
+        // todo: implement
 
-        // leave the following intact when implementing the rest.
+        // this line is to wire the protocol for the assets contract to work
+        // as part of the first deliverable - the rest of this functionality is still tbd
         ActiveProposal::add(&env, proposal_id)
     }
 
