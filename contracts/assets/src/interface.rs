@@ -46,7 +46,7 @@ pub trait AssetTrait {
     ///
     fn set_owner(env: Env, owner: Address, new_owner: Address);
 
-    /// Returns the current owner.
+    /// Returns the current owner
     fn owner(env: Env) -> Address;
 
     /// Change the governance id of this token to either a different implementation or to upgrade to
