@@ -6,7 +6,7 @@ The DAO Assets Contract is a token to be used within the Elio DAO Protocol. It i
 ## Checkpoints
 The basic idea of this token is to provide checkpoint functionality. The idea here is to freeze and reference the voting power before a proposal is created. We do so by writing a checkpoint on all [balance changes](https://github.com/deep-ink-ventures/elio-dao-protocol/blob/main/contracts/assets/src/types.rs#L178).
 
-![image](https://github.com/deep-ink-ventures/elio-dao-protocol/assets/120174523/c72cbc3e-a992-4adc-8e8f-e36e49a085a7)
+![image](https://github.com/deep-ink-ventures/elio-dao-protocol/assets/120174523/3780c20c-3155-42c7-b022-5c55b27c209e)
 
 The checkpoint system maintains a record of token balances at specific points in time, referred to as [*checkpoints*](https://github.com/deep-ink-ventures/elio-dao-protocol/blob/main/contracts/assets/src/types.rs#L31-L36). Each checkpoint represents an accounts's token balance at a particular ledger sequence number (a ledger in the Stellar blockchain). The smart contract [keeps a mapping](https://github.com/deep-ink-ventures/elio-dao-protocol/blob/main/contracts/assets/src/types.rs#L28) of addresses to an array of checkpoints, which store the balance and the associated ledger sequence number.
 
