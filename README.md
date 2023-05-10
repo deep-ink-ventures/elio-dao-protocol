@@ -26,7 +26,7 @@ The protocol consists of three main contracts.
 
 [**Elio DAO Assets**](https://github.com/deep-ink-ventures/elio-dao-protocol/tree/main/contracts/assets), a ERC-20 style token with checkpoint functionality, supporting the [Soroban Token Interface](https://soroban.stellar.org/docs/reference/interfaces/token-interface).
 
-> _Assets_ is the bread and butter of our first deliverable in the SCF Community Grant. You can read more about it in it's [README](https://github.com/deep-ink-ventures/elio-dao-protocol/tree/main/contracts/assets/README.md)
+> _Assets_ is the bread and butter of our first deliverable in the SCF Community Grant. You can read more about it in it's [README](https://github.com/deep-ink-ventures/elio-dao-protocol/tree/main/contracts/assets/README.md)!
 
 [**Elio DAO Votes**](https://github.com/deep-ink-ventures/elio-dao-protocol/tree/main/contracts/votes) is the proposal lifecycle contract with built in voting functionality.
 
@@ -38,6 +38,6 @@ Be sure to follow [the backend service](https://github.com/deep-ink-ventures/eli
 
 It provides a clean and fun to use API for our [frontend](https://github.com/deep-ink-ventures/elio-dao-frontend).
 
-If you are more on the visual side of things, [here](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=126-6939) [is](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=16-103) a [sneak](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=2-101) [peak](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=34-697) into what we are building.
+If you are more on the visual side of things, [here](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=126-6939) is [a](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=16-103) sneak [peak](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=2-101) into [what](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=34-697) we are building.
 
 
