@@ -26,7 +26,7 @@ The protocol consists of three main contracts.
 
 [**Elio DAO Assets**](https://github.com/deep-ink-ventures/elio-dao-protocol/tree/main/contracts/assets), a ERC-20 style token with checkpoint functionality, supporting the [Soroban Token Interface](https://soroban.stellar.org/docs/reference/interfaces/token-interface).
 
-> _Assets_ is the bread and butter of our first deliverable in the SCF Community Grant. You can read more about it in it's [README](https://github.com/deep-ink-ventures/elio-dao-protocol/tree/main/contracts/assets)
+> _Assets_ is the bread and butter of our first deliverable in the SCF Community Grant. You can read more about it in it's [README](https://github.com/deep-ink-ventures/elio-dao-protocol/tree/main/contracts/assets/README.md)
 
 [**Elio DAO Votes**](https://github.com/deep-ink-ventures/elio-dao-protocol/tree/main/contracts/votes) is the proposal lifecycle contract with built in voting functionality.
 
