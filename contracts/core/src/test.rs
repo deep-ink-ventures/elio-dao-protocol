@@ -164,20 +164,20 @@ fn issue_token() {
     assert_eq!(dao.owner, asset_client.owner());
     assert_eq!(client.contract_id, asset_client.governance_id());
 }
-//
-//#[test]
-//#[should_panic(expected = "asset already issued")]
-//fn cant_issue_token_twice() {
-//    let client = create_client();
-//
-//    let assets_wasm_hash = &client.env.install_contract_wasm(assets_contract::WASM);
-//    let dao = create_dao(&client);
-//
-//    let salt = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".into_val(&client.env);
-//    let salt2 = "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY".into_val(&client.env);
-//    client.issue_token(&dao.id, &1_000_000, &dao.owner, &assets_wasm_hash, &salt);
-//    client.issue_token(&dao.id, &1_000_000, &dao.owner, &assets_wasm_hash, &salt2);
-//}
+
+#[test]
+#[should_panic(expected = "asset already issued")]
+fn cant_issue_token_twice() {
+    let client = create_client();
+
+    let assets_wasm_hash = &client.env.install_contract_wasm(assets_contract::WASM);
+    let dao = create_dao(&client);
+
+    let salt = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".into_val(&client.env);
+    let salt2 = "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY".into_val(&client.env);
+    client.issue_token(&dao.id, &1_000_000, &dao.owner, &assets_wasm_hash, &salt);
+    client.issue_token(&dao.id, &1_000_000, &dao.owner, &assets_wasm_hash, &salt2);
+}
 
 #[test]
 #[should_panic(expected = "asset not issued")]
