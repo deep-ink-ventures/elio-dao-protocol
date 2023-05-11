@@ -22,6 +22,7 @@ impl VotesTrait for VotesContract {
 
         // this line is to wire the protocol for the assets contract to work
         // as part of the first deliverable - the rest of this functionality is still tbd
+        // todo: separate proposals per dao
         ActiveProposal::add(&env, proposal_id)
     }
 
@@ -41,7 +42,8 @@ impl VotesTrait for VotesContract {
         // todo: implement
     }
 
-    fn get_active_proposals(env: Env) -> Vec<ActiveProposal> {
+    fn get_active_proposals(env: Env, dao_id: Bytes) -> Vec<ActiveProposal> {
+        // todo: separate proposals per dao
         ActiveProposal::get_all(&env)
     }
 }

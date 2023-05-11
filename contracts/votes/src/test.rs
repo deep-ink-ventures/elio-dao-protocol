@@ -36,7 +36,7 @@ fn active_proposals_are_managed() {
 
     client.create_proposal(&dao_id, &proposal_2_id);
 
-    let all_proposals = client.get_active_proposals();
+    let all_proposals = client.get_active_proposals(&dao_id);
     assert_eq!(all_proposals.len(), 2);
     let p1 = all_proposals.get_unchecked(0).unwrap();
     let p2 = all_proposals.get_unchecked(1).unwrap();
@@ -55,7 +55,7 @@ fn active_proposals_are_managed() {
         base_reserve: 10,
     });
     
-    let all_proposals = client.get_active_proposals();
+    let all_proposals = client.get_active_proposals(&dao_id);
     assert_eq!(all_proposals.len(), 1);
     let p = all_proposals.get_unchecked(0).unwrap();
     assert_eq!(p.id, proposal_2_id);

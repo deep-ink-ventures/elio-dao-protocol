@@ -86,7 +86,7 @@ impl Token {
         let vote_id = core_contract.get_votes_id();
         let votes_contract = votes_contract::Client::new(env, &vote_id);
 
-        let active_proposals = votes_contract.get_active_proposals();
+        let active_proposals = votes_contract.get_active_proposals(&Token::get_symbol(env));
 
         let mut filtered_checkpoints: Vec<Checkpoint> = Vec::new(env);
 

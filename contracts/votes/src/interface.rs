@@ -14,6 +14,6 @@ pub trait VotesTrait {
   
   fn vote(env: Env, proposal_id: Bytes, in_favor: bool, voter: Address);
   
-  fn get_active_proposals(env: Env) -> Vec<ActiveProposal>;
+  fn get_active_proposals(env: Env, dao_id: Bytes) -> Vec<ActiveProposal>;
   
 }
