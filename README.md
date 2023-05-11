@@ -128,8 +128,11 @@ That's it. Now you can create your first dao.
 
 > Note how we are converting string to bytes, as the protocol requests with `echo 'some string' | xxd -p`
 >
-> String to bytes: `echo 'Deep Ink Ventures' | xxd -p` -> Outputs `4465657020496e6b2056656e74757265730a`
-> Bytes to string: `echo '4465657020496e6b2056656e74757265730a' | xxd -r -p` -> Outputs 'Deep Ink Ventures'
+> String to bytes: `echo 'Deep Ink Ventures' | xxd -p`
+> -> Outputs `4465657020496e6b2056656e74757265730a`
+>
+> Bytes to string: `echo '4465657020496e6b2056656e74757265730a' | xxd -r -p`
+> -> Outputs `Deep Ink Ventures`
 
 Run:
 
