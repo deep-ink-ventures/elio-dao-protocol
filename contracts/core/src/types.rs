@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Bytes, Address, Env, BytesN};
+use soroban_sdk::{contracttype, Bytes, Address, Env, BytesN, IntoVal, Symbol};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -61,7 +61,7 @@ impl Dao {
     
     /// +++ Member functions +
     
-    pub fn issue_token(&self, env: &Env, supply: i128, assets_wasm_hash: BytesN<32>, asset_salt: Bytes) {
+    pub fn issue_token(self, env: &Env, supply: i128, assets_wasm_hash: BytesN<32>, asset_salt: Bytes) {
         let key = DaoArticfact::Asset(self.id.clone());
 
         if env.storage().has(&key) {
@@ -69,10 +69,10 @@ impl Dao {
         }
 
         let asset_id = env.deployer().with_current_contract(&asset_salt).deploy(&assets_wasm_hash);
-        // todo: initialize token correctly
-        // let init_fn = Symbol::short("init");
-        // let init_args = (self.id, self.name, supply, self.owner, env.current_contract_id()).into_val(env);
-        // env.invoke_contract::<Bytes>(&asset_id, &init_fn, init_args);
+
+        let init_fn = Symbol::short("init");
+        let init_args = (self.id, self.name, supply, self.owner, env.current_contract_id()).into_val(env);
+        env.invoke_contract::<Bytes>(&asset_id, &init_fn, init_args);
         env.storage().set(&key, &asset_id);
     }
 

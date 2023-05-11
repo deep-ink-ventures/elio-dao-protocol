@@ -146,24 +146,24 @@ fn non_existing_meta_panics() {
 }
 
 // todo: fix reentrancy
-//#[test]
-//fn issue_token() {
-//    let client = create_client();
-//
-//    let assets_wasm_hash = &client.env.install_contract_wasm(assets_contract::WASM);
-//
-//    let salt = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".into_val(&client.env);
-//    let dao = create_dao(&client);
-//    client.issue_token(&dao.id, &1_000_000, &dao.owner, &assets_wasm_hash, &salt);
-//
-//    let asset_id = client.get_dao_asset_id(&dao.id);
-//    let asset_client = assets_contract::Client::new(&client.env, &asset_id);
-//    assert_eq!(dao.id, asset_client.symbol());
-//    assert_eq!(dao.name, asset_client.name());
-//    assert_eq!(1_000_000, asset_client.balance(&dao.owner));
-//    assert_eq!(dao.owner, asset_client.owner());
-//    assert_eq!(client.contract_id, asset_client.governance_id());
-//}
+#[test]
+fn issue_token() {
+    let client = create_client();
+
+    let assets_wasm_hash = &client.env.install_contract_wasm(assets_contract::WASM);
+
+    let salt = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".into_val(&client.env);
+    let dao = create_dao(&client);
+    client.issue_token(&dao.id, &1_000_000, &dao.owner, &assets_wasm_hash, &salt);
+
+    let asset_id = client.get_dao_asset_id(&dao.id);
+    let asset_client = assets_contract::Client::new(&client.env, &asset_id);
+    assert_eq!(dao.id, asset_client.symbol());
+    assert_eq!(dao.name, asset_client.name());
+    assert_eq!(1_000_000, asset_client.balance(&dao.owner));
+    assert_eq!(dao.owner, asset_client.owner());
+    assert_eq!(client.contract_id, asset_client.governance_id());
+}
 //
 //#[test]
 //#[should_panic(expected = "asset already issued")]
