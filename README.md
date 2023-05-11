@@ -54,6 +54,42 @@ cd contracts/assets
 cargo test
 ```
 
+The contract within this protocol are loosely coupled and they need a wasm blob to [wire](https://github.com/deep-ink-ventures/elio-dao-protocol/blob/main/contracts/assets/src/test.rs#L19-L31). Therefore, after each code adjustments you need to run
+
+```sh
+./init.sh
+```
+
+in the root to update to the latest iteration.
+
+## Run a local network
+
+Start by running the docker container. This may take A WHILE. Get a coffee until you see `INFO success: soroban-rpc entered RUNNING state` in the console.
+
+Copy `.env.example` to `.env` and generate a keypair [here](https://laboratory.stellar.org/#account-creator?network=futurenet).
+
+Fund the account via curl:
+
+```sh
+curl "http://localhost:8000/friendbot?addr=${PUBLIC_KEY}"
+```
+
+Run `./deploy.sh` - this will deploy the latest and greatest from the `wasm` folder. Write down the wasm hash for future interactions.
+
+## Deploy to futurenet
+
+Copy `.env.example` to `.env` and generate a keypair [here](https://laboratory.stellar.org/#account-creator?network=futurenet).
+
+Fund the account either on the same website where you generated the keypair or via curl:
+
+```sh
+curl "https://friendbot-futurenet.stellar.org?${PUBLIC_KEY}
+```
+
+Run `./deploy.sh` - this will deploy the latest and greatest from the `wasm` folder. Write down the wasm hash for future interactions.
+
+
+
 
 
 
