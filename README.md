@@ -99,9 +99,61 @@ curl "https://friendbot-futurenet.stellar.org?${PUBLIC_KEY}
 
 Run `./deploy.sh` - this will deploy the latest and greatest from the `wasm` folder. Write down the wasm hash for future interactions.
 
+### Bootstrap the protocol
 
+Once you have setup the protocol, the core contract is deployed and the votes and asset contracts are installed - they'll
+be deployed by the core contract.
 
+Source the env file:
 
+```sh
+source .env
+```
 
+And let's init the protocol - the IDs we're using here may differ in the future, but they are put out by the `deploy.sh` file.
 
+```sh
+soroban contract invoke \
+   --id 3cf31720404f0504e32dd137d404b58ac3e403c1b337223c42bc69a6b6929d58 \
+   --source ${SECRET_KEY} \
+   --rpc-url ${RPC_URL} \
+   --network-passphrase "${NETWORK_PASSPHRASE}" \
+   -- \
+   init \
+   --votes_wasm_hash 2ce04496d389077143996d49de714da3fb207db386b4acbc2828f0213bb33d5a \
+   --votes_salt 0000000000000000000000000000000000000000000000000000000000000000
+```
 
+That's it. Now you can create your first dao.
+
+> Note how we are converting string to bytes, as the protocol requests with `echo 'some string' | xxd -p`
+>
+> String to bytes: `echo 'Deep Ink Ventures' | xxd -p` -> Outputs `4465657020496e6b2056656e74757265730a`
+> Bytes to string: `echo '4465657020496e6b2056656e74757265730a' | xxd -r -p` -> Outputs 'Deep Ink Ventures'
+
+Run:
+
+```sh
+soroban contract invoke \
+   --id 3cf31720404f0504e32dd137d404b58ac3e403c1b337223c42bc69a6b6929d58 \
+   --source ${SECRET_KEY} \
+   --rpc-url ${RPC_URL} \
+   --network-passphrase "${NETWORK_PASSPHRASE}" \
+   -- \
+   create_dao \
+   --dao_id `echo 'DIV' | xxd -p` \
+   --dao_name `echo 'Deep Ink Ventures' | xxd -p` \
+   --dao_owner ${PUBLIC_KEY}
+```
+
+This should give you your dao back:
+
+```json
+{
+   "id":"4449560a",
+   "name":"4465657020496e6b2056656e74757265730a",
+   "owner":"GA455NS7JA6KVEAN6PFCJF3IELZ2A2ABMO7WVRY75ZYMOJFWL2VTK77P"
+}
+```
+
+Congrats, DAO Owner!
