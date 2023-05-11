@@ -40,4 +40,21 @@ It provides a clean and fun to use API for our [frontend](https://github.com/dee
 
 If you are more on the visual side of things, [here](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=126-6939) is [a](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=16-103) sneak [peak](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=2-101) into [what](https://www.figma.com/file/25eK8qARqvKX9ZMtIHbc3U/Design-Deck?type=design&node-id=34-697) we are building.
 
+## Get involved!
+
+### Contract Development
+The local development is pretty straightforward.
+
+Follow the [setup](https://soroban.stellar.org/docs/getting-started/setup) for soroban and `cd` into a contract of choice.
+
+Run the tests:
+
+```sh
+cd contracts/assets
+cargo test
+```
+
+
+
+
 
