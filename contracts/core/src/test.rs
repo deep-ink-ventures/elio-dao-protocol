@@ -147,7 +147,7 @@ fn non_existing_meta_panics() {
 
 // todo: fix reentrancy
 #[test]
-fn issue_token() {
+fn issue_tokens() {
     let client = create_client();
 
     let assets_wasm_hash = &client.env.install_contract_wasm(assets_contract::WASM);

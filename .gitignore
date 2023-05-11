@@ -22,4 +22,5 @@
 # emacs temp files
 *~
 
+.soroban
 .env
