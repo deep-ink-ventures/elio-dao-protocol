@@ -54,7 +54,7 @@ cd contracts/assets
 cargo test
 ```
 
-The contracts within this protocol are loosely coupled and they need a wasm blob to [wire](https://github.com/deep-ink-ventures/elio-dao-protocol/blob/main/contracts/assets/src/test.rs#L19-L31). Therefore, after each code adjustments you need to run
+The contracts within this protocol are loosely coupled and they need a wasm blob to [wire](https://github.com/deep-ink-ventures/elio-dao-protocol/blob/main/contracts/assets/src/test.rs#L19-L31). Therefore, after each code adjustment you need to run
 
 ```sh
 ./init.sh
