@@ -64,7 +64,18 @@ in the root to update to the latest iteration.
 
 ### Run a local network
 
-Start by running the docker container. This may take A WHILE. Get a coffee until you see `INFO success: soroban-rpc entered RUNNING state` in the console.
+Start by running the official soroban docker container:
+
+```sh
+docker run --rm -it \
+   -p 8000:8000 \
+   --name stellar \
+   stellar/quickstart:soroban-dev@sha256:a057ec6f06c6702c005693f8265ed1261e901b153a754e97cf18b0962257e872 \
+   --standalone \
+  --enable-soroban-rpc
+  ```
+
+This may take A WHILE. Get a coffee until you see `INFO success: soroban-rpc entered RUNNING state` in the console.
 
 Copy `.env.example` to `.env` and generate a keypair [here](https://laboratory.stellar.org/#account-creator?network=futurenet).
 
