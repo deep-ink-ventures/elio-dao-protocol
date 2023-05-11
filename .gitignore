@@ -22,5 +22,4 @@
 # emacs temp files
 *~
 
-deploy.sh
 .env
