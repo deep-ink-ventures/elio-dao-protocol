@@ -1,12 +1,5 @@
 use soroban_sdk::{contracttype, Address, Bytes, BytesN, Env, Vec};
-
-mod core_contract {
-    soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
-}
-
-mod votes_contract {
-    soroban_sdk::contractimport!(file = "../../wasm/elio_votes.wasm");
-}
+use crate::{core_contract,votes_contract};
 
 #[derive(Clone)]
 #[contracttype]
@@ -92,7 +85,7 @@ impl Token {
 
         for proposal in active_proposals.iter_unchecked() {
             filtered_checkpoints.push_back(
-                Token::get_checkpoint_for_sequence(env, id.clone(), proposal.ledger)
+                Token::get_checkpoint_for_sequence(env, id.clone(), proposal.inner.ledger)
             );
         }
             

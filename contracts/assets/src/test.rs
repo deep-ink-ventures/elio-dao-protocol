@@ -1,20 +1,8 @@
 #![cfg(test)]
 
-mod votes_contract {
-    soroban_sdk::contractimport!(
-        file = "../../wasm/elio_votes.wasm"
-    );
-}
-
-mod core_contract {
-    soroban_sdk::contractimport!(
-        file = "../../wasm/elio_core.wasm"
-    );
-}
-
 use soroban_sdk::{Env, testutils::{Address as _, LedgerInfo, Ledger}, Address, IntoVal};
 
-use crate::{AssetContract, AssetContractClient};
+use crate::{AssetContract, AssetContractClient, votes_contract, core_contract};
 
 fn wire_protocal(client: &AssetContractClient) -> (core_contract::Client, votes_contract::Client) {
 
@@ -219,7 +207,7 @@ fn checkpoints() {
     });
     
     // let's create a proposal
-    votes_client.create_proposal(&"DIV".into_val(&client.env), &"P1".into_val(&client.env));
+    votes_client.create_proposal(&"DIV".into_val(&client.env), &Address::random(&client.env));
     client.xfer(&owner, &whoever, &100_000);
     
     assert_eq!(client.get_checkpoint_count(&owner), 2);
@@ -243,7 +231,7 @@ fn checkpoints() {
         network_id: Default::default(),
         base_reserve: 10,
     });
-    votes_client.create_proposal(&"DIV".into_val(&client.env), &"P2".into_val(&client.env));
+    votes_client.create_proposal(&"DIV".into_val(&client.env), &Address::random(&client.env));
     client.xfer(&owner, &whoever, &100_000);
 
     assert_eq!(client.get_checkpoint_count(&owner), 3);

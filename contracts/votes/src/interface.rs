@@ -6,13 +6,13 @@ pub trait VotesTrait {
     
   fn create_proposal(env: Env, dao_id: Bytes, proposal_owner: Address) -> ProposalId;
   
-  fn set_metadata(env: Env, proposal_id: Bytes, meta: Bytes, hash: Bytes, proposal_owner: Address);
+  fn set_metadata(env: Env, proposal_id: ProposalId, meta: Bytes, hash: Bytes, proposal_owner: Address);
   
-  fn fault_proposal(env: Env, proposal_id: Bytes, reason: Bytes, dao_owner: Address);
+  fn fault_proposal(env: Env, proposal_id: ProposalId, reason: Bytes, dao_owner: Address);
   
-  fn finalize_proposal(env: Env, proposal_id: Bytes);
+  fn finalize_proposal(env: Env, proposal_id: ProposalId);
   
-  fn vote(env: Env, proposal_id: Bytes, in_favor: bool, voter: Address);
+  fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address);
   
   fn get_active_proposals(env: Env, dao_id: Bytes) -> Vec<ActiveProposal>;
   

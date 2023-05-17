@@ -21,7 +21,7 @@ impl VotesTrait for VotesContract {
 
     fn set_metadata(
         env: Env,
-        proposal_id: Bytes,
+        proposal_id: ProposalId,
         meta: Bytes,
         hash: Bytes,
         proposal_owner: Address,
@@ -29,16 +29,16 @@ impl VotesTrait for VotesContract {
         todo!();
     }
 
-    fn fault_proposal(env: Env, proposal_id: Bytes, reason: Bytes, dao_owner: Address) {
+    fn fault_proposal(env: Env, proposal_id: ProposalId, reason: Bytes, dao_owner: Address) {
         // todo: implement
     }
 
-    fn finalize_proposal(env: Env, proposal_id: Bytes) {
+    fn finalize_proposal(env: Env, proposal_id: ProposalId) {
         // todo: implement
     }
 
-    fn vote(env: Env, proposal_id: Bytes, in_favor: bool, voter: Address) {
-        todo!()
+    fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address) {
+        ActiveProposal::vote(env, dao_id, proposal_id, in_favor, voter);
     }
 
     fn get_active_proposals(env: Env, dao_id: Bytes) -> Vec<ActiveProposal> {

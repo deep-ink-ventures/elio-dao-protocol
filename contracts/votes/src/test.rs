@@ -1,11 +1,14 @@
 #![cfg(test)]
 
 use soroban_sdk::{
-    testutils::{Address, Ledger, LedgerInfo},
-    Env, IntoVal,
+    testutils::{Address as _, Ledger, LedgerInfo},
+    Address, Env, IntoVal,
 };
 
-use crate::{types::PROPOSAL_DURATION, VotesContract, VotesContractClient};
+use crate::{
+    types::{PROPOSAL_DURATION, PROPOSAL_MAX_NR},
+    VotesContract, VotesContractClient,
+};
 
 fn create_client() -> VotesContractClient {
     let env = Env::default();
@@ -25,7 +28,7 @@ fn active_proposals_are_managed() {
         network_id: Default::default(),
         base_reserve: 10,
     });
-    let owner = <soroban_sdk::Address as Address>::random(&client.env);
+    let owner = Address::random(&client.env);
     let proposal_1_id = client.create_proposal(&dao_id, &owner);
 
     client.env.ledger().set(LedgerInfo {
@@ -67,8 +70,23 @@ fn active_proposals_are_managed() {
 fn max_number_of_proposals() {
     let client = create_client();
     let dao_id = "DIV".into_val(&client.env);
-    let owner = <soroban_sdk::Address as Address>::random(&client.env);
-	for _ in 0..=25 {
-		let _ = client.create_proposal(&dao_id, &owner);
-	}
+    let owner = Address::random(&client.env);
+    for _ in 0..=PROPOSAL_MAX_NR {
+        let _ = client.create_proposal(&dao_id, &owner);
+    }
+}
+
+#[test]
+fn vote() {
+    let client = create_client();
+    let dao_id = "DIV".into_val(&client.env);
+    let owner = Address::random(&client.env);
+    let proposal_id = client.create_proposal(&dao_id, &owner);
+    let voter = Address::random(&client.env);
+    client.vote(&dao_id, &proposal_id, &true, &voter);
+    let proposal = client
+        .get_active_proposals(&dao_id)
+        .get_unchecked(0)
+        .unwrap();
+    assert_eq!(proposal.in_favor, 1);
 }

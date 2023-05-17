@@ -16,6 +16,8 @@ pub struct Proposal {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ActiveProposal {
     pub id: ProposalId,
+    pub in_favor: u128,
+    pub against: u128,
     pub inner: Proposal,
 }
 
@@ -36,6 +38,8 @@ impl Proposal {
         let id = env.storage().get(&PROP_ID).unwrap_or(Ok(0)).unwrap();
         proposals.push_back(ActiveProposal {
             id,
+            in_favor: 0,
+            against: 0,
             inner: Proposal {
                 dao_id: dao_id.clone(),
                 ledger: env.ledger().sequence(),
@@ -55,7 +59,7 @@ impl Proposal {
         let mut filtered_proposals: Vec<ActiveProposal> = Vec::new(env);
 
         // filter out outdated proposals
-		let len = active_proposals.len();
+        let len = active_proposals.len();
         for proposal in active_proposals.into_iter_unchecked() {
             if env.ledger().sequence() <= proposal.inner.ledger + PROPOSAL_DURATION {
                 filtered_proposals.push_back(proposal);
@@ -66,5 +70,28 @@ impl Proposal {
         }
 
         filtered_proposals
+    }
+}
+
+impl ActiveProposal {
+    pub fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address) {
+        voter.require_auth();
+
+        let key = KeyActive(dao_id);
+        let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
+        for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
+            if p.id == proposal_id {
+                let voting_power = 1;
+                if in_favor {
+                    p.in_favor += voting_power;
+                } else {
+                    p.against += voting_power;
+                }
+                active_proposals.set(i as u32, p);
+                env.storage().set(&key, &active_proposals);
+                return;
+            }
+        }
+        panic!("proposal not found");
     }
 }
