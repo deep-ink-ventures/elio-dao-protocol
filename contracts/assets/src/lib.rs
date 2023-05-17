@@ -2,6 +2,15 @@
 
 use soroban_sdk::{contractimpl, Address, Bytes, BytesN, Env, Symbol};
 
+mod core_contract {
+    soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
+}
+
+mod votes_contract {
+    type ProposalId = u32;
+    soroban_sdk::contractimport!(file = "../../wasm/elio_votes.wasm");
+}
+
 #[cfg(test)]
 mod test;
 
@@ -9,7 +18,7 @@ mod interface;
 use interface::AssetTrait;
 
 mod types;
-use types::{Token, Checkpoint};
+use types::{Checkpoint, Token};
 
 pub struct AssetContract;
 
@@ -134,7 +143,7 @@ impl AssetTrait for AssetContract {
     fn symbol(env: Env) -> Bytes {
         Token::get_symbol(&env)
     }
-    
+
     fn get_checkpoint_count(env: Env, id: Address) -> u32 {
         Token::get_checkpoints(&env, id).len()
     }
