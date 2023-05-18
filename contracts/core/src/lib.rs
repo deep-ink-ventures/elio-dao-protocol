@@ -43,23 +43,19 @@ impl CoreTrait for CoreContract {
         Dao::load(&env, &dao_id)
     }
 
-    fn get_dao_asset_id(env: Env, dao_id: Bytes) -> BytesN<32> {
-        Dao::load(&env, &dao_id).get_asset_id(&env)
-    }
-    
     fn destroy_dao(env: Env, dao_id: Bytes, dao_owner: Address) {
         Dao::load_for_owner(&env, &dao_id, &dao_owner).destroy(&env);
-        
+
         // todo: release reserve
         env.events().publish((DAO, Symbol::short("destroyed")), dao_id.clone());
     }
-    
+
     fn issue_token(env: Env, dao_id: Bytes, supply: i128, dao_owner: Address, assets_wasm_hash: BytesN<32>, asset_salt: Bytes) {
         Dao::load_for_owner(&env, &dao_id, &dao_owner).issue_token(&env, supply, assets_wasm_hash, asset_salt);
     }
-    
-    fn get_meta_data(env: Env, dao_id: Bytes) -> MetaData {
-        MetaData::load(&env, &dao_id)
+
+    fn get_dao_asset_id(env: Env, dao_id: Bytes) -> BytesN<32> {
+        Dao::load(&env, &dao_id).get_asset_id(&env)
     }
 
     fn set_meta_data(env: Env, dao_id: Bytes, url: Bytes, hash: Bytes, dao_owner: Address) -> MetaData {
@@ -68,6 +64,10 @@ impl CoreTrait for CoreContract {
         let meta = MetaData::create(&env, dao_id, url, hash);
         env.events().publish((DAO, Symbol::short("meta_set")), meta.clone());
         meta
+    }
+
+    fn get_meta_data(env: Env, dao_id: Bytes) -> MetaData {
+        MetaData::load(&env, &dao_id)
     }
 
     fn change_owner(env: Env, dao_id: Bytes, new_owner: Address, dao_owner: Address) -> Dao {

@@ -1,6 +1,7 @@
 #![cfg(test)]
 
 mod votes_contract {
+    type ProposalId = u32;
     soroban_sdk::contractimport!(
         file = "../../wasm/elio_votes.wasm"
     );
@@ -154,7 +155,7 @@ fn issue_tokens() {
 
     let salt = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".into_val(&client.env);
     let dao = create_dao(&client);
-    client.issue_token(&dao.id, &1_000_000, &dao.owner, &assets_wasm_hash, &salt);
+     client.issue_token(&dao.id, &1_000_000, &dao.owner, &assets_wasm_hash, &salt);
 
     let asset_id = client.get_dao_asset_id(&dao.id);
     let asset_client = assets_contract::Client::new(&client.env, &asset_id);
