@@ -66,7 +66,7 @@ impl AssetTrait for AssetContract {
         check_non_negative_amount(amount);
         let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
         let new_allowance = allowance
-            .checked_add(amount.into())
+            .checked_add(amount)
             .expect("Updated allowance doesn't fit in an i128");
 
         Token::write_allowance(&env, from.clone(), spender.clone(), new_allowance);
