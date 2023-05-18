@@ -16,7 +16,7 @@ pub trait VotesTrait {
 
     fn get_metadata(env: Env, proposal_id: ProposalId) -> Metadata;
 
-    fn fault_proposal(env: Env, proposal_id: ProposalId, reason: Bytes, dao_owner: Address);
+    fn fault_proposal(env: Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes, dao_owner: Address);
 
     fn finalize_proposal(env: Env, proposal_id: ProposalId);
 

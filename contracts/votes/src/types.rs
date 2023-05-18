@@ -11,6 +11,7 @@ pub struct Proposal {
     pub dao_id: Bytes,
     pub ledger: u32,
     pub owner: Address,
+    pub status: Status,
 }
 
 #[contracttype]
@@ -20,6 +21,16 @@ pub struct ActiveProposal {
     pub in_favor: u128,
     pub against: u128,
     pub inner: Proposal,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Status {
+    Running,
+    Accepted,
+    Rejected,
+    Faulty(Bytes),
+    Implemented,
 }
 
 const PROP_ID: Symbol = Symbol::short("PROP_ID");
@@ -44,6 +55,7 @@ impl Proposal {
             inner: Proposal {
                 dao_id: dao_id.clone(),
                 ledger: env.ledger().sequence(),
+                status: Status::Running,
                 owner,
             },
         });
@@ -96,6 +108,23 @@ impl ActiveProposal {
         }
         panic!("proposal not found");
     }
+
+    pub fn set_faulty(env: Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes, dao_owner: Address) {
+        dao_owner.require_auth();
+        // todo: check dao_owner is indeed DAO owner
+
+        let key = KeyActive(dao_id);
+        let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
+        for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
+            if p.id == proposal_id {
+                p.inner.status = Status::Faulty(reason);
+                active_proposals.set(i as u32, p);
+                env.storage().set(&key, &active_proposals);
+                return;
+            }
+        }
+        panic!("proposal not found");
+    }
 }
 
 #[contracttype]
@@ -121,7 +150,7 @@ impl Metadata {
 
         let key = KeyActive(dao_id);
         let active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
-        for (i, p) in active_proposals.iter_unchecked().enumerate() {
+        for p in active_proposals.iter_unchecked() {
             if p.id == proposal_id {
                 if p.inner.owner != owner {
                     panic!("only the owner can set metadata");
