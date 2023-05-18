@@ -10,7 +10,7 @@ pub struct Dao {
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MetaData {
+pub struct Metadata {
     pub url: Bytes,
     pub hash: Bytes,
 }
@@ -18,7 +18,7 @@ pub struct MetaData {
 #[derive(Clone)]
 #[contracttype]
 pub enum DaoArticfact {
-    MetaData(Bytes),
+    Metadata(Bytes),
     Asset(Bytes)
 }
 
@@ -94,25 +94,25 @@ impl Dao {
     }
 }
 
-impl MetaData {
+impl Metadata {
 
-    /// Create a new metad ata for the dao
+    /// Create metadata for the dao
     pub fn create(env: &Env, dao_id: Bytes, url: Bytes, hash: Bytes) -> Self {
-        let meta = MetaData { url, hash };
-        env.storage().set(&DaoArticfact::MetaData(dao_id), &meta);
+        let meta = Metadata { url, hash };
+        env.storage().set(&DaoArticfact::Metadata(dao_id), &meta);
         meta
     }
 
-    /// Loads the meta data
+    /// Loads the metadata
     pub fn load(env: &Env, dao_id: &Bytes) -> Self {
         if !Self::exists(env, dao_id) {
-            panic!("MetaData does not exists")
+            panic!("metadata does not exist")
         }
-        env.storage().get_unchecked(&DaoArticfact::MetaData(dao_id.clone())).unwrap()
+        env.storage().get_unchecked(&DaoArticfact::Metadata(dao_id.clone())).unwrap()
     }
 
-    /// Checks if a meta data for the dao_id exists
+    /// Checks if metadata for the dao_id exists
     pub fn exists(env: &Env, dao_id: &Bytes) -> bool {
-        env.storage().has(&DaoArticfact::MetaData(dao_id.clone()))
+        env.storage().has(&DaoArticfact::Metadata(dao_id.clone()))
     }
 }
