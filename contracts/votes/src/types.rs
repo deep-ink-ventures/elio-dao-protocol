@@ -10,6 +10,7 @@ struct KeyActive(Bytes);
 pub struct Proposal {
     pub dao_id: Bytes,
     pub ledger: u32,
+    pub owner: Address,
 }
 
 #[contracttype]
@@ -43,6 +44,7 @@ impl Proposal {
             inner: Proposal {
                 dao_id: dao_id.clone(),
                 ledger: env.ledger().sequence(),
+                owner,
             },
         });
         env.storage().set(&KeyActive(dao_id), &proposals);
@@ -93,5 +95,50 @@ impl ActiveProposal {
             }
         }
         panic!("proposal not found");
+    }
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Metadata {
+    pub url: Bytes,
+    pub hash: Bytes,
+}
+
+#[contracttype]
+struct KeyMeta(ProposalId);
+
+impl Metadata {
+    pub fn set(
+        env: &Env,
+        dao_id: Bytes,
+        proposal_id: ProposalId,
+        url: Bytes,
+        hash: Bytes,
+        owner: Address,
+    ) -> Self {
+        owner.require_auth();
+
+        let key = KeyActive(dao_id);
+        let active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
+        for (i, p) in active_proposals.iter_unchecked().enumerate() {
+            if p.id == proposal_id {
+                if p.inner.owner != owner {
+                    panic!("only the owner can set metadata");
+                }
+                let meta = Metadata { url, hash };
+                env.storage().set(&KeyMeta(proposal_id), &meta);
+                return meta;
+            }
+        }
+        panic!("proposal not found");
+    }
+
+    pub fn get(env: &Env, proposal_id: ProposalId) -> Self {
+        let key = KeyMeta(proposal_id);
+        if !env.storage().has(&key) {
+            panic!("metadata does not exist");
+        }
+        env.storage().get_unchecked(&key).unwrap()
     }
 }

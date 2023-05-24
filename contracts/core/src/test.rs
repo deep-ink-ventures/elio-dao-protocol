@@ -2,20 +2,16 @@
 
 mod votes_contract {
     type ProposalId = u32;
-    soroban_sdk::contractimport!(
-        file = "../../wasm/elio_votes.wasm"
-    );
+    soroban_sdk::contractimport!(file = "../../wasm/elio_votes.wasm");
 }
 
 mod assets_contract {
-    soroban_sdk::contractimport!(
-        file = "../../wasm/elio_assets.wasm"
-    );
+    soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
 }
 
-use soroban_sdk::{Env, testutils::Address as _, Address, IntoVal, Bytes};
+use soroban_sdk::{testutils::Address as _, Address, Bytes, Env, IntoVal};
 
-use crate::{CoreContract, CoreContractClient, types::Dao};
+use crate::{types::Dao, CoreContract, CoreContractClient};
 
 fn create_client() -> CoreContractClient {
     let env = Env::default();
@@ -70,7 +66,7 @@ fn cannot_create_a_dao_twice() {
 }
 
 #[test]
-#[should_panic(expected = "DAO does not exists")]
+#[should_panic(expected = "DAO does not exist")]
 fn destroy_a_dao() {
     let client = create_client();
 
@@ -110,40 +106,42 @@ fn change_dao_owner_only_as_owner() {
 }
 
 #[test]
-fn set_meta_data() {
+fn set_metadata() {
     let client = create_client();
     let dao = create_dao(&client);
 
     let url = "https://deep-ink.ventures".into_val(&client.env);
-    let hash = "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
+    let hash =
+        "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
 
-    client.set_meta_data(&dao.id, &url, &hash, &dao.owner);
+    client.set_metadata(&dao.id, &url, &hash, &dao.owner);
 
-    let meta = client.get_meta_data(&dao.id);
+    let meta = client.get_metadata(&dao.id);
     assert_eq!(meta.url, url);
     assert_eq!(meta.hash, hash);
 }
 
 #[test]
 #[should_panic(expected = "Address not DAO Owner")]
-fn set_meta_data_only_owner() {
+fn set_metadata_only_owner() {
     let client = create_client();
     let dao = create_dao(&client);
     let whoever = Address::random(&client.env);
 
     let url = "https://deep-ink.ventures".into_val(&client.env);
-    let hash = "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
+    let hash =
+        "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
 
-    client.set_meta_data(&dao.id, &url, &hash, &whoever);
+    client.set_metadata(&dao.id, &url, &hash, &whoever);
 }
 
 #[test]
-#[should_panic(expected = "MetaData does not exists")]
+#[should_panic(expected = "metadata does not exist")]
 fn non_existing_meta_panics() {
     let client = create_client();
     let dao = create_dao(&client);
 
-    client.get_meta_data(&dao.id);
+    client.get_metadata(&dao.id);
 }
 
 // todo: fix reentrancy
@@ -155,7 +153,7 @@ fn issue_tokens() {
 
     let salt = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".into_val(&client.env);
     let dao = create_dao(&client);
-     client.issue_token(&dao.id, &1_000_000, &dao.owner, &assets_wasm_hash, &salt);
+    client.issue_token(&dao.id, &1_000_000, &dao.owner, &assets_wasm_hash, &salt);
 
     let asset_id = client.get_dao_asset_id(&dao.id);
     let asset_client = assets_contract::Client::new(&client.env, &asset_id);

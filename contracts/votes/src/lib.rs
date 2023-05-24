@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Address, Bytes, Env, Vec};
+use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol, Vec};
 
 #[cfg(test)]
 mod test;
@@ -8,10 +8,13 @@ mod test;
 mod types;
 
 mod interface;
+
 use interface::VotesTrait;
-use types::{ActiveProposal, Proposal, ProposalId};
+use types::{ActiveProposal, Metadata, Proposal, ProposalId};
 
 pub struct VotesContract;
+
+const VOTES: Symbol = Symbol::short("VOTES");
 
 #[contractimpl]
 impl VotesTrait for VotesContract {
@@ -21,12 +24,26 @@ impl VotesTrait for VotesContract {
 
     fn set_metadata(
         env: Env,
+        dao_id: Bytes,
         proposal_id: ProposalId,
         meta: Bytes,
         hash: Bytes,
         proposal_owner: Address,
     ) {
-        todo!();
+        Metadata::set(
+            &env,
+            dao_id,
+            proposal_id,
+            meta.clone(),
+            hash.clone(),
+            proposal_owner,
+        );
+        env.events()
+            .publish((VOTES, Symbol::short("meta_set")), (meta, hash));
+    }
+
+    fn get_metadata(env: Env, proposal_id: ProposalId) -> Metadata {
+        Metadata::get(&env, proposal_id)
     }
 
     fn fault_proposal(env: Env, proposal_id: ProposalId, reason: Bytes, dao_owner: Address) {

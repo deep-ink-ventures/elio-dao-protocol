@@ -90,3 +90,46 @@ fn vote() {
         .unwrap();
     assert_eq!(proposal.in_favor, 1);
 }
+
+#[test]
+fn set_metadata() {
+    let client = create_client();
+    let dao_id = "DIV".into_val(&client.env);
+    let owner = Address::random(&client.env);
+    let proposal_id = client.create_proposal(&dao_id, &owner);
+
+    let url = "https://deep-ink.ventures".into_val(&client.env);
+    let hash = "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
+
+    client.set_metadata(&dao_id, &proposal_id, &url, &hash, &owner);
+
+    let meta = client.get_metadata(&proposal_id);
+    assert_eq!(meta.url, url);
+    assert_eq!(meta.hash, hash);
+}
+
+#[test]
+#[should_panic(expected = "only the owner can set metadata")]
+fn set_metadata_only_owner() {
+    let client = create_client();
+    let dao_id = "DIV".into_val(&client.env);
+    let owner = Address::random(&client.env);
+    let proposal_id = client.create_proposal(&dao_id, &owner);
+
+    let url = "https://deep-ink.ventures".into_val(&client.env);
+    let hash = "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
+
+	let whoever = Address::random(&client.env);
+    client.set_metadata(&dao_id, &proposal_id, &url, &hash, &whoever);
+}
+
+#[test]
+#[should_panic(expected = "metadata does not exist")]
+fn non_existing_meta_panics() {
+    let client = create_client();
+    let dao_id = "DIV".into_val(&client.env);
+    let owner = Address::random(&client.env);
+    let proposal_id = client.create_proposal(&dao_id, &owner);
+
+    client.get_metadata(&proposal_id);
+}

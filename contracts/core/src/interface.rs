@@ -1,6 +1,6 @@
 use soroban_sdk::{Env, Bytes, Address, BytesN};
 
-use crate::types::{Dao, MetaData};
+use crate::types::{Dao, Metadata};
 
 pub trait CoreTrait {
     
@@ -50,18 +50,18 @@ pub trait CoreTrait {
     ///
     fn get_dao_asset_id(env: Env, dao_id: Bytes) -> BytesN<32>;
     
-    /// Set meta data
+    /// Set metadata
     ///
     /// - `dao_id`: The DAO for which to set metadata
     /// - `meta`: HTTP or IPFS address for the metadata about this DAO (description, logo)
     /// - `hash`: SHA3 hash of the metadata to be found via `meta`
     /// - `dao_owner`: the current owner of the dao
-    fn set_meta_data(env: Env, dao_id: Bytes, meta: Bytes, hash: Bytes, dao_owner: Address) -> MetaData;
+    fn set_metadata(env: Env, dao_id: Bytes, meta: Bytes, hash: Bytes, dao_owner: Address) -> Metadata;
 
-    /// Load meta data for a dao
+    /// Load metadata for a dao
     ///
     /// - `dao_id`: The id of the dao to load meta data for;
-    fn get_meta_data(env: Env, dao_id: Bytes) -> MetaData;
+    fn get_metadata(env: Env, dao_id: Bytes) -> Metadata;
     
     /// Change owner
     ///
