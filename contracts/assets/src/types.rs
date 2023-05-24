@@ -1,5 +1,6 @@
 use soroban_sdk::{contracttype, Address, Bytes, BytesN, Env, Vec};
-use crate::{core_contract,votes_contract};
+
+use crate::{core_contract, votes_contract};
 
 #[derive(Clone)]
 #[contracttype]
@@ -44,12 +45,12 @@ impl Token {
         }
         checkpoints.get_unchecked(i).unwrap()
     }
-    
+
     /// Returns the closest checkpoint at or BEFORE a given sequence
     pub fn get_checkpoint_for_sequence(env: &Env, id: Address, sequence: u32) -> Checkpoint {
         let checkpoints = Token::get_checkpoints(env, id);
         let mut cp_candidate = checkpoints.first_unchecked().unwrap();
-        
+
         for checkpoint in checkpoints.iter_unchecked() {
             if checkpoint.ledger > sequence {
                 break;
@@ -84,11 +85,13 @@ impl Token {
         let mut filtered_checkpoints: Vec<Checkpoint> = Vec::new(env);
 
         for proposal in active_proposals.iter_unchecked() {
-            filtered_checkpoints.push_back(
-                Token::get_checkpoint_for_sequence(env, id.clone(), proposal.inner.ledger)
-            );
+            filtered_checkpoints.push_back(Token::get_checkpoint_for_sequence(
+                env,
+                id.clone(),
+                proposal.inner.ledger,
+            ));
         }
-            
+
         filtered_checkpoints.push_back(Checkpoint {
             balance: Token::read_balance(env, id),
             ledger: env.ledger().sequence(),
@@ -142,14 +145,13 @@ impl Token {
         owner: &Address,
         governance_id: &BytesN<32>,
     ) {
-        if !env.storage().has(&Token::Symbol) {
-            env.storage().set(&Token::Symbol, symbol);
-            env.storage().set(&Token::Name, name);
-            env.storage().set(&Token::Owner, owner);
-            env.storage().set(&Token::GovernanceId, governance_id);
-        } else {
+        if env.storage().has(&Token::Symbol) {
             panic!("DAO already issued a token")
         }
+        env.storage().set(&Token::Symbol, symbol);
+        env.storage().set(&Token::Name, name);
+        env.storage().set(&Token::Owner, owner);
+        env.storage().set(&Token::GovernanceId, governance_id);
     }
 
     pub fn set_owner(env: &Env, owner: &Address, new_owner: &Address) {

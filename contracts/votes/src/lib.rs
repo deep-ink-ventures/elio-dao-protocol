@@ -46,8 +46,8 @@ impl VotesTrait for VotesContract {
         Metadata::get(&env, proposal_id)
     }
 
-    fn fault_proposal(env: Env, proposal_id: ProposalId, reason: Bytes, dao_owner: Address) {
-        // todo: implement
+    fn fault_proposal(env: Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes, dao_owner: Address) {
+        ActiveProposal::set_faulty(env, dao_id, proposal_id, reason, dao_owner)
     }
 
     fn finalize_proposal(env: Env, proposal_id: ProposalId) {

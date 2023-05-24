@@ -6,7 +6,7 @@ use soroban_sdk::{
 };
 
 use crate::{
-    types::{PROPOSAL_DURATION, PROPOSAL_MAX_NR},
+    types::{Status, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
     VotesContract, VotesContractClient,
 };
 
@@ -99,7 +99,8 @@ fn set_metadata() {
     let proposal_id = client.create_proposal(&dao_id, &owner);
 
     let url = "https://deep-ink.ventures".into_val(&client.env);
-    let hash = "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
+    let hash =
+        "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
 
     client.set_metadata(&dao_id, &proposal_id, &url, &hash, &owner);
 
@@ -117,9 +118,10 @@ fn set_metadata_only_owner() {
     let proposal_id = client.create_proposal(&dao_id, &owner);
 
     let url = "https://deep-ink.ventures".into_val(&client.env);
-    let hash = "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
+    let hash =
+        "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
 
-	let whoever = Address::random(&client.env);
+    let whoever = Address::random(&client.env);
     client.set_metadata(&dao_id, &proposal_id, &url, &hash, &whoever);
 }
 
@@ -132,4 +134,22 @@ fn non_existing_meta_panics() {
     let proposal_id = client.create_proposal(&dao_id, &owner);
 
     client.get_metadata(&proposal_id);
+}
+
+#[test]
+fn mark_faulty() {
+    let client = create_client();
+    let dao_id = "DIV".into_val(&client.env);
+    let owner = Address::random(&client.env);
+    let proposal_id = client.create_proposal(&dao_id, &owner);
+
+    let reason = "bad".into_val(&client.env);
+
+    client.fault_proposal(&dao_id, &proposal_id, &reason, &owner);
+
+    let proposal = client
+        .get_active_proposals(&dao_id)
+        .get_unchecked(0)
+        .unwrap();
+    assert_eq!(proposal.inner.status, Status::Faulty(reason));
 }
