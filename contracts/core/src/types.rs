@@ -61,19 +61,17 @@ impl Dao {
     
     /// +++ Member functions +
     
-    pub fn issue_token(self, env: &Env, supply: i128, assets_wasm_hash: BytesN<32>, asset_salt: Bytes) {
+    pub fn issue_token(self, env: &Env, assets_wasm_hash: BytesN<32>, asset_salt: Bytes) {
         let key = DaoArticfact::Asset(self.id.clone());
-
         if env.storage().has(&key) {
             panic!("asset already issued")
         }
-
         let asset_id = env.deployer().with_current_contract(&asset_salt).deploy(&assets_wasm_hash);
+        env.storage().set(&key, &asset_id);
 
         let init_fn = Symbol::short("init");
-        let init_args = (self.id, self.name, supply, self.owner, env.current_contract_id()).into_val(env);
-        env.invoke_contract::<Bytes>(&asset_id, &init_fn, init_args);
-        env.storage().set(&key, &asset_id);
+        let init_args = (self.id, self.name, self.owner.clone(), env.current_contract_id()).into_val(env);
+        env.invoke_contract::<()>(&asset_id, &init_fn, init_args);
     }
 
     pub fn get_asset_id(&self, env: &Env) -> BytesN<32> {

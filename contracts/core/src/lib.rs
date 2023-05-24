@@ -56,17 +56,12 @@ impl CoreTrait for CoreContract {
     fn issue_token(
         env: Env,
         dao_id: Bytes,
-        supply: i128,
         dao_owner: Address,
         assets_wasm_hash: BytesN<32>,
         asset_salt: Bytes,
     ) {
-        Dao::load_for_owner(&env, &dao_id, &dao_owner).issue_token(
-            &env,
-            supply,
-            assets_wasm_hash,
-            asset_salt,
-        );
+        let dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
+        dao.issue_token(&env, assets_wasm_hash, asset_salt);
     }
 
     fn get_dao_asset_id(env: Env, dao_id: Bytes) -> BytesN<32> {
