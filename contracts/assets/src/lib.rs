@@ -30,18 +30,19 @@ fn check_non_negative_amount(amount: i128) {
 
 #[contractimpl]
 impl AssetTrait for AssetContract {
-    fn init(
-        env: Env,
-        symbol: Bytes,
-        name: Bytes,
-        initial_supply: i128,
-        owner: Address,
-        governance_id: BytesN<32>,
-    ) {
+    fn init(env: Env, symbol: Bytes, name: Bytes, owner: Address, governance_id: BytesN<32>) {
         Token::create(&env, &symbol, &name, &owner, &governance_id);
-        Token::write_balance(&env, owner.clone(), initial_supply);
         env.events()
-            .publish((Symbol::short("created"), owner, symbol), initial_supply);
+            .publish((Symbol::short("created"), owner), symbol);
+    }
+
+    fn mint(env: Env, owner: Address, supply: i128) {
+        Token::check_auth(&env, &owner);
+        Token::write_balance(&env, owner.clone(), supply);
+        env.events().publish(
+            (Symbol::short("minted"), owner, Token::get_symbol(&env)),
+            supply,
+        );
     }
 
     fn set_owner(env: Env, owner: Address, new_owner: Address) {

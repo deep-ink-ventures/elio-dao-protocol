@@ -156,9 +156,6 @@ impl Token {
 
     pub fn set_owner(env: &Env, owner: &Address, new_owner: &Address) {
         Token::check_auth(env, owner);
-        if owner != &Token::get_owner(env) {
-            panic!("not Token owner")
-        }
         env.storage().set(&Token::Owner, &new_owner);
     }
 

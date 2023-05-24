@@ -1,19 +1,26 @@
-use soroban_sdk::{Env, Address, Bytes, BytesN};
+use soroban_sdk::{Address, Bytes, BytesN, Env};
 
 use crate::types::Checkpoint;
 
 /// This follows the official specs w/o admin functionalities.
 pub trait AssetTrait {
-
     /// Initializes the contract
     ///
     /// - `symbol`: The DAO ID
     /// - `name`: Name of the DAO
-    /// - `initial_supply`: Total tokens minted on launch
     /// - `governance_id`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
+    /// - `owner`: The owner of this contract
     ///
-    fn init(env: Env, symbol: Bytes, name: Bytes, initial_supply: i128, owner: Address, governance_id: BytesN<32>);
-    
+    fn init(env: Env, symbol: Bytes, name: Bytes, owner: Address, governance_id: BytesN<32>);
+
+    /// Mints tokens
+    ///
+    /// - `supply`: Total tokens minted on launch
+    /// - `governance_id`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
+    /// - `owner`: The current owner (must be authed and the current owner, obviously)
+    ///
+    fn mint(env: Env, owner: Address, supply: i128);
+
     /// Get the last recorded historical balance at or before the given ledger sequence number
     /// This is required by the voting protocil. If you roll your own token, this is a must have.
     ///
@@ -60,12 +67,12 @@ pub trait AssetTrait {
     /// Returns the current governance id.
     ///
     fn governance_id(env: Env) -> BytesN<32>;
-  
+
     // ----------------------------------------------------------------------------------------
     // Token interface -> Everything starting from here satisfies the soroban token interface
     // ----------------------------------------------------------------------------------------
-    // 
-    // All the functions here have to be authorized by the token spender 
+    //
+    // All the functions here have to be authorized by the token spender
     // (usually named `from` here) using all the input arguments, i.e. they have
     // to call  `from.require_auth()`.
 
@@ -85,12 +92,12 @@ pub trait AssetTrait {
     /// Transfer "amount" from "from" to "to", consuming the allowance of "spender".
     /// Authorized by spender (`spender.require_auth()`).
     /// Emit event with topics = ["transfer", from: Address, to: Address], data = [amount: i128]
-    fn xfer_from( env: Env, spender: Address, from: Address, to: Address, amount: i128);
-   
+    fn xfer_from(env: Env, spender: Address, from: Address, to: Address, amount: i128);
+
     // --------------------------------------------------------------------------------
     // Read-only Token interface
     // --------------------------------------------------------------------------------
-    // 
+    //
     // The functions here don't need any authorization and don't emit any
     // events.
 

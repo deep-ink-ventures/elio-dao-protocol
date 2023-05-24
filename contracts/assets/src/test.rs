@@ -1,11 +1,13 @@
 #![cfg(test)]
 
-use soroban_sdk::{Env, testutils::{Address as _, LedgerInfo, Ledger}, Address, IntoVal};
+use soroban_sdk::{
+    testutils::{Address as _, Ledger, LedgerInfo},
+    Address, Env, IntoVal,
+};
 
-use crate::{AssetContract, AssetContractClient, votes_contract, core_contract};
+use crate::{core_contract, votes_contract, AssetContract, AssetContractClient};
 
 fn wire_protocal(client: &AssetContractClient) -> (core_contract::Client, votes_contract::Client) {
-
     let core_id = client.env.register_contract_wasm(None, core_contract::WASM);
     let core_client = core_contract::Client::new(&client.env, &core_id);
 
@@ -18,8 +20,11 @@ fn wire_protocal(client: &AssetContractClient) -> (core_contract::Client, votes_
     (core_client, vote_client)
 }
 
-
-fn create_all_clients() -> (AssetContractClient, core_contract::Client, votes_contract::Client) {
+fn create_all_clients() -> (
+    AssetContractClient,
+    core_contract::Client,
+    votes_contract::Client,
+) {
     let env = Env::default();
     let contract_id = env.register_contract(None, AssetContract);
     let client = AssetContractClient::new(&env, &contract_id);
@@ -32,27 +37,30 @@ fn create_token(client: &AssetContractClient, core_client: &core_contract::Clien
     let name = "Deep Ink Ventures".into_val(&client.env);
     let address = Address::random(&client.env);
     let supply = 1_000_000;
-
     let governance_id = &core_client.contract_id;
-    client.init(&symbol, &name, &supply, &address, &governance_id);
+    client.init(&symbol, &name, &address, &governance_id);
+    client.mint(&address, &supply);
     address
 }
 
 #[test]
 fn create_a_token() {
     let (client, core_client, _) = create_all_clients();
-    let address = Address::random(&client.env);
-    let supply = 1_000_000;
     let symbol = "DIV".into_val(&client.env);
     let name = "Deep Ink Ventures".into_val(&client.env);
+    let address = Address::random(&client.env);
     let governance_id = &core_client.contract_id;
-    client.init(&symbol, &name, &supply, &address, &governance_id);
+    client.init(&symbol, &name, &address, &governance_id);
 
     assert_eq!(symbol, client.symbol());
     assert_eq!(name, client.name());
-    assert_eq!(supply, client.balance(&address));
     assert_eq!(address, client.owner());
     assert_eq!(governance_id, &client.governance_id());
+
+    let supply = 1_000_000;
+    client.mint(&address, &supply);
+
+    assert_eq!(supply, client.balance(&address));
 }
 
 #[test]
@@ -121,7 +129,6 @@ fn token_assets_are_always_authoritzed() {
     assert_eq!(client.authorized(&address), true);
 }
 
-
 #[test]
 fn xfer() {
     let (client, core_client, __) = create_all_clients();
@@ -164,16 +171,16 @@ fn checkpoints() {
 
     let owner = create_token(&client, &core_client);
     let whoever = Address::random(&client.env);
-    
+
     // owner should have a checkpoint after issuance
     assert_eq!(client.get_checkpoint_count(&owner), 1);
     assert_eq!(client.get_checkpoint_count(&whoever), 0);
-    
+
     let cp = client.get_checkpoint_at(&owner, &0);
-    
+
     assert_eq!(cp.ledger, 0);
     assert_eq!(cp.balance, 1_000_000);
-    
+
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
@@ -181,9 +188,9 @@ fn checkpoints() {
         network_id: Default::default(),
         base_reserve: 10,
     });
-    
+
     client.xfer(&owner, &whoever, &100_000);
-    
+
     // Since there is no proposal, the owners first cp should be overridden
     assert_eq!(client.get_checkpoint_count(&owner), 1);
     assert_eq!(client.get_checkpoint_count(&whoever), 1);
@@ -192,12 +199,12 @@ fn checkpoints() {
 
     assert_eq!(cp2.ledger, 1);
     assert_eq!(cp2.balance, 900_000);
-    
+
     let cp3 = client.get_checkpoint_at(&whoever, &0);
 
     assert_eq!(cp3.ledger, 1);
     assert_eq!(cp3.balance, 100_000);
-    
+
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
@@ -205,11 +212,11 @@ fn checkpoints() {
         network_id: Default::default(),
         base_reserve: 10,
     });
-    
+
     // let's create a proposal
     votes_client.create_proposal(&"DIV".into_val(&client.env), &Address::random(&client.env));
     client.xfer(&owner, &whoever, &100_000);
-    
+
     assert_eq!(client.get_checkpoint_count(&owner), 2);
     assert_eq!(client.get_checkpoint_count(&whoever), 2);
 
@@ -222,7 +229,7 @@ fn checkpoints() {
 
     assert_eq!(cp3.ledger, 10);
     assert_eq!(cp3.balance, 200_000);
-    
+
     // a second one
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
@@ -246,7 +253,7 @@ fn checkpoints() {
 
     assert_eq!(cp3.ledger, 20);
     assert_eq!(cp3.balance, 300_000);
-    
+
     // now let's outdate the first one
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
@@ -256,17 +263,16 @@ fn checkpoints() {
         base_reserve: 10,
     });
     client.xfer(&owner, &whoever, &100_000);
-    
+
     assert_eq!(client.get_checkpoint_count(&owner), 2);
     assert_eq!(client.get_checkpoint_count(&whoever), 2);
-    
+
     // let's verify we are getting the correct checkpoints for each proposal!
     assert_eq!(client.get_balance_at(&owner, &19), 700_000);
     assert_eq!(client.get_balance_at(&owner, &20), 700_000);
     assert_eq!(client.get_balance_at(&owner, &20_000), 600_000);
-    
+
     assert_eq!(client.get_balance_at(&whoever, &19), 300_000);
     assert_eq!(client.get_balance_at(&whoever, &20), 300_000);
     assert_eq!(client.get_balance_at(&whoever, &20_000), 400_000);
 }
-

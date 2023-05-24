@@ -6,7 +6,7 @@ use soroban_sdk::{
 };
 
 use crate::{
-    types::{Status, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
+    types::{PropStatus, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
     VotesContract, VotesContractClient,
 };
 
@@ -151,5 +151,5 @@ fn mark_faulty() {
         .get_active_proposals(&dao_id)
         .get_unchecked(0)
         .unwrap();
-    assert_eq!(proposal.inner.status, Status::Faulty(reason));
+    assert_eq!(proposal.inner.status, PropStatus::Faulty(reason));
 }

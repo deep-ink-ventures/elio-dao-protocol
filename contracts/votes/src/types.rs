@@ -11,7 +11,7 @@ pub struct Proposal {
     pub dao_id: Bytes,
     pub ledger: u32,
     pub owner: Address,
-    pub status: Status,
+    pub status: PropStatus,
 }
 
 #[contracttype]
@@ -25,7 +25,7 @@ pub struct ActiveProposal {
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Status {
+pub enum PropStatus {
     Running,
     Accepted,
     Rejected,
@@ -55,7 +55,7 @@ impl Proposal {
             inner: Proposal {
                 dao_id: dao_id.clone(),
                 ledger: env.ledger().sequence(),
-                status: Status::Running,
+                status: PropStatus::Running,
                 owner,
             },
         });
@@ -117,7 +117,7 @@ impl ActiveProposal {
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
             if p.id == proposal_id {
-                p.inner.status = Status::Faulty(reason);
+                p.inner.status = PropStatus::Faulty(reason);
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
                 return;
