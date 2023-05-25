@@ -9,23 +9,20 @@ mod assets_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
 }
 
-use soroban_sdk::{testutils::Address as _, Address, Bytes, Env, IntoVal};
+use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, IntoVal};
 
 use crate::{types::Dao, CoreContract, CoreContractClient};
 
 fn create_client() -> CoreContractClient {
     let env = Env::default();
     let contract_id = env.register_contract(None, CoreContract);
-    let client = CoreContractClient::new(&env, &contract_id);
-    init_client(&client);
-    client
-}
+    let votes_id = env.register_contract_wasm(None, votes_contract::WASM);
 
-fn init_client(client: &CoreContractClient) {
-    // install votes
-    let votes_wasm_hash = &client.env.install_contract_wasm(votes_contract::WASM);
-    let salt = Bytes::from_array(&client.env, &[0; 32]);
-    client.init(&votes_wasm_hash, &salt);
+    let client = CoreContractClient::new(&env, &contract_id);
+
+    client.init(&votes_id);
+
+    client
 }
 
 fn create_dao(client: &CoreContractClient) -> Dao {
@@ -39,7 +36,8 @@ fn create_dao(client: &CoreContractClient) -> Dao {
 #[should_panic(expected = "Already initialized")]
 fn cannot_initialize_twice() {
     let client = create_client();
-    init_client(&client);
+    let fake_id = BytesN::from_array(&client.env, &[0; 32]);
+    client.init(&fake_id);
 }
 
 #[test]

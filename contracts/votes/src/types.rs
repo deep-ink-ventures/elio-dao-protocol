@@ -109,10 +109,7 @@ impl ActiveProposal {
         panic!("proposal not found");
     }
 
-    pub fn set_faulty(env: Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes, dao_owner: Address) {
-        dao_owner.require_auth();
-        // todo: check dao_owner is indeed DAO owner
-
+    pub fn set_faulty(env: Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes) {
         let key = KeyActive(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {

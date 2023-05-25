@@ -6,15 +6,28 @@ use soroban_sdk::{
 };
 
 use crate::{
+    core_contract,
     types::{PropStatus, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
     VotesContract, VotesContractClient,
 };
 
-fn create_client() -> VotesContractClient {
+fn create_clients() -> (core_contract::Client, VotesContractClient) {
     let env = Env::default();
-    let contract_id = env.register_contract(None, VotesContract);
-    let client = VotesContractClient::new(&env, &contract_id);
-    client
+
+    let core_id = env.register_contract_wasm(None, core_contract::WASM);
+    let id = env.register_contract(None, VotesContract);
+
+    let core_client = core_contract::Client::new(&env, &core_id);
+    let client = VotesContractClient::new(&env, &id);
+
+    core_client.init(&id);
+    client.init(&core_id);
+
+    (core_client, client)
+}
+
+fn create_client() -> VotesContractClient {
+    create_clients().1
 }
 
 #[test]
@@ -138,18 +151,39 @@ fn non_existing_meta_panics() {
 
 #[test]
 fn mark_faulty() {
-    let client = create_client();
-    let dao_id = "DIV".into_val(&client.env);
-    let owner = Address::random(&client.env);
+    let (core_client, client) = create_clients();
+    let env = &client.env;
+    let dao_id = "DIV".into_val(env);
+    let name = "Deep Ink Ventures".into_val(env);
+    let dao_owner = Address::random(env);
+    core_client.create_dao(&dao_id, &name, &dao_owner);
+
+    let owner = Address::random(env);
     let proposal_id = client.create_proposal(&dao_id, &owner);
 
-    let reason = "bad".into_val(&client.env);
-
-    client.fault_proposal(&dao_id, &proposal_id, &reason, &owner);
+    let reason = "bad".into_val(env);
+    client.fault_proposal(&dao_id, &proposal_id, &reason, &dao_owner);
 
     let proposal = client
         .get_active_proposals(&dao_id)
         .get_unchecked(0)
         .unwrap();
     assert_eq!(proposal.inner.status, PropStatus::Faulty(reason));
+}
+
+#[test]
+#[should_panic(expected = "only the DAO owner")]
+fn mark_faulty_only_owner() {
+    let (core_client, client) = create_clients();
+    let env = &client.env;
+    let dao_id = "DIV".into_val(env);
+    let name = "Deep Ink Ventures".into_val(env);
+    let dao_owner = Address::random(env);
+    core_client.create_dao(&dao_id, &name, &dao_owner);
+
+    let owner = Address::random(env);
+    let proposal_id = client.create_proposal(&dao_id, &owner);
+
+    let reason = "bad".into_val(env);
+    client.fault_proposal(&dao_id, &proposal_id, &reason, &Address::random(env));
 }

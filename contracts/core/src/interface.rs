@@ -9,7 +9,7 @@ pub trait CoreTrait {
     /// - `votes_wasm_hash`: The wasm hash of the votes contract
     /// - `votes_salt`: a 32 bytes salt to derive the contract id
     ///
-    fn init(env: Env, votes_wasm_hash: BytesN<32>, votes_salt: Bytes);
+    fn init(env: Env, votes_id: BytesN<32>);
 
     fn get_votes_id(env: Env) -> BytesN<32>;
 
