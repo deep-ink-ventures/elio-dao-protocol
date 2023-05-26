@@ -89,8 +89,8 @@ impl VotesTrait for VotesContract {
         ActiveProposal::set_faulty(env, dao_id, proposal_id, reason)
     }
 
-    fn finalize_proposal(env: Env, proposal_id: ProposalId) {
-        // todo: implement
+    fn finalize_proposal(env: Env, dao_id: Bytes, proposal_id: ProposalId) {
+        ActiveProposal::finalize(env, dao_id, proposal_id);
     }
 
     fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address) {
@@ -108,5 +108,9 @@ impl VotesTrait for VotesContract {
 
     fn get_active_proposals(env: Env, dao_id: Bytes) -> Vec<ActiveProposal> {
         Proposal::get_active(&env, dao_id)
+    }
+
+    fn get_archived_proposal(env: Env, id: ProposalId) -> Proposal {
+        Proposal::get_archived(&env, id)
     }
 }

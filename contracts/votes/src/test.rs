@@ -8,7 +8,7 @@ use soroban_sdk::{
 
 use crate::{
     assets_contract, core_contract,
-    types::{PropStatus, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
+    types::{PropStatus, FINALIZATION_DURATION, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
     VotesContract, VotesContractClient,
 };
 
@@ -68,7 +68,7 @@ fn active_proposals_are_managed() {
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
-        sequence_number: 100 + PROPOSAL_DURATION + 1,
+        sequence_number: 100 + PROPOSAL_DURATION + FINALIZATION_DURATION + 1,
         network_id: Default::default(),
         base_reserve: 10,
     });
@@ -206,4 +206,42 @@ fn mark_faulty_only_owner() {
 
     let reason = "bad".into_val(env);
     client.fault_proposal(&dao_id, &proposal_id, &reason, &Address::random(env));
+}
+
+#[test]
+fn finalize() {
+    let (core, client) = create_clients();
+    let env = &client.env;
+    env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+    let dao_id = "DIV".into_val(env);
+    let name = "Deep Ink Ventures".into_val(env);
+    let dao_owner = Address::random(env);
+    core.create_dao(&dao_id, &name, &dao_owner);
+
+    let owner = Address::random(env);
+    let proposal_id = client.create_proposal(&dao_id, &owner);
+
+    // make finalization possible
+    client.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100 + PROPOSAL_DURATION + 1,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+
+    client.finalize_proposal(&dao_id, &proposal_id);
+
+    let proposal = client
+        .get_active_proposals(&dao_id)
+        .get_unchecked(0)
+        .unwrap();
+    assert_eq!(proposal.inner.status, PropStatus::Rejected);
+    assert_eq!(proposal.inner, client.get_archived_proposal(&proposal_id));
 }

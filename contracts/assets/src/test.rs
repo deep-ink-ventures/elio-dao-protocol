@@ -7,18 +7,8 @@ use soroban_sdk::{
 
 use crate::{core_contract, votes_contract, AssetContract, AssetContractClient};
 
-fn wire_protocal(client: &AssetContractClient) -> (core_contract::Client, votes_contract::Client) {
-    let core_id = client.env.register_contract_wasm(None, core_contract::WASM);
-    let core_client = core_contract::Client::new(&client.env, &core_id);
-
-    let votes_salt = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".into_val(&client.env);
-    let votes_wasm_hash = &client.env.install_contract_wasm(votes_contract::WASM);
-
-    core_client.init(votes_wasm_hash, &votes_salt);
-
-    let vote_client = votes_contract::Client::new(&client.env, &core_client.get_votes_id());
-    (core_client, vote_client)
-}
+const FINALIZATION_DURATION: u32 = 5_000;
+const PROPOSAL_DURATION: u32 = 10_000;
 
 fn create_all_clients() -> (
     AssetContractClient,
@@ -26,10 +16,20 @@ fn create_all_clients() -> (
     votes_contract::Client,
 ) {
     let env = Env::default();
-    let contract_id = env.register_contract(None, AssetContract);
-    let client = AssetContractClient::new(&env, &contract_id);
-    let (core_client, votes_client) = wire_protocal(&client);
-    (client, core_client, votes_client)
+
+    let core_id = env.register_contract_wasm(None, core_contract::WASM);
+    let votes_id = env.register_contract_wasm(None, votes_contract::WASM);
+
+    let core = core_contract::Client::new(&env, &core_id);
+    let votes = votes_contract::Client::new(&env, &votes_id);
+
+    let assets_id = env.register_contract(None, AssetContract);
+    let assets = AssetContractClient::new(&env, &assets_id);
+
+    core.init(&votes_id);
+    votes.init(&core_id);
+
+    (assets, core, votes)
 }
 
 fn create_token(client: &AssetContractClient, core_client: &core_contract::Client) -> Address {
@@ -258,7 +258,7 @@ fn checkpoints() {
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
-        sequence_number: 10 + 10_000 + 1,
+        sequence_number: 10 + FINALIZATION_DURATION + PROPOSAL_DURATION + 1,
         network_id: Default::default(),
         base_reserve: 10,
     });

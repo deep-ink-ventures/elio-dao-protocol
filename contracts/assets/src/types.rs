@@ -70,8 +70,8 @@ impl Token {
     /// If you roll your own implementation you need to have a strategy to keep the number of
     /// checkpoints bounded, otherwise the required storage will escalate on busy tokens.
     ///
-    /// Our strategy is to set the number of max concurrent proposal to 25 - to many concurrent
-    /// proposals create voters fatigue anyways.
+    /// Our strategy is to set the maximum number of concurrently active proposals to 25;
+    /// too many active proposals creates voter fatigue anyway.
     pub fn write_checkpoint(env: &Env, id: Address) {
         let key = Self::Checkpoints(id.clone());
 

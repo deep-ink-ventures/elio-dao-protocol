@@ -5,7 +5,10 @@ use crate::assets_contract;
 pub type ProposalId = u32;
 
 #[contracttype]
-struct KeyActive(Bytes);
+struct ActiveKey(Bytes);
+
+#[contracttype]
+struct ArchiveKey(ProposalId);
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -38,6 +41,7 @@ pub enum PropStatus {
 const PROP_ID: Symbol = Symbol::short("PROP_ID");
 
 pub const PROPOSAL_DURATION: u32 = 10_000;
+pub const FINALIZATION_DURATION: u32 = 5_000;
 pub const PROPOSAL_MAX_NR: u32 = 25;
 
 impl Proposal {
@@ -61,13 +65,13 @@ impl Proposal {
                 owner,
             },
         });
-        env.storage().set(&KeyActive(dao_id), &proposals);
+        env.storage().set(&ActiveKey(dao_id), &proposals);
         env.storage().set(&PROP_ID, &(id + 1));
         id
     }
 
     pub fn get_active(env: &Env, dao_id: Bytes) -> Vec<ActiveProposal> {
-        let key = KeyActive(dao_id);
+        let key = ActiveKey(dao_id);
         if !env.storage().has(&key) {
             return Vec::new(env);
         }
@@ -77,7 +81,9 @@ impl Proposal {
         // filter out outdated proposals
         let len = active_proposals.len();
         for proposal in active_proposals.into_iter_unchecked() {
-            if env.ledger().sequence() <= proposal.inner.ledger + PROPOSAL_DURATION {
+            if env.ledger().sequence()
+                <= proposal.inner.ledger + PROPOSAL_DURATION + FINALIZATION_DURATION
+            {
                 filtered_proposals.push_back(proposal);
             }
         }
@@ -86,6 +92,11 @@ impl Proposal {
         }
 
         filtered_proposals
+    }
+
+    pub fn get_archived(env: &Env, id: ProposalId) -> Self {
+        let key = ArchiveKey(id);
+        env.storage().get_unchecked(&key).unwrap()
     }
 }
 
@@ -98,7 +109,7 @@ impl ActiveProposal {
         voter: Address,
         asset: assets_contract::Client,
     ) {
-        let key = KeyActive(dao_id);
+        let key = ActiveKey(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
             if p.id == proposal_id {
@@ -120,13 +131,45 @@ impl ActiveProposal {
     }
 
     pub fn set_faulty(env: Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes) {
-        let key = KeyActive(dao_id);
+        let key = ActiveKey(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
             if p.id == proposal_id {
                 p.inner.status = PropStatus::Faulty(reason);
+
+                log!(&env, "updating proposal");
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
+                return;
+            }
+        }
+        panic!("proposal not found");
+    }
+
+    pub fn finalize(env: Env, dao_id: Bytes, proposal_id: ProposalId) {
+        let key = ActiveKey(dao_id);
+        let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
+        for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
+            if p.id == proposal_id {
+                if env.ledger().sequence() <= p.inner.ledger + PROPOSAL_DURATION {
+                    panic!("proposal still active");
+                }
+                if p.inner.status != PropStatus::Running {
+                    panic!("proposal is not running");
+                }
+                p.inner.status = if p.in_favor > p.against {
+                    PropStatus::Accepted
+                } else {
+                    PropStatus::Rejected
+                };
+
+                log!(&env, "archiving proposal");
+                env.storage().set(&ArchiveKey(proposal_id), &p.inner);
+
+                log!(&env, "updating proposal");
+                active_proposals.set(i as u32, p);
+                env.storage().set(&key, &active_proposals);
+
                 return;
             }
         }
@@ -155,7 +198,7 @@ impl Metadata {
     ) -> Self {
         owner.require_auth();
 
-        let key = KeyActive(dao_id);
+        let key = ActiveKey(dao_id);
         let active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for p in active_proposals.iter_unchecked() {
             if p.id == proposal_id {
