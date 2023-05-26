@@ -1,12 +1,13 @@
 #![cfg(test)]
 
 use soroban_sdk::{
+    log,
     testutils::{Address as _, Ledger, LedgerInfo},
-    Address, Env, IntoVal,
+    Address, Bytes, Env, IntoVal,
 };
 
 use crate::{
-    core_contract,
+    assets_contract, core_contract,
     types::{PropStatus, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
     VotesContract, VotesContractClient,
 };
@@ -91,17 +92,36 @@ fn max_number_of_proposals() {
 
 #[test]
 fn vote() {
-    let client = create_client();
-    let dao_id = "DIV".into_val(&client.env);
-    let owner = Address::random(&client.env);
+    let (core, client) = create_clients();
+    let env = &client.env;
+    let dao_id = "DIV".into_val(env);
+    let name = "Deep Ink Ventures".into_val(env);
+    let dao_owner = Address::random(env);
+    log!(env, "creating DAO");
+    core.create_dao(&dao_id, &name, &dao_owner);
+
+    let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
+    let salt = Bytes::from_array(env, &[1; 32]);
+    log!(env, "issuing DAO token");
+    core.issue_token(&dao_id, &dao_owner, &assets_wasm_hash, &salt);
+
+    let asset_id = core.get_dao_asset_id(&dao_id);
+    let asset = assets_contract::Client::new(env, &asset_id);
+    let supply = 1_000_000;
+    log!(env, "minting DAO token");
+    asset.mint(&dao_owner, &supply);
+
+    let owner = Address::random(env);
+    log!(env, "creating proposal");
     let proposal_id = client.create_proposal(&dao_id, &owner);
-    let voter = Address::random(&client.env);
+
+    let voter = dao_owner;
     client.vote(&dao_id, &proposal_id, &true, &voter);
     let proposal = client
         .get_active_proposals(&dao_id)
         .get_unchecked(0)
         .unwrap();
-    assert_eq!(proposal.in_favor, 1);
+    assert_eq!(proposal.in_favor, supply);
 }
 
 #[test]

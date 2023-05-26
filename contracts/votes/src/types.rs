@@ -1,4 +1,6 @@
-use soroban_sdk::{contracttype, Address, Bytes, Env, Symbol, Vec};
+use soroban_sdk::{contracttype, log, Address, Bytes, Env, Symbol, Vec};
+
+use crate::assets_contract;
 
 pub type ProposalId = u32;
 
@@ -18,8 +20,8 @@ pub struct Proposal {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ActiveProposal {
     pub id: ProposalId,
-    pub in_favor: u128,
-    pub against: u128,
+    pub in_favor: i128,
+    pub against: i128,
     pub inner: Proposal,
 }
 
@@ -88,19 +90,27 @@ impl Proposal {
 }
 
 impl ActiveProposal {
-    pub fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address) {
-        voter.require_auth();
-
+    pub fn vote(
+        env: Env,
+        dao_id: Bytes,
+        proposal_id: ProposalId,
+        in_favor: bool,
+        voter: Address,
+        asset: assets_contract::Client,
+    ) {
         let key = KeyActive(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
             if p.id == proposal_id {
-                let voting_power = 1;
+                log!(&env, "getting voting power");
+                let voting_power = asset.get_balance_at(&voter, &p.inner.ledger);
+
                 if in_favor {
                     p.in_favor += voting_power;
                 } else {
                     p.against += voting_power;
                 }
+                log!(&env, "updating proposal votes");
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
                 return;
