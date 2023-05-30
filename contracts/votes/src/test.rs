@@ -1,20 +1,34 @@
 #![cfg(test)]
 
 use soroban_sdk::{
+    log,
     testutils::{Address as _, Ledger, LedgerInfo},
-    Address, Env, IntoVal,
+    Address, Bytes, Env, IntoVal,
 };
 
 use crate::{
-    types::{PropStatus, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
+    assets_contract, core_contract,
+    types::{PropStatus, FINALIZATION_DURATION, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
     VotesContract, VotesContractClient,
 };
 
-fn create_client() -> VotesContractClient {
+fn create_clients() -> (core_contract::Client, VotesContractClient) {
     let env = Env::default();
-    let contract_id = env.register_contract(None, VotesContract);
-    let client = VotesContractClient::new(&env, &contract_id);
-    client
+
+    let core_id = env.register_contract_wasm(None, core_contract::WASM);
+    let id = env.register_contract(None, VotesContract);
+
+    let core_client = core_contract::Client::new(&env, &core_id);
+    let client = VotesContractClient::new(&env, &id);
+
+    core_client.init(&id);
+    client.init(&core_id);
+
+    (core_client, client)
+}
+
+fn create_client() -> VotesContractClient {
+    create_clients().1
 }
 
 #[test]
@@ -54,7 +68,7 @@ fn active_proposals_are_managed() {
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
-        sequence_number: 100 + PROPOSAL_DURATION + 1,
+        sequence_number: 100 + PROPOSAL_DURATION + FINALIZATION_DURATION + 1,
         network_id: Default::default(),
         base_reserve: 10,
     });
@@ -78,17 +92,36 @@ fn max_number_of_proposals() {
 
 #[test]
 fn vote() {
-    let client = create_client();
-    let dao_id = "DIV".into_val(&client.env);
-    let owner = Address::random(&client.env);
+    let (core, client) = create_clients();
+    let env = &client.env;
+    let dao_id = "DIV".into_val(env);
+    let name = "Deep Ink Ventures".into_val(env);
+    let dao_owner = Address::random(env);
+    log!(env, "creating DAO");
+    core.create_dao(&dao_id, &name, &dao_owner);
+
+    let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
+    let salt = Bytes::from_array(env, &[1; 32]);
+    log!(env, "issuing DAO token");
+    core.issue_token(&dao_id, &dao_owner, &assets_wasm_hash, &salt);
+
+    let asset_id = core.get_dao_asset_id(&dao_id);
+    let asset = assets_contract::Client::new(env, &asset_id);
+    let supply = 1_000_000;
+    log!(env, "minting DAO token");
+    asset.mint(&dao_owner, &supply);
+
+    let owner = Address::random(env);
+    log!(env, "creating proposal");
     let proposal_id = client.create_proposal(&dao_id, &owner);
-    let voter = Address::random(&client.env);
+
+    let voter = dao_owner;
     client.vote(&dao_id, &proposal_id, &true, &voter);
     let proposal = client
         .get_active_proposals(&dao_id)
         .get_unchecked(0)
         .unwrap();
-    assert_eq!(proposal.in_favor, 1);
+    assert_eq!(proposal.in_favor, supply);
 }
 
 #[test]
@@ -138,18 +171,77 @@ fn non_existing_meta_panics() {
 
 #[test]
 fn mark_faulty() {
-    let client = create_client();
-    let dao_id = "DIV".into_val(&client.env);
-    let owner = Address::random(&client.env);
+    let (core_client, client) = create_clients();
+    let env = &client.env;
+    let dao_id = "DIV".into_val(env);
+    let name = "Deep Ink Ventures".into_val(env);
+    let dao_owner = Address::random(env);
+    core_client.create_dao(&dao_id, &name, &dao_owner);
+
+    let owner = Address::random(env);
     let proposal_id = client.create_proposal(&dao_id, &owner);
 
-    let reason = "bad".into_val(&client.env);
-
-    client.fault_proposal(&dao_id, &proposal_id, &reason, &owner);
+    let reason = "bad".into_val(env);
+    client.fault_proposal(&dao_id, &proposal_id, &reason, &dao_owner);
 
     let proposal = client
         .get_active_proposals(&dao_id)
         .get_unchecked(0)
         .unwrap();
     assert_eq!(proposal.inner.status, PropStatus::Faulty(reason));
+}
+
+#[test]
+#[should_panic(expected = "only the DAO owner")]
+fn mark_faulty_only_owner() {
+    let (core_client, client) = create_clients();
+    let env = &client.env;
+    let dao_id = "DIV".into_val(env);
+    let name = "Deep Ink Ventures".into_val(env);
+    let dao_owner = Address::random(env);
+    core_client.create_dao(&dao_id, &name, &dao_owner);
+
+    let owner = Address::random(env);
+    let proposal_id = client.create_proposal(&dao_id, &owner);
+
+    let reason = "bad".into_val(env);
+    client.fault_proposal(&dao_id, &proposal_id, &reason, &Address::random(env));
+}
+
+#[test]
+fn finalize() {
+    let (core, client) = create_clients();
+    let env = &client.env;
+    env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+    let dao_id = "DIV".into_val(env);
+    let name = "Deep Ink Ventures".into_val(env);
+    let dao_owner = Address::random(env);
+    core.create_dao(&dao_id, &name, &dao_owner);
+
+    let owner = Address::random(env);
+    let proposal_id = client.create_proposal(&dao_id, &owner);
+
+    // make finalization possible
+    client.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100 + PROPOSAL_DURATION + 1,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+
+    client.finalize_proposal(&dao_id, &proposal_id);
+
+    let proposal = client
+        .get_active_proposals(&dao_id)
+        .get_unchecked(0)
+        .unwrap();
+    assert_eq!(proposal.inner.status, PropStatus::Rejected);
+    assert_eq!(proposal.inner, client.get_archived_proposal(&proposal_id));
 }
