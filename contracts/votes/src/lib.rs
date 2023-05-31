@@ -66,31 +66,12 @@ impl VotesTrait for VotesContract {
         Metadata::get(&env, proposal_id)
     }
 
-    fn fault_proposal(
-        env: Env,
-        dao_id: Bytes,
-        proposal_id: ProposalId,
-        reason: Bytes,
-        dao_owner: Address,
-    ) {
-        dao_owner.require_auth();
-
-        let core_id = Self::get_core_id(env.clone());
-        let core = core_contract::Client::new(&env, &core_id);
-
-        log!(&env, "getting DAO");
-        let dao = core.get_dao(&dao_id);
-
-        log!(&env, "verifying DAO owner");
-        if dao_owner != dao.owner {
-            panic!("only the DAO owner can fault a proposal");
-        }
-
-        ActiveProposal::set_faulty(env, dao_id, proposal_id, reason)
+    fn get_active_proposals(env: Env, dao_id: Bytes) -> Vec<ActiveProposal> {
+        Proposal::get_active(&env, dao_id)
     }
 
-    fn finalize_proposal(env: Env, dao_id: Bytes, proposal_id: ProposalId) {
-        ActiveProposal::finalize(env, dao_id, proposal_id);
+    fn get_archived_proposal(env: Env, proposal_id: ProposalId) -> Proposal {
+        Proposal::get_archived(&env, proposal_id)
     }
 
     fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address) {
@@ -103,14 +84,46 @@ impl VotesTrait for VotesContract {
         let asset_id = core.get_dao_asset_id(&dao_id);
         let asset = assets_contract::Client::new(&env, &asset_id);
 
-        ActiveProposal::vote(env, dao_id, proposal_id, in_favor, voter, asset);
+        Proposal::vote(&env, dao_id, proposal_id, in_favor, voter, asset);
     }
 
-    fn get_active_proposals(env: Env, dao_id: Bytes) -> Vec<ActiveProposal> {
-        Proposal::get_active(&env, dao_id)
+    fn fault_proposal(
+        env: Env,
+        dao_id: Bytes,
+        proposal_id: ProposalId,
+        reason: Bytes,
+        dao_owner: Address,
+    ) {
+        let core_id = Self::get_core_id(env.clone());
+        verify_dao_owner(&env, &dao_id, dao_owner, core_id);
+
+        Proposal::set_faulty(&env, dao_id, proposal_id, reason)
     }
 
-    fn get_archived_proposal(env: Env, id: ProposalId) -> Proposal {
-        Proposal::get_archived(&env, id)
+    fn finalize_proposal(env: Env, dao_id: Bytes, proposal_id: ProposalId) {
+        Proposal::finalize(&env, dao_id, proposal_id);
+    }
+
+    fn mark_implemented(env: Env, proposal_id: ProposalId, dao_owner: Address) {
+        let proposal = Proposal::get_archived(&env, proposal_id);
+
+        let core_id = Self::get_core_id(env.clone());
+        verify_dao_owner(&env, &proposal.dao_id, dao_owner, core_id);
+
+        Proposal::mark_implemented(&env, proposal_id);
+    }
+}
+
+fn verify_dao_owner(env: &Env, dao_id: &Bytes, dao_owner: Address, core_id: BytesN<32>) {
+    dao_owner.require_auth();
+
+    let core = core_contract::Client::new(&env, &core_id);
+
+    log!(&env, "getting DAO");
+    let dao = core.get_dao(dao_id);
+
+    log!(&env, "verifying DAO owner");
+    if dao_owner != dao.owner {
+        panic!("not the DAO owner");
     }
 }

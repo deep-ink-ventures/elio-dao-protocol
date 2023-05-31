@@ -94,15 +94,13 @@ impl Proposal {
         filtered_proposals
     }
 
-    pub fn get_archived(env: &Env, id: ProposalId) -> Self {
-        let key = ArchiveKey(id);
+    pub fn get_archived(env: &Env, proposal_id: ProposalId) -> Proposal {
+        let key = ArchiveKey(proposal_id);
         env.storage().get_unchecked(&key).unwrap()
     }
-}
 
-impl ActiveProposal {
     pub fn vote(
-        env: Env,
+        env: &Env,
         dao_id: Bytes,
         proposal_id: ProposalId,
         in_favor: bool,
@@ -130,7 +128,7 @@ impl ActiveProposal {
         panic!("proposal not found");
     }
 
-    pub fn set_faulty(env: Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes) {
+    pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes) {
         let key = ActiveKey(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
@@ -146,7 +144,7 @@ impl ActiveProposal {
         panic!("proposal not found");
     }
 
-    pub fn finalize(env: Env, dao_id: Bytes, proposal_id: ProposalId) {
+    pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: ProposalId) {
         let key = ActiveKey(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
@@ -174,6 +172,19 @@ impl ActiveProposal {
             }
         }
         panic!("proposal not found");
+    }
+
+    pub fn mark_implemented(env: &Env, proposal_id: ProposalId) {
+        let key = ArchiveKey(proposal_id);
+        let mut proposal: Proposal = env.storage().get_unchecked(&key).unwrap();
+
+        if proposal.status != PropStatus::Accepted {
+            panic!("proposal was not accepted");
+        }
+
+        proposal.status = PropStatus::Implemented;
+
+        env.storage().set(&key, &proposal);
     }
 }
 
