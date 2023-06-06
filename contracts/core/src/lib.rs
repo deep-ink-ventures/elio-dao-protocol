@@ -1,19 +1,21 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Address, Bytes, BytesN, Env, Symbol};
+use soroban_sdk::{contractimpl, Address, Bytes, BytesN, Env};
 
 mod test;
 
+mod events;
 mod interface;
+use events::{
+    DaoCreatedEventData, DaoDestroyedEventData, DaoMetadataSetEventData, DaoOwnerChangedEventData,
+    CREATED, DAO, DESTROYED, METADATA_SET, OWNER_CHANGED, VOTES,
+};
 use interface::CoreTrait;
 
 mod types;
 use types::{Dao, Metadata};
 
 pub struct CoreContract;
-
-const DAO: Symbol = Symbol::short("DAO");
-const VOTES: Symbol = Symbol::short("VOTES");
 
 #[contractimpl]
 impl CoreTrait for CoreContract {
@@ -30,9 +32,15 @@ impl CoreTrait for CoreContract {
 
     fn create_dao(env: Env, dao_id: Bytes, dao_name: Bytes, dao_owner: Address) -> Dao {
         // todo: reserve
-        let dao = Dao::create(&env, dao_id.clone(), dao_name, dao_owner);
-        env.events()
-            .publish((DAO, Symbol::short("created")), dao.clone());
+        let dao = Dao::create(&env, dao_id.clone(), dao_name.clone(), dao_owner.clone());
+        env.events().publish(
+            (DAO, CREATED),
+            DaoCreatedEventData {
+                dao_id,
+                dao_name,
+                owner_id: dao_owner,
+            },
+        );
         dao
     }
 
@@ -45,7 +53,7 @@ impl CoreTrait for CoreContract {
 
         // todo: release reserve
         env.events()
-            .publish((DAO, Symbol::short("destroyed")), dao_id.clone());
+            .publish((DAO, DESTROYED), DaoDestroyedEventData { dao_id });
     }
 
     fn issue_token(
@@ -72,9 +80,11 @@ impl CoreTrait for CoreContract {
     ) -> Metadata {
         // this is to load & verify ownership
         Dao::load_for_owner(&env, &dao_id, &dao_owner);
-        let meta = Metadata::create(&env, dao_id, url, hash);
-        env.events()
-            .publish((DAO, Symbol::short("meta_set")), meta.clone());
+        let meta = Metadata::create(&env, dao_id.clone(), url.clone(), hash.clone());
+        env.events().publish(
+            (DAO, METADATA_SET),
+            DaoMetadataSetEventData { dao_id, url, hash },
+        );
         meta
     }
 
@@ -84,10 +94,15 @@ impl CoreTrait for CoreContract {
 
     fn change_owner(env: Env, dao_id: Bytes, new_owner: Address, dao_owner: Address) -> Dao {
         let mut dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
-        dao.owner = new_owner;
+        dao.owner = new_owner.clone();
         dao.save(&env);
-        env.events()
-            .publish((DAO, Symbol::short("new_owner")), dao.clone());
+        env.events().publish(
+            (DAO, OWNER_CHANGED),
+            DaoOwnerChangedEventData {
+                dao_id,
+                new_owner_id: new_owner,
+            },
+        );
         dao
     }
 }
