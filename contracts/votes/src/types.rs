@@ -2,7 +2,9 @@ use soroban_sdk::{contracttype, log, Address, Bytes, Env, Symbol, Vec};
 
 use crate::assets_contract;
 
-pub type ProposalId = u32;
+#[contracttype]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ProposalId(u32);
 
 #[contracttype]
 struct ActiveKey(Bytes);
@@ -55,7 +57,7 @@ impl Proposal {
 
         let id = env.storage().get(&PROP_ID).unwrap_or(Ok(0)).unwrap();
         proposals.push_back(ActiveProposal {
-            id,
+            id: ProposalId(id),
             in_favor: 0,
             against: 0,
             inner: Proposal {
@@ -67,7 +69,7 @@ impl Proposal {
         });
         env.storage().set(&ActiveKey(dao_id), &proposals);
         env.storage().set(&PROP_ID, &(id + 1));
-        id
+        ProposalId(id)
     }
 
     pub fn get_active(env: &Env, dao_id: Bytes) -> Vec<ActiveProposal> {
