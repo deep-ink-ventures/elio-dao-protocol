@@ -1,4 +1,5 @@
 use soroban_sdk::{contracttype, Address, Bytes, BytesN, Env, IntoVal, Symbol};
+use crate::events::{ASSET, CREATED, AssetEventData};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -17,7 +18,7 @@ pub struct Metadata {
 
 #[derive(Clone)]
 #[contracttype]
-pub enum DaoArticfact {
+pub enum DaoArtifact {
     Metadata(Bytes),
     Asset(Bytes),
 }
@@ -60,7 +61,7 @@ impl Dao {
     /// +++ Member functions +
 
     pub fn issue_token(self, env: &Env, assets_wasm_hash: BytesN<32>, asset_salt: Bytes) {
-        let key = DaoArticfact::Asset(self.id.clone());
+        let key = DaoArtifact::Asset(self.id.clone());
         if env.storage().has(&key) {
             panic!("asset already issued")
         }
@@ -72,17 +73,21 @@ impl Dao {
 
         let init_fn = Symbol::short("init");
         let init_args = (
-            self.id,
+            self.id.clone(),
             self.name,
             self.owner.clone(),
             env.current_contract_id(),
         )
             .into_val(env);
         env.invoke_contract::<()>(&asset_id, &init_fn, init_args);
+        env.events().publish(
+            (ASSET, CREATED, self.id.clone()),
+            AssetEventData {dao_id: self.id, asset_id: asset_id.into(), owner_id: self.owner}
+        );
     }
 
     pub fn get_asset_id(&self, env: &Env) -> BytesN<32> {
-        let key = DaoArticfact::Asset(self.id.clone());
+        let key = DaoArtifact::Asset(self.id.clone());
         if !env.storage().has(&key) {
             panic!("asset not issued")
         }
@@ -103,7 +108,7 @@ impl Metadata {
     /// Create metadata for the dao
     pub fn create(env: &Env, dao_id: Bytes, url: Bytes, hash: Bytes) -> Self {
         let meta = Metadata { url, hash };
-        env.storage().set(&DaoArticfact::Metadata(dao_id), &meta);
+        env.storage().set(&DaoArtifact::Metadata(dao_id), &meta);
         meta
     }
 
@@ -113,12 +118,12 @@ impl Metadata {
             panic!("metadata does not exist")
         }
         env.storage()
-            .get_unchecked(&DaoArticfact::Metadata(dao_id.clone()))
+            .get_unchecked(&DaoArtifact::Metadata(dao_id.clone()))
             .unwrap()
     }
 
     /// Checks if metadata for the dao_id exists
     pub fn exists(env: &Env, dao_id: &Bytes) -> bool {
-        env.storage().has(&DaoArticfact::Metadata(dao_id.clone()))
+        env.storage().has(&DaoArtifact::Metadata(dao_id.clone()))
     }
 }
