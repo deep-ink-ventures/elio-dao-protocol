@@ -1,7 +1,6 @@
 #![cfg(test)]
 
 mod votes_contract {
-    type ProposalId = u32;
     soroban_sdk::contractimport!(file = "../../wasm/elio_votes.wasm");
 }
 
