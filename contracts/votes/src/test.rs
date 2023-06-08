@@ -3,7 +3,7 @@
 use soroban_sdk::{
     log,
     testutils::{Address as _, Ledger, LedgerInfo},
-    Address, Bytes, Env, IntoVal,
+    Address, BytesN, Env, IntoVal,
 };
 
 use crate::{
@@ -12,8 +12,9 @@ use crate::{
     VotesContract, VotesContractClient,
 };
 
-fn create_clients() -> (core_contract::Client, VotesContractClient) {
+fn create_clients() -> (core_contract::Client<'static>, VotesContractClient<'static>) {
     let env = Env::default();
+    env.mock_all_auths();
 
     let core_id = env.register_contract_wasm(None, core_contract::WASM);
     let id = env.register_contract(None, VotesContract);
@@ -27,7 +28,7 @@ fn create_clients() -> (core_contract::Client, VotesContractClient) {
     (core_client, client)
 }
 
-fn create_client() -> VotesContractClient {
+fn create_client() -> VotesContractClient<'static> {
     create_clients().1
 }
 
@@ -101,7 +102,7 @@ fn vote() {
     core.create_dao(&dao_id, &name, &dao_owner);
 
     let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
-    let salt = Bytes::from_array(env, &[1; 32]);
+    let salt = BytesN::from_array(env, &[1; 32]);
     log!(env, "issuing DAO token");
     core.issue_token(&dao_id, &dao_owner, &assets_wasm_hash, &salt);
 
@@ -257,7 +258,7 @@ fn mark_implemented() {
     core.create_dao(&dao_id, &name, &dao_owner);
 
     let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
-    let salt = Bytes::from_array(env, &[1; 32]);
+    let salt = BytesN::from_array(env, &[1; 32]);
     log!(env, "issuing DAO token");
     core.issue_token(&dao_id, &dao_owner, &assets_wasm_hash, &salt);
 
@@ -310,7 +311,7 @@ fn mark_implemented_only_owner() {
     core.create_dao(&dao_id, &name, &dao_owner);
 
     let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
-    let salt = Bytes::from_array(env, &[1; 32]);
+    let salt = BytesN::from_array(env, &[1; 32]);
     log!(env, "issuing DAO token");
     core.issue_token(&dao_id, &dao_owner, &assets_wasm_hash, &salt);
 

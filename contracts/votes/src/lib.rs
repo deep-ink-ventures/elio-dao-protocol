@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, log, Address, Bytes, BytesN, Env, Symbol, Vec};
+use soroban_sdk::{contractimpl, log, Address, Bytes, Env, Symbol, Vec};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -27,14 +27,14 @@ const CORE: Symbol = Symbol::short("CORE");
 
 #[contractimpl]
 impl VotesTrait for VotesContract {
-    fn init(env: Env, core_id: BytesN<32>) {
+    fn init(env: Env, core_id: Address) {
         if env.storage().has(&CORE) {
             panic!("Already initialized")
         }
         env.storage().set(&CORE, &core_id);
     }
 
-    fn get_core_id(env: Env) -> BytesN<32> {
+    fn get_core_id(env: Env) -> Address {
         env.storage().get_unchecked(&CORE).unwrap()
     }
 
@@ -114,7 +114,7 @@ impl VotesTrait for VotesContract {
     }
 }
 
-fn verify_dao_owner(env: &Env, dao_id: &Bytes, dao_owner: Address, core_id: BytesN<32>) {
+fn verify_dao_owner(env: &Env, dao_id: &Bytes, dao_owner: Address, core_id: Address) {
     dao_owner.require_auth();
 
     let core = core_contract::Client::new(&env, &core_id);

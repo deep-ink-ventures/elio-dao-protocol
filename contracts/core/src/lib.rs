@@ -19,14 +19,14 @@ pub struct CoreContract;
 
 #[contractimpl]
 impl CoreTrait for CoreContract {
-    fn init(env: Env, votes_id: BytesN<32>) {
+    fn init(env: Env, votes_id: Address) {
         if env.storage().has(&VOTES) {
             panic!("Already initialized")
         }
         env.storage().set(&VOTES, &votes_id);
     }
 
-    fn get_votes_id(env: Env) -> BytesN<32> {
+    fn get_votes_id(env: Env) -> Address {
         env.storage().get_unchecked(&VOTES).unwrap()
     }
 
@@ -61,13 +61,13 @@ impl CoreTrait for CoreContract {
         dao_id: Bytes,
         dao_owner: Address,
         assets_wasm_hash: BytesN<32>,
-        asset_salt: Bytes,
+        asset_salt: BytesN<32>,
     ) {
         let dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
         dao.issue_token(&env, assets_wasm_hash, asset_salt);
     }
 
-    fn get_dao_asset_id(env: Env, dao_id: Bytes) -> BytesN<32> {
+    fn get_dao_asset_id(env: Env, dao_id: Bytes) -> Address {
         Dao::load(&env, &dao_id).get_asset_id(&env)
     }
 

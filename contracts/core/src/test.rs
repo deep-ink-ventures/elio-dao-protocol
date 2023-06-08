@@ -8,12 +8,13 @@ mod assets_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
 }
 
-use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, IntoVal};
+use soroban_sdk::{log, testutils::Address as _, Address, BytesN, Env, IntoVal};
 
 use crate::{types::Dao, CoreContract, CoreContractClient};
 
-fn create_client() -> CoreContractClient {
+fn create_client() -> CoreContractClient<'static> {
     let env = Env::default();
+    env.mock_all_auths();
     let contract_id = env.register_contract(None, CoreContract);
     let votes_id = env.register_contract_wasm(None, votes_contract::WASM);
 
@@ -25,9 +26,11 @@ fn create_client() -> CoreContractClient {
 }
 
 fn create_dao(client: &CoreContractClient) -> Dao {
-    let id = "DIV".into_val(&client.env);
-    let name = "Deep Ink Ventures".into_val(&client.env);
-    let owner = Address::random(&client.env);
+    let env = &client.env;
+    let id = "DIV".into_val(env);
+    let name = "Deep Ink Ventures".into_val(env);
+    let owner = Address::random(env);
+    log!(env, "creating DAO");
     client.create_dao(&id, &name, &owner)
 }
 
@@ -35,7 +38,7 @@ fn create_dao(client: &CoreContractClient) -> Dao {
 #[should_panic(expected = "Already initialized")]
 fn cannot_initialize_twice() {
     let client = create_client();
-    let fake_id = BytesN::from_array(&client.env, &[0; 32]);
+    let fake_id = Address::random(&client.env);
     client.init(&fake_id);
 }
 
@@ -141,46 +144,52 @@ fn non_existing_meta_panics() {
     client.get_metadata(&dao.id);
 }
 
-// todo: fix reentrancy
 #[test]
 fn issue_token_once() {
     let client = create_client();
+    let env = &client.env;
 
-    let assets_wasm_hash = &client.env.install_contract_wasm(assets_contract::WASM);
+    log!(env, "installing assets contract WASM");
+    let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
 
-    let salt = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".into_val(&client.env);
+    let salt = BytesN::from_array(env, &[0; 32]);
     let dao = create_dao(&client);
-    let supply = 1_000_000;
+
+    log!(env, "issuing token");
     client.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt);
 
+    log!(env, "getting DAO asset id");
     let asset_id = client.get_dao_asset_id(&dao.id);
-    let asset_client = assets_contract::Client::new(&client.env, &asset_id);
+    let asset_client = assets_contract::Client::new(env, &asset_id);
     assert_eq!(dao.id, asset_client.symbol());
     assert_eq!(dao.name, asset_client.name());
     assert_eq!(dao.owner, asset_client.owner());
-    assert_eq!(client.contract_id, asset_client.governance_id());
+    assert_eq!(client.address, asset_client.governance_id());
 
+    log!(env, "minting token");
+    let supply = 1_000_000;
     asset_client.mint(&dao.owner, &supply);
     assert_eq!(supply, asset_client.balance(&dao.owner));
 }
 
 #[test]
 #[should_panic(expected = "asset already issued")]
-fn cant_issue_token_twice() {
+
+fn cannot_issue_token_twice() {
     let client = create_client();
 
     let assets_wasm_hash = &client.env.install_contract_wasm(assets_contract::WASM);
     let dao = create_dao(&client);
 
-    let salt = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".into_val(&client.env);
-    let salt2 = "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY".into_val(&client.env);
+    let salt = BytesN::from_array(&client.env, &[0; 32]);
+    let salt2 = BytesN::from_array(&client.env, &[1; 32]);
     client.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt);
     client.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt2);
 }
 
 #[test]
 #[should_panic(expected = "asset not issued")]
-fn cant_get_asset_id_if_non_existing() {
+fn cannot_get_asset_id_if_non_existing() {
     let client = create_client();
     let dao = create_dao(&client);
     client.get_dao_asset_id(&dao.id);

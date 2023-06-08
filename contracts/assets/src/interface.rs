@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, Bytes, BytesN, Env};
+use soroban_sdk::{Address, Bytes, Env};
 
 use crate::types::Checkpoint;
 
@@ -11,7 +11,7 @@ pub trait AssetTrait {
     /// - `governance_id`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
     /// - `owner`: The owner of this contract
     ///
-    fn init(env: Env, symbol: Bytes, name: Bytes, owner: Address, governance_id: BytesN<32>);
+    fn init(env: Env, symbol: Bytes, name: Bytes, owner: Address, governance_id: Address);
 
     /// Mints tokens
     ///
@@ -62,11 +62,11 @@ pub trait AssetTrait {
     /// - `owner`: The current owner (must be authed and the current owner, obviously)
     /// - `governance_id`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
     ///
-    fn set_governance_id(env: Env, owner: Address, governance_id: BytesN<32>);
+    fn set_governance_id(env: Env, owner: Address, governance_id: Address);
 
     /// Returns the current governance id.
     ///
-    fn governance_id(env: Env) -> BytesN<32>;
+    fn governance_id(env: Env) -> Address;
 
     // ----------------------------------------------------------------------------------------
     // Token interface -> Everything starting from here satisfies the soroban token interface
