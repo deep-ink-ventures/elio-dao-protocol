@@ -3,15 +3,14 @@ use soroban_sdk::{Env, Bytes, Address, BytesN};
 use crate::types::{Dao, Metadata};
 
 pub trait CoreTrait {
-    
     /// Initialize the contract
     ///
     /// - `votes_wasm_hash`: The wasm hash of the votes contract
     /// - `votes_salt`: a 32 bytes salt to derive the contract id
     ///
-    fn init(env: Env, votes_id: BytesN<32>);
+    fn init(env: Env, votes_id: Address);
 
-    fn get_votes_id(env: Env) -> BytesN<32>;
+    fn get_votes_id(env: Env) -> Address;
 
     /// Create a fresh DAO.
     ///
@@ -41,13 +40,13 @@ pub trait CoreTrait {
     ///
     /// Tokens can only be issued once and the signer of this TX needs to be the owner
     /// of the DAO.
-    fn issue_token(env: Env, dao_id: Bytes, dao_owner: Address, assets_wasm_hash: BytesN<32>, asset_salt: Bytes);
+    fn issue_token(env: Env, dao_id: Bytes, dao_owner: Address, assets_wasm_hash: BytesN<32>, asset_salt: BytesN<32>);
 
     /// Returns the contract id of the dao asset (if exists).
     ///
     /// - `dao_id`: The id of the dao to load;
     ///
-    fn get_dao_asset_id(env: Env, dao_id: Bytes) -> BytesN<32>;
+    fn get_dao_asset_id(env: Env, dao_id: Bytes) -> Address;
     
     /// Set metadata
     ///

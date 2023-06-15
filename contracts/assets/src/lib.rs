@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Address, Bytes, BytesN, Env, Symbol};
+use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -29,7 +29,7 @@ fn check_non_negative_amount(amount: i128) {
 
 #[contractimpl]
 impl AssetTrait for AssetContract {
-    fn init(env: Env, symbol: Bytes, name: Bytes, owner: Address, governance_id: BytesN<32>) {
+    fn init(env: Env, symbol: Bytes, name: Bytes, owner: Address, governance_id: Address) {
         Token::create(&env, &symbol, &name, &owner, &governance_id);
         env.events()
             .publish((Symbol::short("created"), owner), symbol);
@@ -52,11 +52,11 @@ impl AssetTrait for AssetContract {
         Token::get_owner(&env)
     }
 
-    fn set_governance_id(env: Env, owner: Address, governance_id: BytesN<32>) {
+    fn set_governance_id(env: Env, owner: Address, governance_id: Address) {
         Token::set_governance_id(&env, &owner, &governance_id);
     }
 
-    fn governance_id(env: Env) -> BytesN<32> {
+    fn governance_id(env: Env) -> Address {
         Token::get_governance_id(&env)
     }
 

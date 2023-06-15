@@ -44,6 +44,6 @@ pub struct DaoOwnerChangedEventData {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AssetEventData {
     pub dao_id: Bytes,
-    pub asset_id: Bytes,
+    pub asset_id: Address,
     pub owner_id: Address,
 }

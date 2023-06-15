@@ -11,11 +11,12 @@ const FINALIZATION_DURATION: u32 = 5_000;
 const PROPOSAL_DURATION: u32 = 10_000;
 
 fn create_all_clients() -> (
-    AssetContractClient,
-    core_contract::Client,
-    votes_contract::Client,
+    AssetContractClient<'static>,
+    core_contract::Client<'static>,
+    votes_contract::Client<'static>,
 ) {
     let env = Env::default();
+	env.mock_all_auths();
 
     let core_id = env.register_contract_wasm(None, core_contract::WASM);
     let votes_id = env.register_contract_wasm(None, votes_contract::WASM);
@@ -37,7 +38,7 @@ fn create_token(client: &AssetContractClient, core_client: &core_contract::Clien
     let name = "Deep Ink Ventures".into_val(&client.env);
     let address = Address::random(&client.env);
     let supply = 1_000_000;
-    let governance_id = &core_client.contract_id;
+    let governance_id = &core_client.address;
     client.init(&symbol, &name, &address, &governance_id);
     client.mint(&address, &supply);
     address
@@ -49,7 +50,7 @@ fn create_a_token() {
     let symbol = "DIV".into_val(&client.env);
     let name = "Deep Ink Ventures".into_val(&client.env);
     let address = Address::random(&client.env);
-    let governance_id = &core_client.contract_id;
+    let governance_id = &core_client.address;
     client.init(&symbol, &name, &address, &governance_id);
 
     assert_eq!(symbol, client.symbol());
@@ -100,10 +101,10 @@ fn set_governance_id() {
     create_token(&client, &core_client);
     let owner = client.owner();
 
-    client.set_governance_id(&owner, &client.contract_id);
+    client.set_governance_id(&owner, &client.address);
     let new_id = client.governance_id();
 
-    assert_eq!(&client.contract_id, &new_id);
+    assert_eq!(&client.address, &new_id);
 }
 
 #[test]
@@ -112,7 +113,7 @@ fn set_governance_id_auth() {
     let (client, core_client, __) = create_all_clients();
     create_token(&client, &core_client);
     let address = Address::random(&client.env);
-    client.set_governance_id(&address, &client.contract_id);
+    client.set_governance_id(&address, &client.address);
 }
 
 #[test]

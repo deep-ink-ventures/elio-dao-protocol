@@ -1,5 +1,6 @@
-use soroban_sdk::{contracttype, Address, Bytes, BytesN, Env, IntoVal, Symbol};
-use crate::events::{ASSET, CREATED, AssetEventData};
+use soroban_sdk::{contracttype, log, Address, Bytes, BytesN, Env, IntoVal, Symbol};
+
+use crate::events::{AssetEventData, ASSET, CREATED};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -60,33 +61,47 @@ impl Dao {
 
     /// +++ Member functions +
 
-    pub fn issue_token(self, env: &Env, assets_wasm_hash: BytesN<32>, asset_salt: Bytes) {
+    pub fn issue_token(self, env: &Env, assets_wasm_hash: BytesN<32>, asset_salt: BytesN<32>) {
         let key = DaoArtifact::Asset(self.id.clone());
+
+        log!(env, "checking storage");
         if env.storage().has(&key) {
             panic!("asset already issued")
         }
+
+        log!(env, "deploying assets contract");
         let asset_id = env
             .deployer()
             .with_current_contract(&asset_salt)
             .deploy(&assets_wasm_hash);
+
+        log!(env, "storing asset id");
         env.storage().set(&key, &asset_id);
 
         let init_fn = Symbol::short("init");
+
         let init_args = (
             self.id.clone(),
             self.name,
             self.owner.clone(),
-            env.current_contract_id(),
+            env.current_contract_address(),
         )
             .into_val(env);
+        log!(env, "calling init function");
         env.invoke_contract::<()>(&asset_id, &init_fn, init_args);
+
+        log!(env, "publishing event");
         env.events().publish(
             (ASSET, CREATED, self.id.clone()),
-            AssetEventData {dao_id: self.id, asset_id: asset_id.into(), owner_id: self.owner}
+            AssetEventData {
+                dao_id: self.id,
+                asset_id,
+                owner_id: self.owner,
+            },
         );
     }
 
-    pub fn get_asset_id(&self, env: &Env) -> BytesN<32> {
+    pub fn get_asset_id(&self, env: &Env) -> Address {
         let key = DaoArtifact::Asset(self.id.clone());
         if !env.storage().has(&key) {
             panic!("asset not issued")

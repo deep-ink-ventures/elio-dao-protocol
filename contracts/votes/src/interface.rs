@@ -1,11 +1,11 @@
-use soroban_sdk::{Address, Bytes, BytesN, Env, Vec};
+use soroban_sdk::{Address, Bytes, Env, Vec};
 
 use crate::types::{ActiveProposal, Metadata, Proposal, ProposalId};
 
 pub trait VotesTrait {
-    fn init(env: Env, core_id: BytesN<32>);
+    fn init(env: Env, core_id: Address);
 
-    fn get_core_id(env: Env) -> BytesN<32>;
+    fn get_core_id(env: Env) -> Address;
 
     fn create_proposal(env: Env, dao_id: Bytes, proposal_owner: Address) -> ProposalId;
 

@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Bytes, BytesN, Env, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, Env, Vec};
 
 use crate::{core_contract, votes_contract};
 
@@ -133,7 +133,7 @@ impl Token {
         env.storage().get_unchecked(&Token::Owner).unwrap()
     }
 
-    pub fn get_governance_id(env: &Env) -> BytesN<32> {
+    pub fn get_governance_id(env: &Env) -> Address {
         env.storage().get_unchecked(&Token::GovernanceId).unwrap()
     }
 
@@ -143,7 +143,7 @@ impl Token {
         symbol: &Bytes,
         name: &Bytes,
         owner: &Address,
-        governance_id: &BytesN<32>,
+        governance_id: &Address,
     ) {
         if env.storage().has(&Token::Symbol) {
             panic!("DAO already issued a token")
@@ -159,7 +159,7 @@ impl Token {
         env.storage().set(&Token::Owner, &new_owner);
     }
 
-    pub fn set_governance_id(env: &Env, owner: &Address, governance_id: &BytesN<32>) {
+    pub fn set_governance_id(env: &Env, owner: &Address, governance_id: &Address) {
         Token::check_auth(env, owner);
         env.storage().set(&Token::GovernanceId, governance_id);
     }
