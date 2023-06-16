@@ -6,10 +6,6 @@ mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
 }
 
-mod assets_contract {
-    soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
-}
-
 #[cfg(test)]
 mod test;
 
@@ -82,9 +78,8 @@ impl VotesTrait for VotesContract {
 
         log!(&env, "getting DAO token");
         let asset_id = core.get_dao_asset_id(&dao_id);
-        let asset = assets_contract::Client::new(&env, &asset_id);
 
-        Proposal::vote(&env, dao_id, proposal_id, in_favor, voter, asset);
+        Proposal::vote(&env, dao_id, proposal_id, in_favor, voter, asset_id);
     }
 
     fn fault_proposal(
@@ -117,12 +112,12 @@ impl VotesTrait for VotesContract {
 fn verify_dao_owner(env: &Env, dao_id: &Bytes, dao_owner: Address, core_id: Address) {
     dao_owner.require_auth();
 
-    let core = core_contract::Client::new(&env, &core_id);
+    let core = core_contract::Client::new(env, &core_id);
 
-    log!(&env, "getting DAO");
+    log!(env, "getting DAO");
     let dao = core.get_dao(dao_id);
 
-    log!(&env, "verifying DAO owner");
+    log!(env, "verifying DAO owner");
     if dao_owner != dao.owner {
         panic!("not the DAO owner");
     }
