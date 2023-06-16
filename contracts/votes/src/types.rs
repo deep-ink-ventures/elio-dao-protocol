@@ -1,6 +1,4 @@
-use soroban_sdk::{contracttype, log, Address, Bytes, Env, Symbol, Vec};
-
-use crate::assets_contract;
+use soroban_sdk::{contracttype, log, Address, Bytes, Env, IntoVal, Symbol, Vec};
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -107,21 +105,26 @@ impl Proposal {
         proposal_id: ProposalId,
         in_favor: bool,
         voter: Address,
-        asset: assets_contract::Client,
+        asset_id: Address,
     ) {
         let key = ActiveKey(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
             if p.id == proposal_id {
-                log!(&env, "getting voting power");
-                let voting_power = asset.get_balance_at(&voter, &p.inner.ledger);
+                log!(env, "getting voting power");
+                // let voting_power = asset.get_balance_at(&voter, &p.inner.ledger);
+                let voting_power: i128 = env.invoke_contract(
+                    &asset_id,
+                    &Symbol::new(env, "get_balance_at"),
+                    (voter, p.inner.ledger).into_val(env),
+                );
 
                 if in_favor {
                     p.in_favor += voting_power;
                 } else {
                     p.against += voting_power;
                 }
-                log!(&env, "updating proposal votes");
+                log!(env, "updating proposal votes");
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
                 return;
@@ -137,7 +140,7 @@ impl Proposal {
             if p.id == proposal_id {
                 p.inner.status = PropStatus::Faulty(reason);
 
-                log!(&env, "updating proposal");
+                log!(env, "updating proposal");
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
                 return;
@@ -163,10 +166,10 @@ impl Proposal {
                     PropStatus::Rejected
                 };
 
-                log!(&env, "archiving proposal");
+                log!(env, "archiving proposal");
                 env.storage().set(&ArchiveKey(proposal_id), &p.inner);
 
-                log!(&env, "updating proposal");
+                log!(env, "updating proposal");
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
 

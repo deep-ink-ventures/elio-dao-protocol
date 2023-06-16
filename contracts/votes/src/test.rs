@@ -7,10 +7,14 @@ use soroban_sdk::{
 };
 
 use crate::{
-    assets_contract, core_contract,
+    core_contract,
     types::{PropStatus, FINALIZATION_DURATION, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
     VotesContract, VotesContractClient,
 };
+
+mod assets_contract {
+    soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
+}
 
 fn create_clients() -> (core_contract::Client<'static>, VotesContractClient<'static>) {
     let env = Env::default();

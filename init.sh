@@ -1,22 +1,11 @@
 #!/bin/sh
 
-PROFILE="release"
-#PROFILE="release-with-logs"
+DIR="$(dirname "$0")"
 
-printf "> Compiling core contract (${PROFILE})...\n"
-pushd contracts/core
-cargo build --target wasm32-unknown-unknown --profile ${PROFILE} &&
-	cp target/wasm32-unknown-unknown/${PROFILE}/elio_core.wasm ../../wasm
-popd > /dev/zero
+mkdir -p "${DIR}"/wasm/
 
-printf "> Compiling votes contract (${PROFILE})...\n"
-pushd contracts/votes
-cargo build --target wasm32-unknown-unknown --profile ${PROFILE} &&
-	cp target/wasm32-unknown-unknown/${PROFILE}/elio_votes.wasm ../../wasm
-popd > /dev/zero
-
-printf "> Compiling asset contract (${PROFILE})...\n"
-pushd contracts/assets
-cargo build --target wasm32-unknown-unknown --profile ${PROFILE} &&
-	cp target/wasm32-unknown-unknown/${PROFILE}/elio_assets.wasm ../../wasm
-popd > /dev/zero
+for CRATE in core votes assets; do
+	printf "> Compiling ${CRATE} contract...\n"
+	cargo build -p elio-${CRATE} --target wasm32-unknown-unknown --release &&
+		cp "${DIR}"/target/wasm32-unknown-unknown/release/elio_${CRATE}.wasm "${DIR}"/wasm/
+done

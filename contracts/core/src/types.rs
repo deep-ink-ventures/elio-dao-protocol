@@ -27,7 +27,7 @@ pub enum DaoArtifact {
 impl Dao {
     /// Create a new dao for the owner
     pub fn create(env: &Env, id: Bytes, name: Bytes, owner: Address) -> Self {
-        if Self::exists(&env, &id) {
+        if Self::exists(env, &id) {
             panic!("DAO already exists")
         }
         let dao = Dao { id, name, owner };
@@ -47,7 +47,7 @@ impl Dao {
     pub fn load_for_owner(env: &Env, id: &Bytes, owner: &Address) -> Self {
         owner.require_auth();
 
-        let dao = Self::load(&env, id);
+        let dao = Self::load(env, id);
         if owner != &dao.owner {
             panic!("Address not DAO Owner")
         }
