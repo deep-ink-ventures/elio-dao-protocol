@@ -8,115 +8,166 @@ mod assets_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
 }
 
-use soroban_sdk::{log, testutils::Address as _, Address, BytesN, Env, IntoVal};
+use soroban_sdk::{log, testutils::Address as _, token, Address, BytesN, Env, IntoVal};
 
 use crate::{types::Dao, CoreContract, CoreContractClient};
 
-fn create_client() -> CoreContractClient<'static> {
-    let env = Env::default();
-    env.mock_all_auths();
-    let contract_id = env.register_contract(None, CoreContract);
-    let votes_id = env.register_contract_wasm(None, votes_contract::WASM);
-
-    let client = CoreContractClient::new(&env, &contract_id);
-
-    client.init(&votes_id);
-
-    client
+struct Clients {
+    core: CoreContractClient<'static>,
+    native_asset: token::Client<'static>,
 }
 
-fn create_dao(client: &CoreContractClient) -> Dao {
-    let env = &client.env;
+fn create_clients() -> Clients {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let core_id = env.register_contract(None, CoreContract);
+    let votes_id = env.register_contract_wasm(None, votes_contract::WASM);
+
+    let core = CoreContractClient::new(&env, &core_id);
+
+    let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
+    let native_asset = token::Client::new(&env, &native_asset_id);
+
+    core.init(&votes_id, &native_asset_id);
+
+    Clients { core, native_asset }
+}
+
+fn create_dao(core: &CoreContractClient<'static>, dao_owner: &Address) -> Dao {
+    let env = &core.env;
+
     let id = "DIV".into_val(env);
     let name = "Deep Ink Ventures".into_val(env);
-    let owner = Address::random(env);
-    log!(env, "creating DAO");
-    client.create_dao(&id, &name, &owner)
+
+    core.create_dao(&id, &name, &dao_owner)
+}
+
+fn mint_and_create_dao(clients: &Clients, dao_owner: &Address) -> Dao {
+    clients.native_asset.mint(&dao_owner, &i128::MAX);
+    create_dao(&clients.core, &dao_owner)
 }
 
 #[test]
 #[should_panic(expected = "Already initialized")]
 fn cannot_initialize_twice() {
-    let client = create_client();
-    let fake_id = Address::random(&client.env);
-    client.init(&fake_id);
+    let core = create_clients().core;
+    let fake_id = Address::random(&core.env);
+    core.init(&fake_id, &fake_id);
 }
 
 #[test]
 fn create_a_dao() {
-    let client = create_client();
+    let clients = create_clients();
 
-    let id = "DIV".into_val(&client.env);
-    let name = "Deep Ink Ventures".into_val(&client.env);
-    let owner = Address::random(&client.env);
-    client.create_dao(&id, &name, &owner);
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
+    clients.native_asset.mint(&user, &i128::MAX);
 
-    let dao = client.get_dao(&"DIV".into_val(&client.env));
+    let id = "DIV".into_val(env);
+    let name = "Deep Ink Ventures".into_val(env);
+
+    let balance_before = clients.native_asset.balance(&user);
+    core.create_dao(&id, &name, &user);
+    let balance_after = clients.native_asset.balance(&user);
+    assert!(balance_after < balance_before);
+
+    let dao = core.get_dao(&"DIV".into_val(env));
     assert_eq!(dao.id, id);
     assert_eq!(dao.name, name);
-    assert_eq!(dao.owner, owner);
+    assert_eq!(dao.owner, user);
+}
+
+#[test]
+#[should_panic(expected = "balance is not sufficient to spend")]
+fn cannot_create_a_dao_without_funds() {
+    let core = create_clients().core;
+
+    create_dao(&core, &Address::random(&core.env));
 }
 
 #[test]
 #[should_panic(expected = "DAO already exists")]
 fn cannot_create_a_dao_twice() {
-    let client = create_client();
-    create_dao(&client);
-    create_dao(&client);
+    let clients = create_clients();
+    let core = &clients.core;
+    let user = Address::random(&core.env);
+
+    mint_and_create_dao(&clients, &user);
+    create_dao(&core, &user);
 }
 
 #[test]
 #[should_panic(expected = "DAO does not exist")]
 fn destroy_a_dao() {
-    let client = create_client();
+    let clients = create_clients();
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
 
-    let dao = create_dao(&client);
+    let dao = mint_and_create_dao(&clients, &user);
+    let balance_before = clients.native_asset.balance(&user);
+    core.destroy_dao(&dao.id, &user);
+    let balance_after = clients.native_asset.balance(&user);
+    assert!(balance_after > balance_before);
 
-    client.destroy_dao(&dao.id, &dao.owner);
-    client.get_dao(&dao.id);
+    core.get_dao(&dao.id);
 }
 
 #[test]
 #[should_panic(expected = "Address not DAO Owner")]
 fn destroy_a_dao_only_as_owner() {
-    let client = create_client();
+    let clients = create_clients();
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
 
-    let dao = create_dao(&client);
-    client.destroy_dao(&dao.id, &Address::random(&client.env));
+    let dao = mint_and_create_dao(&clients, &user);
+    core.destroy_dao(&dao.id, &Address::random(env));
 }
 
 #[test]
 fn change_dao_owner() {
-    let client = create_client();
-    let new_owner = Address::random(&client.env);
-    let dao = create_dao(&client);
+    let clients = create_clients();
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &user);
 
-    let dao = client.change_owner(&dao.id, &new_owner, &dao.owner);
-    assert_eq!(client.get_dao(&dao.id).owner, new_owner);
+    let new_owner = Address::random(&core.env);
+    core.change_owner(&dao.id, &new_owner, &dao.owner);
+    assert_eq!(core.get_dao(&dao.id).owner, new_owner);
 }
 
 #[test]
 #[should_panic(expected = "Address not DAO Owner")]
 fn change_dao_owner_only_as_owner() {
-    let client = create_client();
-    let new_owner = Address::random(&client.env);
-    let dao = create_dao(&client);
+    let clients = create_clients();
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &user);
 
-    client.change_owner(&dao.id, &new_owner, &new_owner);
+    let new_owner = Address::random(&core.env);
+    core.change_owner(&dao.id, &new_owner, &new_owner);
 }
 
 #[test]
 fn set_metadata() {
-    let client = create_client();
-    let dao = create_dao(&client);
+    let clients = create_clients();
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &user);
 
-    let url = "https://deep-ink.ventures".into_val(&client.env);
+    let url = "https://deep-ink.ventures".into_val(&core.env);
     let hash =
-        "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
+        "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&core.env);
 
-    client.set_metadata(&dao.id, &url, &hash, &dao.owner);
+    core.set_metadata(&dao.id, &url, &hash, &dao.owner);
 
-    let meta = client.get_metadata(&dao.id);
+    let meta = core.get_metadata(&dao.id);
     assert_eq!(meta.url, url);
     assert_eq!(meta.hash, hash);
 }
@@ -124,73 +175,88 @@ fn set_metadata() {
 #[test]
 #[should_panic(expected = "Address not DAO Owner")]
 fn set_metadata_only_owner() {
-    let client = create_client();
-    let dao = create_dao(&client);
-    let whoever = Address::random(&client.env);
+    let clients = create_clients();
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &user);
 
-    let url = "https://deep-ink.ventures".into_val(&client.env);
+    let url = "https://deep-ink.ventures".into_val(&core.env);
     let hash =
-        "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&client.env);
+        "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(&core.env);
 
-    client.set_metadata(&dao.id, &url, &hash, &whoever);
+    let whoever = Address::random(&core.env);
+    core.set_metadata(&dao.id, &url, &hash, &whoever);
 }
 
 #[test]
 #[should_panic(expected = "metadata does not exist")]
 fn non_existing_meta_panics() {
-    let client = create_client();
-    let dao = create_dao(&client);
+    let clients = create_clients();
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &user);
 
-    client.get_metadata(&dao.id);
+    core.get_metadata(&dao.id);
 }
 
 #[test]
 fn issue_token_once() {
-    let client = create_client();
-    let env = &client.env;
+    let clients = create_clients();
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &user);
 
     log!(env, "installing assets contract WASM");
     let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
 
-    let salt = BytesN::from_array(env, &[0; 32]);
-    let dao = create_dao(&client);
-
     log!(env, "issuing token");
-    client.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt);
+    let salt = BytesN::from_array(env, &[0; 32]);
+    core.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt);
 
     log!(env, "getting DAO asset id");
-    let asset_id = client.get_dao_asset_id(&dao.id);
-    let asset_client = assets_contract::Client::new(env, &asset_id);
-    assert_eq!(dao.id, asset_client.symbol());
-    assert_eq!(dao.name, asset_client.name());
-    assert_eq!(dao.owner, asset_client.owner());
-    assert_eq!(client.address, asset_client.governance_id());
+    let asset_id = core.get_dao_asset_id(&dao.id);
+    let asset_core = assets_contract::Client::new(env, &asset_id);
+    assert_eq!(dao.id, asset_core.symbol());
+    assert_eq!(dao.name, asset_core.name());
+    assert_eq!(dao.owner, asset_core.owner());
+    assert_eq!(core.address, asset_core.governance_id());
 
     log!(env, "minting token");
     let supply = 1_000_000;
-    asset_client.mint(&dao.owner, &supply);
-    assert_eq!(supply, asset_client.balance(&dao.owner));
+    asset_core.mint(&dao.owner, &supply);
+    assert_eq!(supply, asset_core.balance(&dao.owner));
 }
 
 #[test]
 #[should_panic(expected = "asset already issued")]
 
 fn cannot_issue_token_twice() {
-    let client = create_client();
+    let clients = create_clients();
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &user);
 
-    let assets_wasm_hash = &client.env.install_contract_wasm(assets_contract::WASM);
-    let dao = create_dao(&client);
+    log!(env, "installing assets contract WASM");
+    let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
 
-    let salt = BytesN::from_array(&client.env, &[0; 32]);
-    let salt2 = BytesN::from_array(&client.env, &[1; 32]);
-    client.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt);
-    client.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt2);
+    log!(env, "issuing token twice");
+    let salt = BytesN::from_array(&core.env, &[0; 32]);
+    let salt2 = BytesN::from_array(&core.env, &[1; 32]);
+    core.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt);
+    core.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt2);
 }
 
 #[test]
 #[should_panic(expected = "asset not issued")]
 fn cannot_get_asset_id_if_non_existing() {
-    let client = create_client();
-    let dao = create_dao(&client);
-    client.get_dao_asset_id(&dao.id);
+    let clients = create_clients();
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &user);
+    core.get_dao_asset_id(&dao.id);
 }

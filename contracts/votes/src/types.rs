@@ -4,6 +4,12 @@ use soroban_sdk::{contracttype, log, Address, Bytes, Env, IntoVal, Symbol, Vec};
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ProposalId(u32);
 
+impl ProposalId {
+    pub fn new(id: u32) -> Self {
+        Self(id)
+    }
+}
+
 #[contracttype]
 struct ActiveKey(Bytes);
 

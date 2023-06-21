@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Bytes, Env, Vec};
+use soroban_sdk::{contracttype, log, Address, Bytes, Env, Vec};
 
 use crate::{core_contract, votes_contract};
 
@@ -14,7 +14,7 @@ pub struct Allowances {
 pub enum Token {
     Allowance(Allowances),
     Balance(Address),
-    Nonce(Address),
+    Nonce(Address), // unused?
     Name,
     Symbol,
     Owner,
@@ -39,7 +39,7 @@ impl Token {
     }
 
     pub fn get_checkpoint_at(env: &Env, id: Address, i: u32) -> Checkpoint {
-        let checkpoints = Token::get_checkpoints(env, id);
+        let checkpoints = Self::get_checkpoints(env, id);
         if checkpoints.len() <= i {
             panic!("Checkpoint index error");
         }
@@ -49,8 +49,15 @@ impl Token {
     /// Returns the closest checkpoint at or BEFORE a given sequence
     pub fn get_checkpoint_for_sequence(env: &Env, id: Address, sequence: u32) -> Checkpoint {
         let checkpoints = Token::get_checkpoints(env, id);
+        log!(
+            env,
+            "checkpoints: {}, len: {}",
+            checkpoints,
+            checkpoints.len()
+        );
         let mut cp_candidate = checkpoints.first_unchecked().unwrap();
 
+        log!(env, "inner loop");
         for checkpoint in checkpoints.iter_unchecked() {
             if checkpoint.ledger > sequence {
                 break;
@@ -75,27 +82,34 @@ impl Token {
     pub fn write_checkpoint(env: &Env, id: Address) {
         let key = Self::Checkpoints(id.clone());
 
-        let governance_id = Token::get_governance_id(env);
+        log!(env, "getting governance");
+        let governance_id = Self::get_governance_id(env);
+
         let core_contract = core_contract::Client::new(env, &governance_id);
+        log!(env, "getting voting contract id");
         let vote_id = core_contract.get_votes_id();
         let votes_contract = votes_contract::Client::new(env, &vote_id);
 
-        let active_proposals = votes_contract.get_active_proposals(&Token::get_symbol(env));
+        log!(env, "getting active props");
+        let active_proposals = votes_contract.get_active_proposals(&Self::get_symbol(env));
 
-        let mut filtered_checkpoints: Vec<Checkpoint> = Vec::new(env);
+        let mut filtered_checkpoints: Vec<Checkpoint> = Self::get_checkpoints(env, id.clone()); //Vec::new(env);
 
-        for proposal in active_proposals.iter_unchecked() {
-            filtered_checkpoints.push_back(Token::get_checkpoint_for_sequence(
-                env,
-                id.clone(),
-                proposal.inner.ledger,
-            ));
-        }
+        // log!(env, "looping");
+        // for proposal in active_proposals.iter_unchecked() {
+        //     filtered_checkpoints.push_back(Self::get_checkpoint_for_sequence(
+        //         env,
+        //         id.clone(),
+        //         proposal.inner.ledger,
+        //     ));
+        // }
 
+        log!(env, "new checkpoint");
         filtered_checkpoints.push_back(Checkpoint {
             balance: Token::read_balance(env, id),
             ledger: env.ledger().sequence(),
         });
+        log!(env, "storing checkpoints");
         env.storage().set(&key, &filtered_checkpoints);
     }
 
@@ -130,6 +144,7 @@ impl Token {
     }
 
     pub fn get_owner(env: &Env) -> Address {
+        log!(env, "getting token owner");
         env.storage().get_unchecked(&Token::Owner).unwrap()
     }
 
@@ -167,6 +182,7 @@ impl Token {
     pub fn write_balance(env: &Env, addr: Address, amount: i128) {
         let key = Token::Balance(addr.clone());
         env.storage().set(&key, &amount);
+        log!(env, "writing checkpoint");
         Token::write_checkpoint(env, addr);
     }
 
@@ -180,6 +196,7 @@ impl Token {
     }
 
     pub fn check_auth(env: &Env, owner: &Address) {
+        log!(env, "checking token owner");
         owner.require_auth();
         if owner != &Token::get_owner(env) {
             panic!("not Token owner")

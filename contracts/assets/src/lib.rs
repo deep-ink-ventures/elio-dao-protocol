@@ -4,7 +4,7 @@ use events::{
     AssetMintedEventData, AssetNewOwnerEventData, AssetSetGovernanceIDEventData,
     AssetTransferredEventData, ASSET, GOVERNANCE_ID_CHANGED, MINTED, OWNER_CHANGED, TRANSFERRED,
 };
-use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol};
+use soroban_sdk::{contractimpl, log, Address, Bytes, Env, Symbol};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -40,7 +40,9 @@ impl AssetTrait for AssetContract {
     }
 
     fn mint(env: Env, owner: Address, supply: i128) {
+        log!(env, "minting DAO token");
         Token::check_auth(&env, &owner);
+        log!(env, "writing balance");
         Token::write_balance(&env, owner.clone(), supply.clone());
         env.events().publish(
             (ASSET, MINTED, Token::get_symbol(&env)),

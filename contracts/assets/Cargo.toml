@@ -8,6 +8,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 soroban-sdk = { workspace = true }
+#elio-core = { path = "../core/", artifact = "cdylib", target = "wasm32-unknown-unknown"}
+#elio-votes = { path = "../votes/", artifact = "cdylib", target = "wasm32-unknown-unknown"}
 
 [dev_dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }

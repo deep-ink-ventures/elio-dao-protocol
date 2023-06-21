@@ -13,6 +13,7 @@ mod types;
 
 mod interface;
 
+use core_contract::Client as CoreContractClient;
 use interface::VotesTrait;
 use types::{ActiveProposal, Metadata, Proposal, ProposalId};
 
@@ -35,6 +36,13 @@ impl VotesTrait for VotesContract {
     }
 
     fn create_proposal(env: Env, dao_id: Bytes, owner: Address) -> ProposalId {
+        let core_id = Self::get_core_id(env.clone());
+        let core = CoreContractClient::new(&env, &core_id);
+
+        // check that DAO exists
+        let _ = core.get_dao(&dao_id);
+
+        log!(env, "creating proposal");
         Proposal::create(&env, dao_id, owner)
     }
 
