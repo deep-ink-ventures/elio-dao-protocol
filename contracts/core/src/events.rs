@@ -1,7 +1,7 @@
 use soroban_sdk::{contracttype, Address, Bytes, Symbol};
 
-pub const ASSET: Symbol = Symbol::short("ASSET");
 pub const DAO: Symbol = Symbol::short("DAO");
+pub const ASSET: Symbol = Symbol::short("ASSET");
 pub const VOTES: Symbol = Symbol::short("VOTES");
 
 pub const CREATED: Symbol = Symbol::short("created");
@@ -42,8 +42,9 @@ pub struct DaoOwnerChangedEventData {
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct AssetEventData {
+pub struct AssetCreatedEventData {
     pub dao_id: Bytes,
     pub asset_id: Address,
     pub owner_id: Address,
+    pub governance_id: Address,
 }

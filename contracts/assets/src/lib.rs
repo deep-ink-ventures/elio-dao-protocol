@@ -1,5 +1,9 @@
 #![no_std]
 
+use events::{
+    AssetMintedEventData, AssetNewOwnerEventData, AssetSetGovernanceIDEventData,
+    AssetTransferredEventData, ASSET, GOVERNANCE_ID_CHANGED, MINTED, OWNER_CHANGED, TRANSFERRED,
+};
 use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol};
 
 mod core_contract {
@@ -12,6 +16,8 @@ mod votes_contract {
 
 #[cfg(test)]
 mod test;
+
+mod events;
 
 mod interface;
 use interface::AssetTrait;
@@ -31,21 +37,28 @@ fn check_non_negative_amount(amount: i128) {
 impl AssetTrait for AssetContract {
     fn init(env: Env, symbol: Bytes, name: Bytes, owner: Address, governance_id: Address) {
         Token::create(&env, &symbol, &name, &owner, &governance_id);
-        env.events()
-            .publish((Symbol::short("created"), owner), symbol);
     }
 
     fn mint(env: Env, owner: Address, supply: i128) {
         Token::check_auth(&env, &owner);
-        Token::write_balance(&env, owner.clone(), supply);
+        Token::write_balance(&env, owner.clone(), supply.clone());
         env.events().publish(
-            (Symbol::short("minted"), owner, Token::get_symbol(&env)),
-            supply,
+            (ASSET, MINTED, Token::get_symbol(&env)),
+            AssetMintedEventData {
+                owner_id: owner,
+                amount: supply,
+            },
         );
     }
 
     fn set_owner(env: Env, owner: Address, new_owner: Address) {
         Token::set_owner(&env, &owner, &new_owner);
+        env.events().publish(
+            (ASSET, OWNER_CHANGED, Token::get_symbol(&env)),
+            AssetNewOwnerEventData {
+                new_owner_id: new_owner,
+            },
+        );
     }
 
     fn owner(env: Env) -> Address {
@@ -54,6 +67,10 @@ impl AssetTrait for AssetContract {
 
     fn set_governance_id(env: Env, owner: Address, governance_id: Address) {
         Token::set_governance_id(&env, &owner, &governance_id);
+        env.events().publish(
+            (ASSET, GOVERNANCE_ID_CHANGED, Token::get_symbol(&env)),
+            AssetSetGovernanceIDEventData { governance_id },
+        );
     }
 
     fn governance_id(env: Env) -> Address {
@@ -99,8 +116,14 @@ impl AssetTrait for AssetContract {
         check_non_negative_amount(amount);
         Token::spend_balance(&env, from.clone(), amount);
         Token::receive_balance(&env, to.clone(), amount);
-        env.events()
-            .publish((Symbol::new(&env, "transfer"), from, to), amount)
+        env.events().publish(
+            (ASSET, TRANSFERRED, Token::get_symbol(&env)),
+            AssetTransferredEventData {
+                owner_id: from,
+                new_owner_id: to,
+                amount,
+            },
+        );
     }
 
     fn xfer_from(env: Env, spender: Address, from: Address, to: Address, amount: i128) {
@@ -110,8 +133,14 @@ impl AssetTrait for AssetContract {
         Token::spend_allowance(&env, from.clone(), spender, amount);
         Token::spend_balance(&env, from.clone(), amount);
         Token::receive_balance(&env, to.clone(), amount);
-        env.events()
-            .publish((Symbol::new(&env, "transfer"), from, to), amount)
+        env.events().publish(
+            (ASSET, TRANSFERRED, Token::get_symbol(&env)),
+            AssetTransferredEventData {
+                owner_id: from,
+                new_owner_id: to,
+                amount,
+            },
+        );
     }
 
     fn balance(env: Env, addr: Address) -> i128 {
