@@ -1,6 +1,6 @@
 use soroban_sdk::{contracttype, log, Address, Bytes, BytesN, Env, IntoVal, Symbol};
 
-use crate::events::{AssetEventData, ASSET, CREATED};
+use crate::events::{AssetCreatedEventData, ASSET, CREATED};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -80,11 +80,12 @@ impl Dao {
 
         let init_fn = Symbol::short("init");
 
+        let governance_id = env.current_contract_address();
         let init_args = (
             self.id.clone(),
             self.name,
             self.owner.clone(),
-            env.current_contract_address(),
+            governance_id.clone(),
         )
             .into_val(env);
         log!(env, "calling init function");
@@ -93,10 +94,11 @@ impl Dao {
         log!(env, "publishing event");
         env.events().publish(
             (ASSET, CREATED, self.id.clone()),
-            AssetEventData {
+            AssetCreatedEventData {
                 dao_id: self.id,
                 asset_id,
                 owner_id: self.owner,
+                governance_id,
             },
         );
     }
