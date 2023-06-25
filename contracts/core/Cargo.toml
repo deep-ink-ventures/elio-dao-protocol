@@ -11,6 +11,8 @@ soroban-sdk = { workspace = true }
 
 [dev_dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
+#elio-votes = { path = "../votes/", artifact = "cdylib", target = "wasm32-unknown-unknown"}
+#elio-assets = { path = "../assets/", artifact = "cdylib", target = "wasm32-unknown-unknown"}
 
 [features]
 testutils = ["soroban-sdk/testutils"]
