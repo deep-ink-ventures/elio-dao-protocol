@@ -1,7 +1,7 @@
 #![no_std]
 
 //use soroban_sdk::xdr::{Asset, Hash, HashIdPreimage, HashIdPreimageFromAsset, WriteXdr};
-use soroban_sdk::{contractimpl, log, token, Address, Bytes, BytesN, Env, Symbol};
+use soroban_sdk::{contractimpl, token, Address, Bytes, BytesN, Env, Symbol};
 
 mod test;
 
@@ -20,7 +20,7 @@ pub const NATIVE: Symbol = Symbol::short("NATIVE");
 
 pub struct CoreContract;
 
-const RESERVE_AMOUNT: i128 = 1;
+const RESERVE_AMOUNT: i128 = 100;
 
 #[contractimpl]
 impl CoreTrait for CoreContract {
@@ -31,6 +31,8 @@ impl CoreTrait for CoreContract {
 
         env.storage().set(&VOTES, &votes_id);
         env.storage().set(&NATIVE, &native_asset_id);
+
+        // todo: finalize asset integration
         //.unwrap_or_else(native_asset_contract_address));
 
         //.unwrap_or_else(|| {
@@ -49,16 +51,15 @@ impl CoreTrait for CoreContract {
     }
 
     fn create_dao(env: Env, dao_id: Bytes, dao_name: Bytes, dao_owner: Address) -> Dao {
-        log!(&env, "reserving native tokens");
-        let native_asset_id = env.storage().get_unchecked(&NATIVE).unwrap();
-        let native_token = token::Client::new(&env, &native_asset_id);
-        let contract = &env.current_contract_address();
-        native_token.transfer(&dao_owner, &contract, &RESERVE_AMOUNT);
 
-        log!(&env, "creating DAO");
+        // todo: finalize asset integration
+        // let native_asset_id = env.storage().get_unchecked(&NATIVE).unwrap();
+        // let native_token = token::Client::new(&env, &native_asset_id);
+        // let contract = &env.current_contract_address();
+        // native_token.transfer(&dao_owner, &contract, &RESERVE_AMOUNT);
+
         let dao = Dao::create(&env, dao_id.clone(), dao_name.clone(), dao_owner.clone());
 
-        log!(&env, "publishing DAO CREATED event");
         env.events().publish(
             (DAO, CREATED),
             DaoCreatedEventData {
@@ -77,13 +78,12 @@ impl CoreTrait for CoreContract {
     fn destroy_dao(env: Env, dao_id: Bytes, dao_owner: Address) {
         Dao::load_for_owner(&env, &dao_id, &dao_owner).destroy(&env);
 
-        log!(&env, "releasing native token reserve");
-        let native_asset_id = env.storage().get_unchecked(&NATIVE).unwrap();
-        let native_token = token::Client::new(&env, &native_asset_id);
-        let contract = &env.current_contract_address();
-        native_token.transfer(&contract, &dao_owner, &RESERVE_AMOUNT);
+        // todo: finalize asset integration
+//        let native_asset_id = env.storage().get_unchecked(&NATIVE).unwrap();
+//        let native_token = token::Client::new(&env, &native_asset_id);
+//        let contract = &env.current_contract_address();
+//        native_token.transfer(&contract, &dao_owner, &RESERVE_AMOUNT);
 
-        log!(&env, "publishing DAO DESTROYED event");
         env.events()
             .publish((DAO, DESTROYED), DaoDestroyedEventData { dao_id });
     }
@@ -96,7 +96,6 @@ impl CoreTrait for CoreContract {
         asset_salt: BytesN<32>,
     ) {
         let dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
-        log!(env, "issuing DAO token");
         dao.issue_token(&env, assets_wasm_hash, asset_salt);
     }
 
@@ -140,6 +139,7 @@ impl CoreTrait for CoreContract {
     }
 }
 
+// todo: finalize asset integration
 // fn native_asset_contract_address() -> Address {
 //     let env = Env::default();
 //     let preimage_from_asset = HashIdPreimageFromAsset {
