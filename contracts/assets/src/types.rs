@@ -83,16 +83,15 @@ impl Token {
 
         let active_proposals = votes_contract.get_active_proposals(&Self::get_symbol(env));
 
-        let mut filtered_checkpoints: Vec<Checkpoint> = Self::get_checkpoints(env, id.clone()); //Vec::new(env);
+        let mut filtered_checkpoints: Vec<Checkpoint> = Vec::new(env);
 
-        // todo: finalize checkpoint filter
-        // for proposal in active_proposals.iter_unchecked() {
-        //     filtered_checkpoints.push_back(Self::get_checkpoint_for_sequence(
-        //         env,
-        //         id.clone(),
-        //         proposal.inner.ledger,
-        //     ));
-        // }
+         for proposal in active_proposals.iter_unchecked() {
+             filtered_checkpoints.push_back(Self::get_checkpoint_for_sequence(
+                 env,
+                 id.clone(),
+                 proposal.inner.ledger,
+             ));
+         }
 
         filtered_checkpoints.push_back(Checkpoint {
             balance: Token::read_balance(env, id),
