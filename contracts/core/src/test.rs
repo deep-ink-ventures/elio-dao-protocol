@@ -28,9 +28,7 @@ fn create_clients() -> Clients {
 
     let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
     let native_asset = token::Client::new(&env, &native_asset_id);
-
     core.init(&votes_id, &native_asset_id);
-
     Clients { core, native_asset }
 }
 

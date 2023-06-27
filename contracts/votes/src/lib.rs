@@ -35,14 +35,14 @@ impl VotesTrait for VotesContract {
         env.storage().get_unchecked(&CORE).unwrap()
     }
 
-    fn create_proposal(env: Env, dao_id: Bytes, owner: Address) -> ProposalId {
+    fn create_proposal(env: Env, dao_id: Bytes, proposal_owner: Address) -> ProposalId {
         let core_id = Self::get_core_id(env.clone());
         let core = CoreContractClient::new(&env, &core_id);
 
         // check that DAO exists
         let _ = core.get_dao(&dao_id);
 
-        Proposal::create(&env, dao_id, owner)
+        Proposal::create(&env, dao_id, proposal_owner)
     }
 
     fn set_metadata(
@@ -53,6 +53,7 @@ impl VotesTrait for VotesContract {
         hash: Bytes,
         proposal_owner: Address,
     ) {
+        // todo: this should only be set once
         Metadata::set(
             &env,
             dao_id,

@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, log, Address, Bytes, Env, IntoVal, Symbol, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec};
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -117,7 +117,6 @@ impl Proposal {
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
             if p.id == proposal_id {
-                log!(env, "getting voting power");
                 // let voting_power = asset.get_balance_at(&voter, &p.inner.ledger);
                 let voting_power: i128 = env.invoke_contract(
                     &asset_id,
@@ -130,7 +129,6 @@ impl Proposal {
                 } else {
                     p.against += voting_power;
                 }
-                log!(env, "updating proposal votes");
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
                 return;
@@ -146,7 +144,6 @@ impl Proposal {
             if p.id == proposal_id {
                 p.inner.status = PropStatus::Faulty(reason);
 
-                log!(env, "updating proposal");
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
                 return;
@@ -172,10 +169,8 @@ impl Proposal {
                     PropStatus::Rejected
                 };
 
-                log!(env, "archiving proposal");
                 env.storage().set(&ArchiveKey(proposal_id), &p.inner);
 
-                log!(env, "updating proposal");
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
 
