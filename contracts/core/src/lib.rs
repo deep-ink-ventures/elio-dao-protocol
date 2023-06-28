@@ -21,7 +21,9 @@ pub const NATIVE: Symbol = Symbol::short("NATIVE");
 
 pub struct CoreContract;
 
-const RESERVE_AMOUNT: i128 = 1000;
+const XLM: i128 = 10_000_000;
+const RESERVE_AMOUNT: i128 = 1000 * XLM;
+
 
 #[contractimpl]
 impl CoreTrait for CoreContract {

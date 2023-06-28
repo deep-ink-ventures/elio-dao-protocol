@@ -32,10 +32,7 @@ soroban contract install \
 )"
 export ASSETS_WASM_HASH
 
-printf "CORE ADDRESS: $CORE_ADDRESS"
-printf "VOTES ADDRESS: $VOTES_ADDRESS"
-printf "ASSETS WASM HASH: $ASSETS_WASM_HASH"
-
+printf "\n Initialising core ...\n"
 soroban contract invoke \
     --id "${CORE_ADDRESS}" \
     --source "${SECRET_KEY}" \
@@ -45,3 +42,7 @@ soroban contract invoke \
     init \
     --votes_id "${VOTES_ADDRESS}" \
     --native_asset_id "${STELLAR_ASSET_ID}"
+
+printf "\nCORE ADDRESS: $CORE_ADDRESS"
+printf "\nVOTES ADDRESS: $VOTES_ADDRESS"
+printf "\nASSETS WASM HASH: $ASSETS_WASM_HASH"
