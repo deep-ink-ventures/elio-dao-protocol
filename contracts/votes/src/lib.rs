@@ -47,7 +47,6 @@ impl VotesTrait for VotesContract {
         // check that DAO exists
         let _ = core.get_dao(&dao_id);
 
-        Proposal::create(&env, dao_id.clone(), proposal_owner.clone());
         let proposal_id = Proposal::create(&env, dao_id.clone(), proposal_owner.clone());
         env.events().publish(
             (PROPOSAL, CREATED),
