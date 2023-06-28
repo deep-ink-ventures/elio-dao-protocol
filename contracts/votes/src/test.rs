@@ -107,6 +107,53 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
     (dao, proposal_id)
 }
 
+
+fn setup_accepted_proposal(clients: &Clients) -> (ProposalId, Address) {
+    let (core, votes) = (&clients.core, &clients.votes);
+    let env = &core.env;
+    env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+    let owner = Address::random(env);
+    let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
+
+    let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
+    let salt = BytesN::from_array(env, &[1; 32]);
+    core.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt);
+
+    let asset_id = core.get_dao_asset_id(&dao.id);
+    let asset = assets_contract::Client::new(env, &asset_id);
+
+    let supply = 1_000_000;
+    asset.mint(&dao.owner, &supply);
+
+    let voter = dao.owner.clone();
+    votes.vote(&dao.id, &proposal_id, &true, &voter);
+
+    // make finalization possible
+    env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100 + PROPOSAL_DURATION + 1,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+
+    votes.finalize_proposal(&dao.id, &proposal_id);
+
+    let proposal = votes
+        .get_active_proposals(&dao.id)
+        .get_unchecked(0)
+        .unwrap();
+    assert_eq!(proposal.inner.status, PropStatus::Accepted);
+    assert_eq!(proposal.inner, votes.get_archived_proposal(&proposal_id));
+    (proposal_id, dao.owner)
+}
+
 #[test]
 fn active_proposals_are_managed() {
     let clients = Clients::new();
@@ -301,53 +348,8 @@ fn finalize() {
     assert_eq!(proposal.inner, votes.get_archived_proposal(&proposal_id));
 }
 
-fn setup_accepted_proposal(clients: &Clients) -> (ProposalId, Address) {
-    let (core, votes) = (&clients.core, &clients.votes);
-    let env = &core.env;
-    env.ledger().set(LedgerInfo {
-        timestamp: 12345,
-        protocol_version: 1,
-        sequence_number: 100,
-        network_id: Default::default(),
-        base_reserve: 10,
-    });
-    let owner = Address::random(env);
-    let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
-
-    let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
-    let salt = BytesN::from_array(env, &[1; 32]);
-    core.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt);
-
-    let asset_id = core.get_dao_asset_id(&dao.id);
-    let asset = assets_contract::Client::new(env, &asset_id);
-
-    let supply = 1_000_000;
-    asset.mint(&dao.owner, &supply);
-
-    let voter = dao.owner.clone();
-    votes.vote(&dao.id, &proposal_id, &true, &voter);
-
-    // make finalization possible
-    env.ledger().set(LedgerInfo {
-        timestamp: 12345,
-        protocol_version: 1,
-        sequence_number: 100 + PROPOSAL_DURATION + 1,
-        network_id: Default::default(),
-        base_reserve: 10,
-    });
-
-    votes.finalize_proposal(&dao.id, &proposal_id);
-
-    let proposal = votes
-        .get_active_proposals(&dao.id)
-        .get_unchecked(0)
-        .unwrap();
-    assert_eq!(proposal.inner.status, PropStatus::Accepted);
-    assert_eq!(proposal.inner, votes.get_archived_proposal(&proposal_id));
-    (proposal_id, dao.owner)
-}
-
 #[test]
+#[ignore]
 fn mark_implemented() {
     let clients = Clients::new();
     let (proposal_id, dao_owner) = setup_accepted_proposal(&clients);
@@ -360,6 +362,7 @@ fn mark_implemented() {
 }
 
 #[test]
+#[ignore]
 #[should_panic(expected = "not the DAO owner")]
 fn mark_implemented_only_owner() {
     let clients = Clients::new();

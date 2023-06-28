@@ -28,6 +28,7 @@ fn create_clients() -> Clients {
 
     let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
     let native_asset = token::Client::new(&env, &native_asset_id);
+
     core.init(&votes_id, &native_asset_id);
     Clients { core, native_asset }
 }
@@ -66,10 +67,10 @@ fn create_a_dao() {
     let id = "DIV".into_val(env);
     let name = "Deep Ink Ventures".into_val(env);
     // todo: finalize asset integration
-//    let balance_before = clients.native_asset.balance(&user);
+    let balance_before = clients.native_asset.balance(&user);
     core.create_dao(&id, &name, &user);
-//    let balance_after = clients.native_asset.balance(&user);
-//    assert!(balance_after < balance_before);
+    let balance_after = clients.native_asset.balance(&user);
+    assert!(balance_after < balance_before);
 
     let dao = core.get_dao(&"DIV".into_val(env));
     assert_eq!(dao.id, id);
@@ -106,11 +107,10 @@ fn destroy_a_dao() {
     let user = Address::random(env);
 
     let dao = mint_and_create_dao(&clients, &user);
-    // todo: finalize asset integration
-//    let balance_before = clients.native_asset.balance(&user);
+    let balance_before = clients.native_asset.balance(&user);
     core.destroy_dao(&dao.id, &user);
-//    let balance_after = clients.native_asset.balance(&user);
-//    assert!(balance_after > balance_before);
+    let balance_after = clients.native_asset.balance(&user);
+    assert!(balance_after > balance_before);
 
     core.get_dao(&dao.id);
 }
