@@ -44,4 +44,4 @@ soroban contract invoke \
     -- \
     init \
     --votes_id "${VOTES_ADDRESS}" \
-    --native_asset_id "${CORE_ADDRESS}"
+    --native_asset_id "${STELLAR_ASSET_ID}"
