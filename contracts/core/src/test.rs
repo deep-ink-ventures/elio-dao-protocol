@@ -87,7 +87,7 @@ fn cannot_create_a_dao_without_funds() {
 }
 
 #[test]
-#[should_panic(expected = "DAO already exists")]
+#[should_panic(expected = "Status(ContractError(1))")]
 fn cannot_create_a_dao_twice() {
     let clients = create_clients();
     let core = &clients.core;

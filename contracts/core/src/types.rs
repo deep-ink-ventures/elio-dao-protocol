@@ -1,6 +1,7 @@
-use soroban_sdk::{contracttype, Address, Bytes, BytesN, Env, IntoVal, Symbol};
+use soroban_sdk::{contracttype, Address, Bytes, BytesN, Env, IntoVal, Symbol, panic_with_error};
 
 use crate::events::{AssetCreatedEventData, ASSET, CREATED};
+use crate::error::CoreError;
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -28,7 +29,7 @@ impl Dao {
     /// Create a new dao for the owner
     pub fn create(env: &Env, id: Bytes, name: Bytes, owner: Address) -> Self {
         if Self::exists(env, &id) {
-            panic!("DAO already exists")
+            panic_with_error!(env, CoreError::DaoAlreadyExists)
         }
         let dao = Dao { id, name, owner };
         env.storage().set(&dao.id, &dao);

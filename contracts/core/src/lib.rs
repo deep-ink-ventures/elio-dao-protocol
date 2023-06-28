@@ -16,6 +16,8 @@ use interface::CoreTrait;
 mod types;
 use types::{Dao, Metadata};
 
+mod error;
+
 pub const NATIVE: Symbol = Symbol::short("NATIVE");
 
 pub struct CoreContract;
