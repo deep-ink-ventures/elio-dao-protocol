@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol, Vec};
+use soroban_sdk::{contractimpl, Address, Bytes, Env, Vec};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -13,14 +13,19 @@ mod types;
 
 mod interface;
 
+mod events;
+
 use core_contract::Client as CoreContractClient;
+use events::{
+    ProposalFaultedEventData, ProposalFinalizedEventData, ProposalMetadataSetEventData, CORE,
+    CREATED, FAULTED, FINALIZED, METADATA_SET, PROPOSAL,
+};
 use interface::VotesTrait;
 use types::{ActiveProposal, Metadata, Proposal, ProposalId};
 
-pub struct VotesContract;
+use crate::events::{ProposalCreatedEventData, VoteCastEventData, VOTE_CAST};
 
-const VOTES: Symbol = Symbol::short("VOTES");
-const CORE: Symbol = Symbol::short("CORE");
+pub struct VotesContract;
 
 #[contractimpl]
 impl VotesTrait for VotesContract {
@@ -42,7 +47,17 @@ impl VotesTrait for VotesContract {
         // check that DAO exists
         let _ = core.get_dao(&dao_id);
 
-        Proposal::create(&env, dao_id, proposal_owner)
+        Proposal::create(&env, dao_id.clone(), proposal_owner.clone());
+        let proposal_id = Proposal::create(&env, dao_id.clone(), proposal_owner.clone());
+        env.events().publish(
+            (PROPOSAL, CREATED),
+            ProposalCreatedEventData {
+                proposal_id,
+                dao_id,
+                owner_id: proposal_owner,
+            },
+        );
+        proposal_id
     }
 
     fn set_metadata(
@@ -62,8 +77,14 @@ impl VotesTrait for VotesContract {
             hash.clone(),
             proposal_owner,
         );
-        env.events()
-            .publish((VOTES, Symbol::short("meta_set")), (meta, hash));
+        env.events().publish(
+            (PROPOSAL, METADATA_SET),
+            ProposalMetadataSetEventData {
+                proposal_id,
+                url: meta,
+                hash,
+            },
+        );
     }
 
     fn get_metadata(env: Env, proposal_id: ProposalId) -> Metadata {
@@ -86,7 +107,15 @@ impl VotesTrait for VotesContract {
 
         let asset_id = core.get_dao_asset_id(&dao_id);
 
-        Proposal::vote(&env, dao_id, proposal_id, in_favor, voter, asset_id);
+        Proposal::vote(&env, dao_id, proposal_id, in_favor, voter.clone(), asset_id);
+        env.events().publish(
+            (PROPOSAL, VOTE_CAST),
+            VoteCastEventData {
+                proposal_id,
+                voter_id: voter,
+                in_favor,
+            },
+        );
     }
 
     fn fault_proposal(
@@ -99,11 +128,22 @@ impl VotesTrait for VotesContract {
         let core_id = Self::get_core_id(env.clone());
         verify_dao_owner(&env, &dao_id, dao_owner, core_id);
 
-        Proposal::set_faulty(&env, dao_id, proposal_id, reason)
+        Proposal::set_faulty(&env, dao_id, proposal_id, reason.clone());
+        env.events().publish(
+            (PROPOSAL, FAULTED),
+            ProposalFaultedEventData {
+                proposal_id,
+                reason,
+            },
+        );
     }
 
     fn finalize_proposal(env: Env, dao_id: Bytes, proposal_id: ProposalId) {
         Proposal::finalize(&env, dao_id, proposal_id);
+        env.events().publish(
+            (PROPOSAL, FINALIZED),
+            ProposalFinalizedEventData { proposal_id },
+        );
     }
 
     fn mark_implemented(env: Env, proposal_id: ProposalId, dao_owner: Address) {
