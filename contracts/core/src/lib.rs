@@ -7,8 +7,8 @@ mod test;
 mod events;
 mod interface;
 use events::{
-    DaoCreatedEventData, DaoDestroyedEventData, DaoMetadataSetEventData, DaoOwnerChangedEventData,
-    CREATED, DAO, DESTROYED, METADATA_SET, OWNER_CHANGED, VOTES,
+    AssetCreatedEventData, DaoCreatedEventData, DaoDestroyedEventData, DaoMetadataSetEventData, DaoOwnerChangedEventData,
+    ASSET, CREATED, DAO, DESTROYED, METADATA_SET, OWNER_CHANGED, VOTES,
 };
 use interface::CoreTrait;
 
@@ -85,7 +85,20 @@ impl CoreTrait for CoreContract {
         asset_salt: BytesN<32>,
     ) {
         let dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
-        dao.issue_token(&env, assets_wasm_hash, asset_salt);
+        dao.clone().issue_token(&env, assets_wasm_hash, asset_salt);
+
+        let asset_id = Self::get_dao_asset_id(env.clone(), dao_id);
+        let governance_id = env.current_contract_address();
+
+        env.events().publish(
+            (ASSET, CREATED, dao.id.clone()),
+            AssetCreatedEventData {
+                dao_id: dao.clone().id,
+                asset_id,
+                owner_id: dao.owner,
+                governance_id,
+            },
+        );
     }
 
     fn get_dao_asset_id(env: Env, dao_id: Bytes) -> Address {

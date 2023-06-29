@@ -1,6 +1,5 @@
 use soroban_sdk::{contracttype, Address, Bytes, BytesN, Env, IntoVal, Symbol, panic_with_error};
 
-use crate::events::{AssetCreatedEventData, ASSET, CREATED};
 use crate::error::CoreError;
 
 #[contracttype]
@@ -87,16 +86,6 @@ impl Dao {
         )
             .into_val(env);
         env.invoke_contract::<()>(&asset_id, &init_fn, init_args);
-
-        env.events().publish(
-            (ASSET, CREATED, self.id.clone()),
-            AssetCreatedEventData {
-                dao_id: self.id,
-                asset_id,
-                owner_id: self.owner,
-                governance_id,
-            },
-        );
     }
 
     pub fn get_asset_id(&self, env: &Env) -> Address {
