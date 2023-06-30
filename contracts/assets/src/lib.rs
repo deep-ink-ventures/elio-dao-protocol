@@ -40,8 +40,8 @@ impl AssetTrait for AssetContract {
     }
 
     fn mint(env: Env, owner: Address, supply: i128) {
-        // todo: this should only mint once
         Token::check_auth(&env, &owner);
+        Token::check_is_minted(&env, owner.clone());
         Token::write_balance(&env, owner.clone(), supply.clone());
         env.events().publish(
             (ASSET, MINTED, Token::get_symbol(&env)),
