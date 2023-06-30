@@ -10,6 +10,8 @@ use crate::{core_contract, votes_contract, AssetContract, AssetContractClient};
 const FINALIZATION_DURATION: u32 = 5_000;
 const PROPOSAL_DURATION: u32 = 10_000;
 
+const SUPPLY: i128 = 1_000_000;
+
 fn create_all_clients() -> (
     AssetContractClient<'static>,
     core_contract::Client<'static>,
@@ -39,10 +41,9 @@ fn create_token(client: &AssetContractClient, core_client: &core_contract::Clien
     let symbol = "DIV".into_val(&client.env);
     let name = "Deep Ink Ventures".into_val(&client.env);
     let address = Address::random(&client.env);
-    let supply = 1_000_000;
     let governance_id = &core_client.address;
     client.init(&symbol, &name, &address, &governance_id);
-    client.mint(&address, &supply);
+    client.mint(&address, &SUPPLY);
     address
 }
 
@@ -60,10 +61,9 @@ fn create_a_token() {
     assert_eq!(address, client.owner());
     assert_eq!(governance_id, &client.governance_id());
 
-    let supply = 1_000_000;
-    client.mint(&address, &supply);
+    client.mint(&address, &SUPPLY);
 
-    assert_eq!(supply, client.balance(&address));
+    assert_eq!(SUPPLY, client.balance(&address));
 }
 
 #[test]
@@ -79,8 +79,7 @@ fn create_a_token_only_once() {
 fn mint_only_once() {
     let (client, core_client, _) = create_all_clients();
     let address= create_token(&client, &core_client);
-    let supply = 1_000_000;
-    client.mint(&address, &supply);
+    client.mint(&address, &SUPPLY);
 }
 
 #[test]
