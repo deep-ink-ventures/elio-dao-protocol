@@ -1,6 +1,6 @@
 use soroban_sdk::{Address, Bytes, Env, Vec};
 
-use crate::types::{ActiveProposal, Metadata, Proposal, ProposalId};
+use crate::types::{ActiveProposal, Configuration, Metadata, Proposal, ProposalId, Voting};
 
 pub trait VotesTrait {
     fn init(env: Env, core_id: Address);
@@ -23,6 +23,18 @@ pub trait VotesTrait {
     fn get_active_proposals(env: Env, dao_id: Bytes) -> Vec<ActiveProposal>;
 
     fn get_archived_proposal(env: Env, id: ProposalId) -> Proposal;
+
+    fn set_configuration(
+        env: Env,
+        dao_id: Bytes,
+        proposal_id: ProposalId,
+        proposal_duration: u32,
+        proposal_token_deposit: u128,
+        voting: Voting,
+        proposal_owner: Address,
+    );
+
+    fn get_configuration(env: Env, proposal_id: ProposalId) -> Configuration;
 
     fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address);
 
