@@ -47,7 +47,6 @@ pub enum PropStatus {
 const PROP_ID: Symbol = Symbol::short("PROP_ID");
 
 pub const PROPOSAL_DURATION: u32 = 10_000;
-pub const FINALIZATION_DURATION: u32 = 5_000;
 pub const PROPOSAL_MAX_NR: u32 = 25;
 
 impl Proposal {
@@ -88,7 +87,7 @@ impl Proposal {
         let len = active_proposals.len();
         for proposal in active_proposals.into_iter_unchecked() {
             if env.ledger().sequence()
-                <= proposal.inner.ledger + PROPOSAL_DURATION + FINALIZATION_DURATION
+                <= proposal.inner.ledger + PROPOSAL_DURATION
             {
                 filtered_proposals.push_back(proposal);
             }

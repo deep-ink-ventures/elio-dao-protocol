@@ -7,7 +7,7 @@ use soroban_sdk::{
 
 use crate::{
     core_contract::{Client as CoreContractClient, Dao, WASM as CoreWASM},
-    types::{PropStatus, FINALIZATION_DURATION, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
+    types::{PropStatus, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
     ProposalId, VotesContract, VotesContractClient,
 };
 
@@ -197,7 +197,7 @@ fn active_proposals_are_managed() {
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
-        sequence_number: 100 + PROPOSAL_DURATION + FINALIZATION_DURATION + 1,
+        sequence_number: 100 + PROPOSAL_DURATION + 1,
         network_id: Default::default(),
         base_reserve: 10,
     });
@@ -340,12 +340,8 @@ fn finalize() {
 
     votes.finalize_proposal(&dao.id, &proposal_id);
 
-    let proposal = votes
-        .get_active_proposals(&dao.id)
-        .get_unchecked(0)
-        .unwrap();
-    assert_eq!(proposal.inner.status, PropStatus::Rejected);
-    assert_eq!(proposal.inner, votes.get_archived_proposal(&proposal_id));
+    let proposal = votes.get_archived_proposal(&proposal_id);
+    assert_eq!(proposal.status, PropStatus::Rejected);
 }
 
 #[test]
