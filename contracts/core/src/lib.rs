@@ -83,9 +83,9 @@ impl CoreTrait for CoreContract {
         dao_owner: Address,
         assets_wasm_hash: BytesN<32>,
         asset_salt: BytesN<32>,
-    ) {
+    ) -> Address {
         let dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
-        dao.issue_token(&env, assets_wasm_hash, asset_salt);
+        dao.issue_token(&env, assets_wasm_hash, asset_salt)
     }
 
     fn get_dao_asset_id(env: Env, dao_id: Bytes) -> Address {

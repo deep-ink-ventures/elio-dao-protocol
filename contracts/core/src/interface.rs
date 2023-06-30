@@ -40,7 +40,7 @@ pub trait CoreTrait {
     ///
     /// Tokens can only be issued once and the signer of this TX needs to be the owner
     /// of the DAO.
-    fn issue_token(env: Env, dao_id: Bytes, dao_owner: Address, assets_wasm_hash: BytesN<32>, asset_salt: BytesN<32>);
+    fn issue_token(env: Env, dao_id: Bytes, dao_owner: Address, assets_wasm_hash: BytesN<32>, asset_salt: BytesN<32>) -> Address;
 
     /// Returns the contract id of the dao asset (if exists).
     ///
