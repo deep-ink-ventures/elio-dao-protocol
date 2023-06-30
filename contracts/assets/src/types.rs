@@ -187,6 +187,12 @@ impl Token {
         }
     }
 
+    pub fn check_is_minted(env: &Env, owner: Address) {
+        if Token::get_checkpoints(env, owner).len() > 0 {
+            panic!("Token can only be minted once")
+        }
+    }
+
     pub fn spend_balance(env: &Env, addr: Address, amount: i128) {
         let balance = Token::read_balance(env, addr.clone());
         if balance < amount {

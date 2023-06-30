@@ -75,6 +75,15 @@ fn create_a_token_only_once() {
 }
 
 #[test]
+#[should_panic(expected = "Token can only be minted once")]
+fn mint_only_once() {
+    let (client, core_client, _) = create_all_clients();
+    let address= create_token(&client, &core_client);
+    let supply = 1_000_000;
+    client.mint(&address, &supply);
+}
+
+#[test]
 fn set_owner() {
     let (client, core_client, __) = create_all_clients();
     create_token(&client, &core_client);
