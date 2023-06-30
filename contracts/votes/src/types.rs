@@ -44,6 +44,13 @@ pub enum PropStatus {
     Implemented,
 }
 
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Voting {
+    MAJORITY,
+    CUSTOM,
+}
+
 const PROP_ID: Symbol = Symbol::short("PROP_ID");
 
 pub const PROPOSAL_DURATION: u32 = 10_000;
@@ -233,6 +240,41 @@ impl Metadata {
         let key = KeyMeta(proposal_id);
         if !env.storage().has(&key) {
             panic!("metadata does not exist");
+        }
+        env.storage().get_unchecked(&key).unwrap()
+    }
+}
+
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Configuration {
+    pub proposal_duration: u32,
+    pub proposal_token_deposit: u128,
+    pub voting: Voting,
+}
+
+#[contracttype]
+struct KeyDao(Bytes);
+
+impl Configuration {
+    pub fn set(
+        env: &Env,
+        dao_id: Bytes,
+        proposal_duration: u32,
+        proposal_token_deposit: u128,
+        voting: Voting
+    ) -> Self {
+        let key = KeyDao(dao_id);
+        let configuration = Configuration { proposal_duration, proposal_token_deposit, voting };
+        env.storage().set(&key, &configuration);
+        configuration
+    }
+
+    pub fn get(env: &Env, dao_id: Bytes) -> Self {
+        let key = KeyDao(dao_id);
+        if !env.storage().has(&key) {
+            panic!("configuration does not exist");
         }
         env.storage().get_unchecked(&key).unwrap()
     }

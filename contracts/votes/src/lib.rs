@@ -16,6 +16,7 @@ mod interface;
 use core_contract::Client as CoreContractClient;
 use interface::VotesTrait;
 use types::{ActiveProposal, Metadata, Proposal, ProposalId};
+use crate::types::{Configuration, Voting};
 
 pub struct VotesContract;
 
@@ -76,6 +77,34 @@ impl VotesTrait for VotesContract {
 
     fn get_archived_proposal(env: Env, proposal_id: ProposalId) -> Proposal {
         Proposal::get_archived(&env, proposal_id)
+    }
+
+    fn set_configuration(
+        env: Env,
+        dao_id: Bytes,
+        proposal_duration: u32,
+        proposal_token_deposit: u128,
+        voting: Voting,
+        dao_owner: Address,
+    ) {
+        Configuration::set(
+            &env,
+            dao_id.clone(),
+            proposal_duration,
+            proposal_token_deposit,
+            voting.clone(),
+        );
+        let core_id = Self::get_core_id(env.clone());
+        verify_dao_owner(&env, &dao_id, dao_owner, core_id);
+        env.events()
+            .publish(
+                (VOTES, Symbol::short("conf_set")),
+                (proposal_duration, proposal_token_deposit, voting)
+            );
+    }
+
+    fn get_configuration(env: Env, dao_id: Bytes) -> Configuration {
+        Configuration::get(&env, dao_id)
     }
 
     fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address) {

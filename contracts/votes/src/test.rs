@@ -10,6 +10,7 @@ use crate::{
     types::{PropStatus, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
     ProposalId, VotesContract, VotesContractClient,
 };
+use crate::types::Voting;
 
 mod assets_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
@@ -261,6 +262,54 @@ fn non_existing_meta_panics() {
     let Clients { votes, .. } = Clients::new();
 
     votes.get_metadata(&ProposalId::new(0));
+}
+
+#[test]
+fn set_configuration() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+
+    let owner = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &owner);
+
+    let proposal_duration: u32 = 100;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let voting = Voting::MAJORITY;
+
+    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
+
+    let configuration = votes.get_configuration(&dao.id);
+    assert_eq!(configuration.proposal_duration, proposal_duration);
+    assert_eq!(configuration.proposal_token_deposit, proposal_token_deposit);
+    assert_eq!(configuration.voting, voting);
+}
+
+#[test]
+#[should_panic(expected = "not the DAO owner")]
+fn set_configuration_only_owner() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+
+    let owner = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &owner);
+
+    let proposal_duration: u32 = 100;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let voting = Voting::MAJORITY;
+    let whoever = Address::random(env);
+    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &whoever);
+}
+
+#[test]
+#[should_panic(expected = "configuration does not exist")]
+fn non_existing_configuration_panics() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+
+    let owner = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &owner);
+
+    votes.get_configuration(&dao.id);
 }
 
 #[test]
