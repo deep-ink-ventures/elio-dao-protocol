@@ -82,21 +82,20 @@ impl VotesTrait for VotesContract {
     fn set_configuration(
         env: Env,
         dao_id: Bytes,
-        proposal_id: ProposalId,
         proposal_duration: u32,
         proposal_token_deposit: u128,
         voting: Voting,
-        proposal_owner: Address,
+        dao_owner: Address,
     ) {
         Configuration::set(
             &env,
-            dao_id,
-            proposal_id,
+            dao_id.clone(),
             proposal_duration,
             proposal_token_deposit,
             voting.clone(),
-            proposal_owner
         );
+        let core_id = Self::get_core_id(env.clone());
+        verify_dao_owner(&env, &dao_id, dao_owner, core_id);
         env.events()
             .publish(
                 (VOTES, Symbol::short("conf_set")),
@@ -104,8 +103,8 @@ impl VotesTrait for VotesContract {
             );
     }
 
-    fn get_configuration(env: Env, proposal_id: ProposalId) -> Configuration {
-        Configuration::get(&env, proposal_id)
+    fn get_configuration(env: Env, dao_id: Bytes) -> Configuration {
+        Configuration::get(&env, dao_id)
     }
 
     fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address) {

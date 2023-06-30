@@ -270,72 +270,46 @@ fn set_configuration() {
     let env = &votes.env;
 
     let owner = Address::random(env);
-    let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
+    let dao = mint_and_create_dao(&clients, &owner);
 
     let proposal_duration: u32 = 100;
     let proposal_token_deposit: u128 = 100_000_000;
     let voting = Voting::MAJORITY;
 
-    votes.set_configuration(&dao.id, &proposal_id, &proposal_duration, &proposal_token_deposit, &voting, &owner);
+    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
 
-    let configuration = votes.get_configuration(&proposal_id);
+    let configuration = votes.get_configuration(&dao.id);
     assert_eq!(configuration.proposal_duration, proposal_duration);
     assert_eq!(configuration.proposal_token_deposit, proposal_token_deposit);
     assert_eq!(configuration.voting, voting);
 }
 
 #[test]
-#[should_panic(expected = "only the owner can set configuration")]
+#[should_panic(expected = "not the DAO owner")]
 fn set_configuration_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
 
     let owner = Address::random(env);
-    let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
+    let dao = mint_and_create_dao(&clients, &owner);
 
     let proposal_duration: u32 = 100;
     let proposal_token_deposit: u128 = 100_000_000;
     let voting = Voting::MAJORITY;
     let whoever = Address::random(env);
-    votes.set_configuration(&dao.id, &proposal_id, &proposal_duration, &proposal_token_deposit, &voting, &whoever);
+    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &whoever);
 }
 
 #[test]
 #[should_panic(expected = "configuration does not exist")]
 fn non_existing_configuration_panics() {
-    let Clients { votes, .. } = Clients::new();
-
-    votes.get_configuration(&ProposalId::new(0));
-}
-
-#[test]
-fn can_simultaneously_set_meta_and_config() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
 
     let owner = Address::random(env);
-    let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
+    let dao = mint_and_create_dao(&clients, &owner);
 
-    let proposal_duration: u32 = 100;
-    let proposal_token_deposit: u128 = 100_000_000;
-    let voting = Voting::MAJORITY;
-    let url = "https://deep-ink.ventures".into_val(env);
-    let hash = "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(env);
-
-    votes.set_metadata(&dao.id, &proposal_id, &url, &hash, &owner);
-    let meta = votes.get_metadata(&proposal_id);
-
-
-    votes.set_configuration(&dao.id, &proposal_id, &proposal_duration, &proposal_token_deposit, &voting, &owner);
-    let configuration = votes.get_configuration(&proposal_id);
-
-    assert_eq!(meta.url, url);
-    assert_eq!(meta.hash, hash);
-
-    assert_eq!(configuration.proposal_duration, proposal_duration);
-    assert_eq!(configuration.proposal_token_deposit, proposal_token_deposit);
-    assert_eq!(configuration.voting, voting);
-
+    votes.get_configuration(&dao.id);
 }
 
 #[test]

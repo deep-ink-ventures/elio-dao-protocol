@@ -27,14 +27,13 @@ pub trait VotesTrait {
     fn set_configuration(
         env: Env,
         dao_id: Bytes,
-        proposal_id: ProposalId,
         proposal_duration: u32,
         proposal_token_deposit: u128,
         voting: Voting,
-        proposal_owner: Address,
+        dao_owner: Address,
     );
 
-    fn get_configuration(env: Env, proposal_id: ProposalId) -> Configuration;
+    fn get_configuration(env: Env, dao_id: Bytes) -> Configuration;
 
     fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address);
 

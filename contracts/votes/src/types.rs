@@ -219,14 +219,21 @@ impl Metadata {
         hash: Bytes,
         owner: Address,
     ) -> Self {
-        let proposal = find_proposal(&env, dao_id, proposal_id, &owner);
-        if proposal.inner.owner != owner {
-            panic!("only the owner can set metadata");
-        }
+        owner.require_auth();
 
-        let meta = Metadata { url, hash };
-        env.storage().set(&KeyMeta(proposal_id), &meta);
-        meta
+        let key = ActiveKey(dao_id);
+        let active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
+        for p in active_proposals.iter_unchecked() {
+            if p.id == proposal_id {
+                if p.inner.owner != owner {
+                    panic!("only the owner can set metadata");
+                }
+                let meta = Metadata { url, hash };
+                env.storage().set(&KeyMeta(proposal_id), &meta);
+                return meta;
+            }
+        }
+        panic!("proposal not found");
     }
 
     pub fn get(env: &Env, proposal_id: ProposalId) -> Self {
@@ -247,50 +254,28 @@ pub struct Configuration {
     pub voting: Voting,
 }
 
+#[contracttype]
+struct KeyDao(Bytes);
+
 impl Configuration {
     pub fn set(
         env: &Env,
         dao_id: Bytes,
-        proposal_id: ProposalId,
         proposal_duration: u32,
         proposal_token_deposit: u128,
-        voting: Voting,
-        owner: Address,
+        voting: Voting
     ) -> Self {
-        let proposal = find_proposal(env, dao_id, proposal_id, &owner);
-        if proposal.inner.owner != owner {
-            panic!("only the owner can set configuration");
-        }
-
+        let key = KeyDao(dao_id);
         let configuration = Configuration { proposal_duration, proposal_token_deposit, voting };
-        env.storage().set(&KeyMeta(proposal_id), &configuration);
+        env.storage().set(&key, &configuration);
         configuration
     }
 
-    pub fn get(env: &Env, proposal_id: ProposalId) -> Self {
-        let key = KeyMeta(proposal_id);
+    pub fn get(env: &Env, dao_id: Bytes) -> Self {
+        let key = KeyDao(dao_id);
         if !env.storage().has(&key) {
             panic!("configuration does not exist");
         }
         env.storage().get_unchecked(&key).unwrap()
     }
-}
-
-fn find_proposal(
-    env: &Env,
-    dao_id: Bytes,
-    proposal_id: ProposalId,
-    owner: &Address,
-) -> ActiveProposal {
-    owner.require_auth();
-
-    let key = ActiveKey(dao_id);
-    let active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
-
-    for active_proposal in active_proposals.iter_unchecked() {
-        if active_proposal.id == proposal_id {
-            return active_proposal;
-        }
-    }
-    panic!("proposal not found");
 }
