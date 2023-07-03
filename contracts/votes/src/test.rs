@@ -290,7 +290,7 @@ fn set_configuration() {
 
     votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
 
-    let configuration = votes.get_configuration();
+    let configuration = votes.get_configuration(&dao.id);
     assert_eq!(configuration.proposal_duration, proposal_duration);
     assert_eq!(configuration.proposal_token_deposit, proposal_token_deposit);
     assert_eq!(configuration.voting, voting);
@@ -315,14 +315,30 @@ fn set_configuration_only_owner() {
 #[test]
 #[should_panic(expected = "configuration does not exist")]
 fn non_existing_configuration_panics() {
-    let Clients { votes, .. } = Clients::new();
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
 
-    votes.get_configuration();
+    let owner = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &owner);
+
+    votes.get_configuration(&dao.id);
 }
 
 #[test]
 #[should_panic(expected = "configuration does not exist")]
 fn must_create_configuration_before_proposal() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+
+    let owner = Address::random(env);
+    let dao = mint_and_create_dao(clients, &owner);
+
+    votes.create_proposal(&dao.id, &owner);
+}
+
+#[test]
+#[should_panic(expected = "configuration does not exist")]
+fn only_shows() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
 

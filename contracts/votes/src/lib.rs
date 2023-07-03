@@ -44,7 +44,7 @@ impl VotesTrait for VotesContract {
         let _ = core.get_dao(&dao_id);
 
         // check that configuration exists
-        Self::get_configuration(env.clone());
+        Self::get_configuration(env.clone(), dao_id.clone());
 
         Proposal::create(&env, dao_id, proposal_owner)
     }
@@ -92,6 +92,7 @@ impl VotesTrait for VotesContract {
     ) {
         Configuration::set(
             &env,
+            dao_id.clone(),
             proposal_duration,
             proposal_token_deposit,
             voting.clone(),
@@ -105,8 +106,8 @@ impl VotesTrait for VotesContract {
             );
     }
 
-    fn get_configuration(env: Env) -> Configuration {
-        Configuration::get(&env)
+    fn get_configuration(env: Env, dao_id: Bytes) -> Configuration {
+        Configuration::get(&env, dao_id)
     }
 
     fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address) {

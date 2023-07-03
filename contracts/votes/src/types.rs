@@ -89,7 +89,7 @@ impl Proposal {
         let active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         let mut filtered_proposals: Vec<ActiveProposal> = Vec::new(env);
 
-        let proposal_duration = Configuration::get(&env).proposal_duration;
+        let proposal_duration = Configuration::get(&env, dao_id).proposal_duration;
 
         // filter out outdated proposals
         let len = active_proposals.len();
@@ -161,7 +161,7 @@ impl Proposal {
 
     pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: ProposalId) {
         let key = ActiveKey(dao_id.clone());
-        let proposal_duration = Configuration::get(&env).proposal_duration;
+        let proposal_duration = Configuration::get(&env, dao_id).proposal_duration;
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
             if p.id == proposal_id {
@@ -256,26 +256,23 @@ pub struct Configuration {
     pub voting: Voting,
 }
 
-const CONFIG: Symbol = Symbol::short("CONFIG");
-
 impl Configuration {
     pub fn set(
         env: &Env,
+        dao_id: Bytes,
         proposal_duration: u32,
         proposal_token_deposit: u128,
         voting: Voting
     ) -> Self {
-        let key = &CONFIG;
         let configuration = Configuration { proposal_duration, proposal_token_deposit, voting };
-        env.storage().set(&key, &configuration);
+        env.storage().set(&dao_id, &configuration);
         configuration
     }
 
-    pub fn get(env: &Env) -> Self {
-        let key = &CONFIG;
-        if !env.storage().has(&key) {
+    pub fn get(env: &Env, dao_id: Bytes) -> Self {
+        if !env.storage().has(&dao_id) {
             panic!("configuration does not exist");
         }
-        env.storage().get_unchecked(&key).unwrap()
+        env.storage().get_unchecked(&dao_id).unwrap()
     }
 }
