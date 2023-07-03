@@ -43,6 +43,9 @@ impl VotesTrait for VotesContract {
         // check that DAO exists
         let _ = core.get_dao(&dao_id);
 
+        // check that configuration exists
+        Self::get_configuration(env.clone(), dao_id.clone());
+
         Proposal::create(&env, dao_id, proposal_owner)
     }
 

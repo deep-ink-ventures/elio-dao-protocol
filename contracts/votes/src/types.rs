@@ -53,7 +53,6 @@ pub enum Voting {
 
 const PROP_ID: Symbol = Symbol::short("PROP_ID");
 
-pub const PROPOSAL_DURATION: u32 = 10_000;
 pub const PROPOSAL_MAX_NR: u32 = 25;
 
 impl Proposal {
@@ -83,18 +82,20 @@ impl Proposal {
     }
 
     pub fn get_active(env: &Env, dao_id: Bytes) -> Vec<ActiveProposal> {
-        let key = ActiveKey(dao_id);
+        let key = ActiveKey(dao_id.clone());
         if !env.storage().has(&key) {
             return Vec::new(env);
         }
         let active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         let mut filtered_proposals: Vec<ActiveProposal> = Vec::new(env);
 
+        let proposal_duration = Configuration::get(&env, dao_id).proposal_duration;
+
         // filter out outdated proposals
         let len = active_proposals.len();
         for proposal in active_proposals.into_iter_unchecked() {
             if env.ledger().sequence()
-                <= proposal.inner.ledger + PROPOSAL_DURATION
+                <= proposal.inner.ledger + proposal_duration
             {
                 filtered_proposals.push_back(proposal);
             }
@@ -159,11 +160,12 @@ impl Proposal {
     }
 
     pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: ProposalId) {
-        let key = ActiveKey(dao_id);
+        let key = ActiveKey(dao_id.clone());
+        let proposal_duration = Configuration::get(&env, dao_id).proposal_duration;
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
             if p.id == proposal_id {
-                if env.ledger().sequence() <= p.inner.ledger + PROPOSAL_DURATION {
+                if env.ledger().sequence() <= p.inner.ledger + proposal_duration {
                     panic!("proposal still active");
                 }
                 if p.inner.status != PropStatus::Running {
@@ -254,9 +256,6 @@ pub struct Configuration {
     pub voting: Voting,
 }
 
-#[contracttype]
-struct KeyDao(Bytes);
-
 impl Configuration {
     pub fn set(
         env: &Env,
@@ -265,17 +264,15 @@ impl Configuration {
         proposal_token_deposit: u128,
         voting: Voting
     ) -> Self {
-        let key = KeyDao(dao_id);
         let configuration = Configuration { proposal_duration, proposal_token_deposit, voting };
-        env.storage().set(&key, &configuration);
+        env.storage().set(&dao_id, &configuration);
         configuration
     }
 
     pub fn get(env: &Env, dao_id: Bytes) -> Self {
-        let key = KeyDao(dao_id);
-        if !env.storage().has(&key) {
+        if !env.storage().has(&dao_id) {
             panic!("configuration does not exist");
         }
-        env.storage().get_unchecked(&key).unwrap()
+        env.storage().get_unchecked(&dao_id).unwrap()
     }
 }
