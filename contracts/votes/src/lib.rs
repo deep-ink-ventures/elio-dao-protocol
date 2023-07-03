@@ -18,10 +18,11 @@ mod events;
 use core_contract::Client as CoreContractClient;
 use events::{
     ProposalFaultedEventData, ProposalFinalizedEventData, ProposalMetadataSetEventData, CORE,
-    CREATED, FAULTED, FINALIZED, METADATA_SET, PROPOSAL,
+    CREATED, FAULTED, FINALIZED, METADATA_SET, PROPOSAL, CONF_SET, ProposalConfigurationSetEventData,
 };
 use interface::VotesTrait;
 use types::{ActiveProposal, Metadata, Proposal, ProposalId};
+use crate::types::{Configuration, Voting};
 
 use crate::events::{ProposalCreatedEventData, VoteCastEventData, VOTE_CAST};
 
@@ -46,7 +47,8 @@ impl VotesTrait for VotesContract {
 
         // check that DAO exists
         let _ = core.get_dao(&dao_id);
-
+        // check that configuration exists
+        Self::get_configuration(env.clone(), dao_id.clone());
         let proposal_id = Proposal::create(&env, dao_id.clone(), proposal_owner.clone());
         env.events().publish(
             (PROPOSAL, CREATED),
@@ -96,6 +98,38 @@ impl VotesTrait for VotesContract {
 
     fn get_archived_proposal(env: Env, proposal_id: ProposalId) -> Proposal {
         Proposal::get_archived(&env, proposal_id)
+    }
+
+    fn set_configuration(
+        env: Env,
+        dao_id: Bytes,
+        proposal_duration: u32,
+        proposal_token_deposit: u128,
+        voting: Voting,
+        dao_owner: Address,
+    ) {
+        Configuration::set(
+            &env,
+            dao_id.clone(),
+            proposal_duration,
+            proposal_token_deposit,
+            voting.clone(),
+        );
+        verify_dao_owner(&env, &dao_id, dao_owner, Self::get_core_id(env.clone()));
+        env.events()
+            .publish(
+                (PROPOSAL, CONF_SET),
+                ProposalConfigurationSetEventData {
+                    dao_id,
+                    proposal_duration,
+                    proposal_token_deposit,
+                    proposal_voting_type: voting,
+                }
+            );
+    }
+
+    fn get_configuration(env: Env, dao_id: Bytes) -> Configuration {
+        Configuration::get(&env, dao_id)
     }
 
     fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address) {

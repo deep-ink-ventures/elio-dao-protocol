@@ -18,7 +18,7 @@ pub enum Token {
     Name,
     Symbol,
     Owner,
-    GovernanceId,
+    CoreAddress,
     Checkpoints(Address),
 }
 
@@ -75,9 +75,9 @@ impl Token {
     pub fn write_checkpoint(env: &Env, id: Address) {
         let key = Self::Checkpoints(id.clone());
 
-        let governance_id = Self::get_governance_id(env);
+        let core_address = Self::get_core_address(env);
 
-        let core_contract = core_contract::Client::new(env, &governance_id);
+        let core_contract = core_contract::Client::new(env, &core_address);
         let vote_id = core_contract.get_votes_id();
         let votes_contract = votes_contract::Client::new(env, &vote_id);
 
@@ -134,8 +134,8 @@ impl Token {
         env.storage().get_unchecked(&Token::Owner).unwrap()
     }
 
-    pub fn get_governance_id(env: &Env) -> Address {
-        env.storage().get_unchecked(&Token::GovernanceId).unwrap()
+    pub fn get_core_address(env: &Env) -> Address {
+        env.storage().get_unchecked(&Token::CoreAddress).unwrap()
     }
 
     /// Create a new token
@@ -144,7 +144,7 @@ impl Token {
         symbol: &Bytes,
         name: &Bytes,
         owner: &Address,
-        governance_id: &Address,
+        core_address: &Address,
     ) {
         if env.storage().has(&Token::Symbol) {
             panic!("DAO already issued a token")
@@ -152,7 +152,7 @@ impl Token {
         env.storage().set(&Token::Symbol, symbol);
         env.storage().set(&Token::Name, name);
         env.storage().set(&Token::Owner, owner);
-        env.storage().set(&Token::GovernanceId, governance_id);
+        env.storage().set(&Token::CoreAddress, core_address);
     }
 
     pub fn set_owner(env: &Env, owner: &Address, new_owner: &Address) {
@@ -160,9 +160,9 @@ impl Token {
         env.storage().set(&Token::Owner, &new_owner);
     }
 
-    pub fn set_governance_id(env: &Env, owner: &Address, governance_id: &Address) {
+    pub fn set_core_address(env: &Env, owner: &Address, core_address: &Address) {
         Token::check_auth(env, owner);
-        env.storage().set(&Token::GovernanceId, governance_id);
+        env.storage().set(&Token::CoreAddress, core_address);
     }
 
     pub fn write_balance(env: &Env, addr: Address, amount: i128) {
@@ -184,6 +184,12 @@ impl Token {
         owner.require_auth();
         if owner != &Token::get_owner(env) {
             panic!("not Token owner")
+        }
+    }
+
+    pub fn check_is_minted(env: &Env, owner: Address) {
+        if Token::get_checkpoints(env, owner).len() > 0 {
+            panic!("Token can only be minted once")
         }
     }
 

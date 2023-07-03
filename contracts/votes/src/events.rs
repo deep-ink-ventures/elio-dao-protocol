@@ -1,6 +1,6 @@
 use soroban_sdk::{contracttype, Address, Bytes, Symbol};
 
-use crate::types::ProposalId;
+use crate::types::{ProposalId, Voting};
 
 pub const CORE: Symbol = Symbol::short("CORE");
 pub const PROPOSAL: Symbol = Symbol::short("PROPOSAL");
@@ -10,6 +10,7 @@ pub const METADATA_SET: Symbol = Symbol::short("meta_set");
 pub const VOTE_CAST: Symbol = Symbol::short("vote_cast");
 pub const FAULTED: Symbol = Symbol::short("faulted");
 pub const FINALIZED: Symbol = Symbol::short("finalized");
+pub const CONF_SET: Symbol = Symbol::short("conf_set");
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -25,6 +26,15 @@ pub struct ProposalMetadataSetEventData {
     pub proposal_id: ProposalId,
     pub url: Bytes,
     pub hash: Bytes,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProposalConfigurationSetEventData {
+    pub dao_id: Bytes,
+    pub proposal_duration: u32,
+    pub proposal_token_deposit: u128,
+    pub proposal_voting_type: Voting,
 }
 
 #[contracttype]

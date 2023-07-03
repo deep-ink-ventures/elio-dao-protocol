@@ -4,7 +4,7 @@ pub const ASSET: Symbol = Symbol::short("ASSET");
 
 pub const MINTED: Symbol = Symbol::short("minted");
 pub const OWNER_CHANGED: Symbol = Symbol::short("new_owner");
-pub const GOVERNANCE_ID_CHANGED: Symbol = Symbol::short("new_govid");
+pub const CORE_ADDRESS_CHANGED: Symbol = Symbol::short("new_govid");
 pub const TRANSFERRED: Symbol = Symbol::short("transfer");
 
 #[contracttype]
@@ -12,7 +12,7 @@ pub const TRANSFERRED: Symbol = Symbol::short("transfer");
 pub struct AssetCreatedEventData {
     pub dao_id: Bytes,
     pub owner_id: Address,
-    pub governance_id: Address,
+    pub core_address: Address,
     pub name: Bytes,
     pub symbol: Bytes,
 }
@@ -33,7 +33,7 @@ pub struct AssetNewOwnerEventData {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AssetSetGovernanceIDEventData {
-    pub governance_id: Address,
+    pub core_address: Address,
 }
 
 #[contracttype]

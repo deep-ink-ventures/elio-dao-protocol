@@ -62,7 +62,7 @@ impl Dao {
 
     /// +++ Member functions +
 
-    pub fn issue_token(self, env: &Env, assets_wasm_hash: BytesN<32>, asset_salt: BytesN<32>) {
+    pub fn issue_token(self, env: &Env, assets_wasm_hash: BytesN<32>, asset_salt: BytesN<32>) -> Address {
         let key = DaoArtifact::Asset(self.id.clone());
 
         if env.storage().has(&key) {
@@ -78,12 +78,12 @@ impl Dao {
 
         let init_fn = Symbol::short("init");
 
-        let governance_id = env.current_contract_address();
+        let core_address = env.current_contract_address();
         let init_args = (
             self.id.clone(),
             self.name,
             self.owner.clone(),
-            governance_id.clone(),
+            core_address.clone(),
         )
             .into_val(env);
         env.invoke_contract::<()>(&asset_id, &init_fn, init_args);
@@ -92,11 +92,11 @@ impl Dao {
             (ASSET, CREATED, self.id.clone()),
             AssetCreatedEventData {
                 dao_id: self.id,
-                asset_id,
+                asset_id: asset_id.clone(),
                 owner_id: self.owner,
-                governance_id,
             },
         );
+        asset_id
     }
 
     pub fn get_asset_id(&self, env: &Env) -> Address {

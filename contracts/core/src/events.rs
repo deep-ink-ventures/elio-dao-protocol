@@ -46,5 +46,4 @@ pub struct AssetCreatedEventData {
     pub dao_id: Bytes,
     pub asset_id: Address,
     pub owner_id: Address,
-    pub governance_id: Address,
 }

@@ -8,15 +8,15 @@ pub trait AssetTrait {
     ///
     /// - `symbol`: The DAO ID
     /// - `name`: Name of the DAO
-    /// - `governance_id`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
+    /// - `core_address`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
     /// - `owner`: The owner of this contract
     ///
-    fn init(env: Env, symbol: Bytes, name: Bytes, owner: Address, governance_id: Address);
+    fn init(env: Env, symbol: Bytes, name: Bytes, owner: Address, core_address: Address);
 
     /// Mints tokens
     ///
     /// - `supply`: Total tokens minted on launch
-    /// - `governance_id`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
+    /// - `core_address`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
     /// - `owner`: The current owner (must be authed and the current owner, obviously)
     ///
     fn mint(env: Env, owner: Address, supply: i128);
@@ -56,17 +56,17 @@ pub trait AssetTrait {
     /// Returns the current owner
     fn owner(env: Env) -> Address;
 
-    /// Change the governance id of this token to either a different implementation or to upgrade to
+    /// Change the core address of this token to either a different implementation or to upgrade to
     /// a newer version of elio DAO.
     ///
     /// - `owner`: The current owner (must be authed and the current owner, obviously)
-    /// - `governance_id`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
+    /// - `core_address`: Contract ID of the governance protocol to use. We'd be thrilled if you choose elio DAO's latest :-)
     ///
-    fn set_governance_id(env: Env, owner: Address, governance_id: Address);
+    fn set_core_address(env: Env, owner: Address, core_address: Address);
 
-    /// Returns the current governance id.
+    /// Returns the current core address.
     ///
-    fn governance_id(env: Env) -> Address;
+    fn core_address(env: Env) -> Address;
 
     // ----------------------------------------------------------------------------------------
     // Token interface -> Everything starting from here satisfies the soroban token interface

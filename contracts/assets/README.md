@@ -17,7 +17,7 @@ This process allows accounts to only signal favor/not-in-favor for a proposal bu
 Since Elio DAO will provide a flexible extension system, users can use this transparent token that allows for fully on-chain governance - but they don’t have to. This is a basic building block of Elio DAOs core functionality but it can be replaced with [custom solutions](https://github.com/deep-ink-ventures/elio-dao-protocol/blob/main/contracts/core/src/lib.rs#L57-L59) due to our modular approach.
 
 ## Upgrading and protocol switches
-While we're obviously thrilled if you use **Elio DAO** for your DAO management purposes, you can at all times swap the underlying governance system via the `set_governance_id` function. This as well allows upgrading to newer deployed versions of our protocol. The `owner` is independent of the `Elio DAO Core` manager (though initially and practially the same most of the time), so that assets maintain integrity even when Elio DAO is for whatever reason no longer available.
+While we're obviously thrilled if you use **Elio DAO** for your DAO management purposes, you can at all times swap the underlying governance system via the `set_core_address` function. This as well allows upgrading to newer deployed versions of our protocol. The `owner` is independent of the `Elio DAO Core` manager (though initially and practially the same most of the time), so that assets maintain integrity even when Elio DAO is for whatever reason no longer available.
 
 ### Interface
 - `init`: Constructor of the assets
@@ -26,8 +26,8 @@ While we're obviously thrilled if you use **Elio DAO** for your DAO management p
 - `get_checkpoint_at`: Discovery Function: Get a checkpoint at an index stored for a given id
 - `set_owner`: Change the owner of this token
 - `owner`: Returns the current owner
-- `set_governance_id`: Change the governance id of this token to either a different implementation or to upgrade to a newer version of elio DAO.
-- `governance_id`: Returns the current governance id.
+- `set_core_address`: Change the core address of this token to either a different implementation or to upgrade to a newer version of elio DAO.
+- `core_address`: Returns the current core address.
 
 The remainder of the interface follows the [Soroban Token Interface](https://soroban.stellar.org/docs/reference/interfaces/token-interface).
 
