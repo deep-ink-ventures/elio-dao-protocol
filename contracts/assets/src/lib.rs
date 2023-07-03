@@ -2,7 +2,7 @@
 
 use events::{
     AssetMintedEventData, AssetNewOwnerEventData, AssetSetGovernanceIDEventData,
-    AssetTransferredEventData, ASSET, GOVERNANCE_ID_CHANGED, MINTED, OWNER_CHANGED, TRANSFERRED,
+    AssetTransferredEventData, ASSET, CORE_ADDRESS_CHANGED, MINTED, OWNER_CHANGED, TRANSFERRED,
 };
 use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol};
 
@@ -35,8 +35,8 @@ fn check_non_negative_amount(amount: i128) {
 
 #[contractimpl]
 impl AssetTrait for AssetContract {
-    fn init(env: Env, symbol: Bytes, name: Bytes, owner: Address, governance_id: Address) {
-        Token::create(&env, &symbol, &name, &owner, &governance_id);
+    fn init(env: Env, symbol: Bytes, name: Bytes, owner: Address, core_address: Address) {
+        Token::create(&env, &symbol, &name, &owner, &core_address);
     }
 
     fn mint(env: Env, owner: Address, supply: i128) {
@@ -66,16 +66,16 @@ impl AssetTrait for AssetContract {
         Token::get_owner(&env)
     }
 
-    fn set_governance_id(env: Env, owner: Address, governance_id: Address) {
-        Token::set_governance_id(&env, &owner, &governance_id);
+    fn set_core_address(env: Env, owner: Address, core_address: Address) {
+        Token::set_core_address(&env, &owner, &core_address);
         env.events().publish(
-            (ASSET, GOVERNANCE_ID_CHANGED, Token::get_symbol(&env)),
-            AssetSetGovernanceIDEventData { governance_id },
+            (ASSET, CORE_ADDRESS_CHANGED, Token::get_symbol(&env)),
+            AssetSetGovernanceIDEventData { core_address },
         );
     }
 
-    fn governance_id(env: Env) -> Address {
-        Token::get_governance_id(&env)
+    fn core_address(env: Env) -> Address {
+        Token::get_core_address(&env)
     }
 
     fn incr_allow(env: Env, from: Address, spender: Address, amount: i128) {

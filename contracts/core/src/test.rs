@@ -222,7 +222,7 @@ fn issue_token_once() {
     assert_eq!(dao.id, asset_core.symbol());
     assert_eq!(dao.name, asset_core.name());
     assert_eq!(dao.owner, asset_core.owner());
-    assert_eq!(core.address, asset_core.governance_id());
+    assert_eq!(core.address, asset_core.core_address());
 
     log!(env, "minting token");
     let supply = 1_000_000;

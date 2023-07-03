@@ -41,8 +41,8 @@ fn create_token(client: &AssetContractClient, core_client: &core_contract::Clien
     let symbol = "DIV".into_val(&client.env);
     let name = "Deep Ink Ventures".into_val(&client.env);
     let address = Address::random(&client.env);
-    let governance_id = &core_client.address;
-    client.init(&symbol, &name, &address, &governance_id);
+    let core_address = &core_client.address;
+    client.init(&symbol, &name, &address, &core_address);
     client.mint(&address, &SUPPLY);
     address
 }
@@ -53,13 +53,13 @@ fn create_a_token() {
     let symbol = "DIV".into_val(&client.env);
     let name = "Deep Ink Ventures".into_val(&client.env);
     let address = Address::random(&client.env);
-    let governance_id = &core_client.address;
-    client.init(&symbol, &name, &address, &governance_id);
+    let core_address = &core_client.address;
+    client.init(&symbol, &name, &address, &core_address);
 
     assert_eq!(symbol, client.symbol());
     assert_eq!(name, client.name());
     assert_eq!(address, client.owner());
-    assert_eq!(governance_id, &client.governance_id());
+    assert_eq!(core_address, &client.core_address());
 
     client.mint(&address, &SUPPLY);
 
@@ -106,24 +106,24 @@ fn set_owner_auth() {
 }
 
 #[test]
-fn set_governance_id() {
+fn set_core_address() {
     let (client, core_client, __) = create_all_clients();
     create_token(&client, &core_client);
     let owner = client.owner();
 
-    client.set_governance_id(&owner, &client.address);
-    let new_id = client.governance_id();
+    client.set_core_address(&owner, &client.address);
+    let new_id = client.core_address();
 
     assert_eq!(&client.address, &new_id);
 }
 
 #[test]
 #[should_panic(expected = "not Token owner")]
-fn set_governance_id_auth() {
+fn set_core_address_auth() {
     let (client, core_client, __) = create_all_clients();
     create_token(&client, &core_client);
     let address = Address::random(&client.env);
-    client.set_governance_id(&address, &client.address);
+    client.set_core_address(&address, &client.address);
 }
 
 #[test]
@@ -134,7 +134,7 @@ fn spendable_equals_balance() {
 }
 
 #[test]
-fn token_assets_are_always_authoritzed() {
+fn token_assets_are_always_authorized() {
     let (client, _, __) = create_all_clients();
     let address = Address::random(&client.env);
     assert_eq!(client.authorized(&address), true);

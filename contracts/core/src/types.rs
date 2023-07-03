@@ -78,12 +78,12 @@ impl Dao {
 
         let init_fn = Symbol::short("init");
 
-        let governance_id = env.current_contract_address();
+        let core_address = env.current_contract_address();
         let init_args = (
             self.id.clone(),
             self.name,
             self.owner.clone(),
-            governance_id.clone(),
+            core_address.clone(),
         )
             .into_val(env);
         env.invoke_contract::<()>(&asset_id, &init_fn, init_args);
@@ -94,7 +94,6 @@ impl Dao {
                 dao_id: self.id,
                 asset_id: asset_id.clone(),
                 owner_id: self.owner,
-                governance_id,
             },
         );
         asset_id
