@@ -7,7 +7,7 @@ use soroban_sdk::{
 
 use crate::{
     core_contract::{Client as CoreContractClient, Dao, WASM as CoreWASM},
-    types::{PropStatus, PROPOSAL_DURATION, PROPOSAL_MAX_NR},
+    types::{PropStatus, PROPOSAL_MAX_NR},
     ProposalId, VotesContract, VotesContractClient,
 };
 use crate::types::Voting;
@@ -15,6 +15,8 @@ use crate::types::Voting;
 mod assets_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
 }
+
+const PROPOSAL_DURATION: u32 = 10_000;
 
 struct Clients {
     core: CoreContractClient<'static>,
@@ -103,6 +105,11 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
     native_asset.mint(&dao_owner, &i128::MAX);
     let dao = create_dao(&core, &dao_owner);
 
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let voting = Voting::MAJORITY;
+    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
+
     let proposal_id = votes.create_proposal(&dao.id, &proposal_owner);
 
     (dao, proposal_id)
@@ -171,6 +178,11 @@ fn active_proposals_are_managed() {
 
     let dao_owner = Address::random(env);
     let dao = mint_and_create_dao(&clients, &dao_owner);
+
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let voting = Voting::MAJORITY;
+    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
 
     let owner = Address::random(env);
     let proposal_1_id = votes.create_proposal(&dao.id, &owner);
@@ -272,13 +284,13 @@ fn set_configuration() {
     let owner = Address::random(env);
     let dao = mint_and_create_dao(&clients, &owner);
 
-    let proposal_duration: u32 = 100;
+    let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let voting = Voting::MAJORITY;
 
     votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
 
-    let configuration = votes.get_configuration(&dao.id);
+    let configuration = votes.get_configuration();
     assert_eq!(configuration.proposal_duration, proposal_duration);
     assert_eq!(configuration.proposal_token_deposit, proposal_token_deposit);
     assert_eq!(configuration.voting, voting);
@@ -293,7 +305,7 @@ fn set_configuration_only_owner() {
     let owner = Address::random(env);
     let dao = mint_and_create_dao(&clients, &owner);
 
-    let proposal_duration: u32 = 100;
+    let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let voting = Voting::MAJORITY;
     let whoever = Address::random(env);
@@ -303,13 +315,21 @@ fn set_configuration_only_owner() {
 #[test]
 #[should_panic(expected = "configuration does not exist")]
 fn non_existing_configuration_panics() {
+    let Clients { votes, .. } = Clients::new();
+
+    votes.get_configuration();
+}
+
+#[test]
+#[should_panic(expected = "configuration does not exist")]
+fn must_create_configuration_before_proposal() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
 
     let owner = Address::random(env);
-    let dao = mint_and_create_dao(&clients, &owner);
+    let dao = mint_and_create_dao(clients, &owner);
 
-    votes.get_configuration(&dao.id);
+    votes.create_proposal(&dao.id, &owner);
 }
 
 #[test]
@@ -352,6 +372,11 @@ fn vote() {
     let supply = 1_000_000;
     let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
 
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let voting = Voting::MAJORITY;
+    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
+
     let owner = Address::random(env);
     let proposal_id = votes.create_proposal(&dao.id, &owner);
 
@@ -378,11 +403,13 @@ fn finalize() {
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
 
+    let proposal_duration: u32 = 10_000;
+
     // make finalization possible
     votes.env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
-        sequence_number: 100 + PROPOSAL_DURATION + 1,
+        sequence_number: 100 + proposal_duration + 1,
         network_id: Default::default(),
         base_reserve: 10,
     });
