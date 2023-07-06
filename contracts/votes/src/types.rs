@@ -1,4 +1,12 @@
-use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec, token};
+
+mod core_contract {
+    soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
+}
+
+use core_contract::Client as CoreContractClient;
+
+
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -51,18 +59,27 @@ pub enum Voting {
     CUSTOM,
 }
 
-const PROP_ID: Symbol = Symbol::short("PROP_ID");
-
+pub const XLM: i128 = 10_000_000;
+pub const RESERVE_AMOUNT: i128 = 100 * XLM;
 pub const PROPOSAL_MAX_NR: u32 = 25;
 
+const PROP_ID: Symbol = Symbol::short("PROP_ID");
+
 impl Proposal {
-    pub fn create(env: &Env, dao_id: Bytes, owner: Address) -> ProposalId {
+    pub fn create(env: &Env, dao_id: Bytes, owner: Address, core_id: Address) -> ProposalId {
         owner.require_auth();
 
         let mut proposals = Self::get_active(env, dao_id.clone());
         if proposals.len() == PROPOSAL_MAX_NR {
             panic!("already at maximum number of {PROPOSAL_MAX_NR} proposals");
         }
+
+        // Transfer required amount to prevent spam
+        let core = CoreContractClient::new(&env, &core_id);
+        let native_asset_id = core.get_native_asset_id();
+        let native_token = token::Client::new(&env, &native_asset_id);
+        let contract = env.current_contract_address();
+        native_token.transfer(&owner, &contract, &RESERVE_AMOUNT);
 
         let id = env.storage().get(&PROP_ID).unwrap_or(Ok(0)).unwrap();
         proposals.push_back(ActiveProposal {
@@ -78,6 +95,7 @@ impl Proposal {
         });
         env.storage().set(&ActiveKey(dao_id), &proposals);
         env.storage().set(&PROP_ID, &(id + 1));
+
         ProposalId(id)
     }
 
@@ -138,18 +156,26 @@ impl Proposal {
                 }
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
+
                 return;
             }
         }
         panic!("proposal not found");
     }
 
-    pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes) {
+    pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes, core_id: Address) {
         let key = ActiveKey(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
             if p.id == proposal_id {
                 p.inner.status = PropStatus::Faulty(reason);
+
+                // return reserved tokens
+                let core = CoreContractClient::new(&env, &core_id);
+                let native_asset_id = core.get_native_asset_id();
+                let native_token = token::Client::new(&env, &native_asset_id);
+                let contract = env.current_contract_address();
+                native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
@@ -159,7 +185,7 @@ impl Proposal {
         panic!("proposal not found");
     }
 
-    pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: ProposalId) {
+    pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: ProposalId, core_id: Address) {
         let key = ActiveKey(dao_id.clone());
         let proposal_duration = Configuration::get(&env, dao_id).proposal_duration;
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
@@ -178,6 +204,13 @@ impl Proposal {
                 };
 
                 env.storage().set(&ArchiveKey(proposal_id), &p.inner);
+
+                // return reserved tokens
+                let core = CoreContractClient::new(&env, &core_id);
+                let native_asset_id = core.get_native_asset_id();
+                let native_token = token::Client::new(&env, &native_asset_id);
+                let contract = env.current_contract_address();
+                native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);

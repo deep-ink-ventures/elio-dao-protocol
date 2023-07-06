@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Address, Bytes, Env, Vec};
+use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol, Vec};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -28,6 +28,8 @@ use crate::events::{ProposalCreatedEventData, VoteCastEventData, VOTE_CAST};
 
 pub struct VotesContract;
 
+pub const NATIVE: Symbol = Symbol::short("NATIVE");
+
 #[contractimpl]
 impl VotesTrait for VotesContract {
     fn init(env: Env, core_id: Address) {
@@ -49,7 +51,8 @@ impl VotesTrait for VotesContract {
         let _ = core.get_dao(&dao_id);
         // check that configuration exists
         Self::get_configuration(env.clone(), dao_id.clone());
-        let proposal_id = Proposal::create(&env, dao_id.clone(), proposal_owner.clone());
+
+        let proposal_id = Proposal::create(&env, dao_id.clone(), proposal_owner.clone(), core_id);
         env.events().publish(
             (PROPOSAL, CREATED),
             ProposalCreatedEventData {
@@ -159,9 +162,9 @@ impl VotesTrait for VotesContract {
         dao_owner: Address,
     ) {
         let core_id = Self::get_core_id(env.clone());
-        verify_dao_owner(&env, &dao_id, dao_owner, core_id);
+        verify_dao_owner(&env, &dao_id, dao_owner, core_id.clone());
 
-        Proposal::set_faulty(&env, dao_id, proposal_id, reason.clone());
+        Proposal::set_faulty(&env, dao_id, proposal_id, reason.clone(), core_id);
         env.events().publish(
             (PROPOSAL, FAULTED),
             ProposalFaultedEventData {
@@ -172,7 +175,8 @@ impl VotesTrait for VotesContract {
     }
 
     fn finalize_proposal(env: Env, dao_id: Bytes, proposal_id: ProposalId) {
-        Proposal::finalize(&env, dao_id, proposal_id);
+        let core_id = Self::get_core_id(env.clone());
+        Proposal::finalize(&env, dao_id, proposal_id, core_id);
         env.events().publish(
             (PROPOSAL, FINALIZED),
             ProposalFinalizedEventData { proposal_id },

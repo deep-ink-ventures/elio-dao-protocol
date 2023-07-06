@@ -7,7 +7,7 @@ use soroban_sdk::{
 
 use crate::{
     core_contract::{Client as CoreContractClient, Dao, WASM as CoreWASM},
-    types::{PropStatus, PROPOSAL_MAX_NR},
+    types::{PropStatus, PROPOSAL_MAX_NR, RESERVE_AMOUNT, XLM},
     ProposalId, VotesContract, VotesContractClient,
 };
 use crate::types::Voting;
@@ -17,6 +17,7 @@ mod assets_contract {
 }
 
 const PROPOSAL_DURATION: u32 = 10_000;
+const MINT: i128 = 1_000 * XLM;
 
 struct Clients {
     core: CoreContractClient<'static>,
@@ -105,6 +106,9 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
     native_asset.mint(&dao_owner, &i128::MAX);
     let dao = create_dao(&core, &dao_owner);
 
+    let native_asset_id = core.get_native_asset_id();
+    fund_account(&env, &native_asset_id,proposal_owner);
+
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let voting = Voting::MAJORITY;
@@ -162,6 +166,11 @@ fn setup_accepted_proposal(clients: &Clients) -> (ProposalId, Address) {
     (proposal_id, dao.owner)
 }
 
+fn fund_account(env: &Env, native_asset_id: &Address, address: &Address) {
+    let native_token = token::Client::new(&env, &native_asset_id);
+    native_token.mint(&address, &MINT);
+}
+
 #[test]
 fn active_proposals_are_managed() {
     let clients = Clients::new();
@@ -185,6 +194,7 @@ fn active_proposals_are_managed() {
     votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
 
     let owner = Address::random(env);
+    fund_account(&env, &core.get_native_asset_id(),&owner);
     let proposal_1_id = votes.create_proposal(&dao.id, &owner);
 
     env.ledger().set(LedgerInfo {
@@ -394,6 +404,7 @@ fn vote() {
     votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
 
     let owner = Address::random(env);
+    fund_account(&env, &clients.core.get_native_asset_id(),&owner);
     let proposal_id = votes.create_proposal(&dao.id, &owner);
 
     let voter = dao.owner;
@@ -459,4 +470,81 @@ fn mark_implemented_only_owner() {
     let votes = clients.votes;
 
     votes.mark_implemented(&proposal_id, &Address::random(&votes.env));
+}
+
+#[test]
+fn reserves_token_on_proposal_creation() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+
+    let owner = Address::random(env);
+    let native_asset_id = &clients.core.get_native_asset_id();
+    let native_token = token::Client::new(&env, &native_asset_id);
+
+    create_dao_with_proposal(&clients, &owner);
+
+    // Checks if balance deducted after proposal creation
+    let current_balance = native_token.balance(&owner);
+    assert_eq!(current_balance, &MINT - &RESERVE_AMOUNT);
+}
+
+#[test]
+fn return_tokens_when_faulty() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+
+    let owner = Address::random(env);
+    let native_asset_id = &clients.core.get_native_asset_id();
+    let native_token = token::Client::new(&env, &native_asset_id);
+    let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
+
+    // Checks if balance deducted after proposal creation
+    let current_balance = native_token.balance(&owner);
+    assert_eq!(current_balance, &MINT - &RESERVE_AMOUNT);
+
+    let reason = "bad".into_val(env);
+    votes.fault_proposal(&dao.id, &proposal_id, &reason, &dao.owner);
+
+    // Check if reserved token has been returned
+    let current_balance = native_token.balance(&owner);
+    assert_eq!(&current_balance, &MINT)
+}
+
+#[test]
+fn returns_tokens_on_finalize() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+    env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+    let owner = Address::random(env);
+    let native_asset_id = &clients.core.get_native_asset_id();
+    let native_token = token::Client::new(&env, &native_asset_id);
+
+    let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
+
+    // Checks if balance deducted after proposal creation
+    let current_balance = native_token.balance(&owner);
+    assert_eq!(current_balance, &MINT - &RESERVE_AMOUNT);
+
+    let proposal_duration: u32 = 10_000;
+
+    // make finalization possible
+    votes.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100 + proposal_duration + 1,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+
+    votes.finalize_proposal(&dao.id, &proposal_id);
+
+    // Check if reserved token has been returned
+    let current_balance = native_token.balance(&owner);
+    assert_eq!(&current_balance, &MINT)
 }
