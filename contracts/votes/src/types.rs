@@ -1,5 +1,7 @@
 use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec};
 
+use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL};
+
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ProposalId(u32);
@@ -94,9 +96,7 @@ impl Proposal {
         // filter out outdated proposals
         let len = active_proposals.len();
         for proposal in active_proposals.into_iter_unchecked() {
-            if env.ledger().sequence()
-                <= proposal.inner.ledger + proposal_duration
-            {
+            if env.ledger().sequence() <= proposal.inner.ledger + proposal_duration {
                 filtered_proposals.push_back(proposal);
             }
         }
@@ -179,9 +179,15 @@ impl Proposal {
 
                 env.storage().set(&ArchiveKey(proposal_id), &p.inner);
 
-                active_proposals.set(i as u32, p);
+                active_proposals.set(i as u32, p.clone());
                 env.storage().set(&key, &active_proposals);
-
+                env.events().publish(
+                    (PROPOSAL, STATUS_UPDATE),
+                    ProposalStatusUpdateEventData {
+                        proposal_id,
+                        status: p.inner.status,
+                    },
+                );
                 return;
             }
         }
@@ -199,6 +205,13 @@ impl Proposal {
         proposal.status = PropStatus::Implemented;
 
         env.storage().set(&key, &proposal);
+        env.events().publish(
+            (PROPOSAL, STATUS_UPDATE),
+            ProposalStatusUpdateEventData {
+                proposal_id,
+                status: proposal.status,
+            },
+        );
     }
 }
 
@@ -247,7 +260,6 @@ impl Metadata {
     }
 }
 
-
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Configuration {
@@ -262,9 +274,13 @@ impl Configuration {
         dao_id: Bytes,
         proposal_duration: u32,
         proposal_token_deposit: u128,
-        voting: Voting
+        voting: Voting,
     ) -> Self {
-        let configuration = Configuration { proposal_duration, proposal_token_deposit, voting };
+        let configuration = Configuration {
+            proposal_duration,
+            proposal_token_deposit,
+            voting,
+        };
         env.storage().set(&dao_id, &configuration);
         configuration
     }
