@@ -17,8 +17,8 @@ mod events;
 
 use core_contract::Client as CoreContractClient;
 use events::{
-    ProposalFaultedEventData, ProposalFinalizedEventData, ProposalMetadataSetEventData, CORE,
-    CREATED, FAULTED, FINALIZED, METADATA_SET, PROPOSAL, CONF_SET, ProposalConfigurationSetEventData,
+    ProposalFaultedEventData, ProposalMetadataSetEventData, CORE,
+    CREATED, FAULTED, METADATA_SET, PROPOSAL, CONF_SET, ProposalConfigurationSetEventData,
 };
 use interface::VotesTrait;
 use types::{ActiveProposal, Metadata, Proposal, ProposalId};
@@ -173,10 +173,6 @@ impl VotesTrait for VotesContract {
 
     fn finalize_proposal(env: Env, dao_id: Bytes, proposal_id: ProposalId) {
         Proposal::finalize(&env, dao_id, proposal_id);
-        env.events().publish(
-            (PROPOSAL, FINALIZED),
-            ProposalFinalizedEventData { proposal_id },
-        );
     }
 
     fn mark_implemented(env: Env, proposal_id: ProposalId, dao_owner: Address) {
