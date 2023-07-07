@@ -6,7 +6,7 @@ mod core_contract {
 
 use core_contract::Client as CoreContractClient;
 
-
+use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL};
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -95,7 +95,6 @@ impl Proposal {
         });
         env.storage().set(&ActiveKey(dao_id), &proposals);
         env.storage().set(&PROP_ID, &(id + 1));
-
         ProposalId(id)
     }
 
@@ -112,9 +111,7 @@ impl Proposal {
         // filter out outdated proposals
         let len = active_proposals.len();
         for proposal in active_proposals.into_iter_unchecked() {
-            if env.ledger().sequence()
-                <= proposal.inner.ledger + proposal_duration
-            {
+            if env.ledger().sequence() <= proposal.inner.ledger + proposal_duration {
                 filtered_proposals.push_back(proposal);
             }
         }
@@ -156,7 +153,6 @@ impl Proposal {
                 }
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
-
                 return;
             }
         }
@@ -212,9 +208,15 @@ impl Proposal {
                 let contract = env.current_contract_address();
                 native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
-                active_proposals.set(i as u32, p);
+                active_proposals.set(i as u32, p.clone());
                 env.storage().set(&key, &active_proposals);
-
+                env.events().publish(
+                    (PROPOSAL, STATUS_UPDATE),
+                    ProposalStatusUpdateEventData {
+                        proposal_id,
+                        status: p.inner.status,
+                    },
+                );
                 return;
             }
         }
@@ -232,6 +234,13 @@ impl Proposal {
         proposal.status = PropStatus::Implemented;
 
         env.storage().set(&key, &proposal);
+        env.events().publish(
+            (PROPOSAL, STATUS_UPDATE),
+            ProposalStatusUpdateEventData {
+                proposal_id,
+                status: proposal.status,
+            },
+        );
     }
 }
 
@@ -280,7 +289,6 @@ impl Metadata {
     }
 }
 
-
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Configuration {
@@ -295,9 +303,13 @@ impl Configuration {
         dao_id: Bytes,
         proposal_duration: u32,
         proposal_token_deposit: u128,
-        voting: Voting
+        voting: Voting,
     ) -> Self {
-        let configuration = Configuration { proposal_duration, proposal_token_deposit, voting };
+        let configuration = Configuration {
+            proposal_duration,
+            proposal_token_deposit,
+            voting,
+        };
         env.storage().set(&dao_id, &configuration);
         configuration
     }
