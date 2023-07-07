@@ -162,9 +162,9 @@ impl VotesTrait for VotesContract {
         dao_owner: Address,
     ) {
         let core_id = Self::get_core_id(env.clone());
-        verify_dao_owner(&env, &dao_id, dao_owner, core_id.clone());
+        verify_dao_owner(&env, &dao_id, dao_owner, core_id);
 
-        Proposal::set_faulty(&env, dao_id, proposal_id, reason.clone(), core_id);
+        Proposal::set_faulty(&env, dao_id, proposal_id, reason.clone());
         env.events().publish(
             (PROPOSAL, FAULTED),
             ProposalFaultedEventData {
@@ -175,8 +175,7 @@ impl VotesTrait for VotesContract {
     }
 
     fn finalize_proposal(env: Env, dao_id: Bytes, proposal_id: ProposalId) {
-        let core_id = Self::get_core_id(env.clone());
-        Proposal::finalize(&env, dao_id, proposal_id, core_id);
+        Proposal::finalize(&env, dao_id, proposal_id);
     }
 
     fn mark_implemented(env: Env, proposal_id: ProposalId, dao_owner: Address) {

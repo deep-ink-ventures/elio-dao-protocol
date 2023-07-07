@@ -6,7 +6,7 @@ mod core_contract {
 
 use core_contract::Client as CoreContractClient;
 
-use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL};
+use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL, CORE};
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -159,7 +159,7 @@ impl Proposal {
         panic!("proposal not found");
     }
 
-    pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes, core_id: Address) {
+    pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes) {
         let key = ActiveKey(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
@@ -167,6 +167,7 @@ impl Proposal {
                 p.inner.status = PropStatus::Faulty(reason);
 
                 // return reserved tokens
+                let core_id = env.storage().get_unchecked(&CORE).unwrap();
                 let core = CoreContractClient::new(&env, &core_id);
                 let native_asset_id = core.get_native_asset_id();
                 let native_token = token::Client::new(&env, &native_asset_id);
@@ -181,7 +182,7 @@ impl Proposal {
         panic!("proposal not found");
     }
 
-    pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: ProposalId, core_id: Address) {
+    pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: ProposalId) {
         let key = ActiveKey(dao_id.clone());
         let proposal_duration = Configuration::get(&env, dao_id).proposal_duration;
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
@@ -202,6 +203,7 @@ impl Proposal {
                 env.storage().set(&ArchiveKey(proposal_id), &p.inner);
 
                 // return reserved tokens
+                let core_id = env.storage().get_unchecked(&CORE).unwrap();
                 let core = CoreContractClient::new(&env, &core_id);
                 let native_asset_id = core.get_native_asset_id();
                 let native_token = token::Client::new(&env, &native_asset_id);
