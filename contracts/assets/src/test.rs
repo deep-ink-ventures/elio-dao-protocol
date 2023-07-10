@@ -67,7 +67,7 @@ fn create_a_token() {
 }
 
 #[test]
-#[should_panic(expected = "DAO already issued a token")]
+#[should_panic(expected = "Status(ContractError(4))")]
 fn create_a_token_only_once() {
     let (client, core_client, _) = create_all_clients();
     create_token(&client, &core_client);
@@ -75,7 +75,7 @@ fn create_a_token_only_once() {
 }
 
 #[test]
-#[should_panic(expected = "Token can only be minted once")]
+#[should_panic(expected = "Status(ContractError(6))")]
 fn mint_only_once() {
     let (client, core_client, _) = create_all_clients();
     let address= create_token(&client, &core_client);
@@ -97,7 +97,7 @@ fn set_owner() {
 }
 
 #[test]
-#[should_panic(expected = "not Token owner")]
+#[should_panic(expected = "Status(ContractError(5))")]
 fn set_owner_auth() {
     let (client, core_client, __) = create_all_clients();
     create_token(&client, &core_client);
@@ -118,7 +118,7 @@ fn set_core_address() {
 }
 
 #[test]
-#[should_panic(expected = "not Token owner")]
+#[should_panic(expected = "Status(ContractError(5))")]
 fn set_core_address_auth() {
     let (client, core_client, __) = create_all_clients();
     create_token(&client, &core_client);

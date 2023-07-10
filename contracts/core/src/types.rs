@@ -39,7 +39,7 @@ impl Dao {
     /// Loads the DAO
     pub fn load(env: &Env, id: &Bytes) -> Self {
         if !Self::exists(env, id) {
-            panic!("DAO does not exist")
+            panic_with_error!(env, CoreError::DaoDoesNotExist)
         }
         env.storage().get_unchecked(id).unwrap()
     }
@@ -50,7 +50,7 @@ impl Dao {
 
         let dao = Self::load(env, id);
         if owner != &dao.owner {
-            panic!("Address not DAO Owner")
+            panic_with_error!(env, CoreError::NotDaoOwner)
         }
         dao
     }
@@ -66,7 +66,7 @@ impl Dao {
         let key = DaoArtifact::Asset(self.id.clone());
 
         if env.storage().has(&key) {
-            panic!("asset already issued")
+            panic_with_error!(env, CoreError::AssetAlreadyIssued)
         }
 
         let asset_id = env
@@ -102,7 +102,7 @@ impl Dao {
     pub fn get_asset_id(&self, env: &Env) -> Address {
         let key = DaoArtifact::Asset(self.id.clone());
         if !env.storage().has(&key) {
-            panic!("asset not issued")
+            panic_with_error!(env, CoreError::AssetNotIssued)
         }
         env.storage().get_unchecked(&key).unwrap()
     }
@@ -128,7 +128,7 @@ impl Metadata {
     /// Loads the metadata
     pub fn load(env: &Env, dao_id: &Bytes) -> Self {
         if !Self::exists(env, dao_id) {
-            panic!("metadata does not exist")
+            panic_with_error!(env, CoreError::NoMetadata)
         }
         env.storage()
             .get_unchecked(&DaoArtifact::Metadata(dao_id.clone()))

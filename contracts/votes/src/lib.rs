@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Address, Bytes, Env, Vec};
+use soroban_sdk::{contractimpl, Address, Bytes, Env, Vec, panic_with_error};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -14,6 +14,7 @@ mod types;
 mod interface;
 
 mod events;
+mod error;
 
 use core_contract::Client as CoreContractClient;
 use events::{
@@ -22,6 +23,7 @@ use events::{
 };
 use interface::VotesTrait;
 use types::{ActiveProposal, Metadata, Proposal, ProposalId};
+use crate::error::VotesError;
 use crate::types::{Configuration, Voting};
 
 use crate::events::{ProposalCreatedEventData, VoteCastEventData, VOTE_CAST};
@@ -32,7 +34,7 @@ pub struct VotesContract;
 impl VotesTrait for VotesContract {
     fn init(env: Env, core_id: Address) {
         if env.storage().has(&CORE) {
-            panic!("Already initialized")
+            panic_with_error!(env, VotesError::CoreAlreadyInitialized)
         }
         env.storage().set(&CORE, &core_id);
     }
@@ -193,6 +195,6 @@ fn verify_dao_owner(env: &Env, dao_id: &Bytes, dao_owner: Address, core_id: Addr
     let dao = core.get_dao(dao_id);
 
     if dao_owner != dao.owner {
-        panic!("not the DAO owner");
+        panic_with_error!(env, VotesError::NotDaoOwner)
     }
 }

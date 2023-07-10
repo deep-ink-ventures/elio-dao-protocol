@@ -1,4 +1,5 @@
-use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec, panic_with_error};
+use crate::error::VotesError;
 
 use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL};
 
@@ -63,7 +64,7 @@ impl Proposal {
 
         let mut proposals = Self::get_active(env, dao_id.clone());
         if proposals.len() == PROPOSAL_MAX_NR {
-            panic!("already at maximum number of {PROPOSAL_MAX_NR} proposals");
+            panic_with_error!(env, VotesError::MaxProposalsReached)
         }
 
         let id = env.storage().get(&PROP_ID).unwrap_or(Ok(0)).unwrap();
@@ -141,7 +142,7 @@ impl Proposal {
                 return;
             }
         }
-        panic!("proposal not found");
+        panic_with_error!(env, VotesError::ProposalNotFound)
     }
 
     pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes) {
@@ -156,7 +157,7 @@ impl Proposal {
                 return;
             }
         }
-        panic!("proposal not found");
+        panic_with_error!(env, VotesError::ProposalNotFound)
     }
 
     pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: ProposalId) {
@@ -166,10 +167,10 @@ impl Proposal {
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
             if p.id == proposal_id {
                 if env.ledger().sequence() <= p.inner.ledger + proposal_duration {
-                    panic!("proposal still active");
+                    panic_with_error!(env, VotesError::ProposalStillActive)
                 }
                 if p.inner.status != PropStatus::Running {
-                    panic!("proposal is not running");
+                   panic_with_error!(env, VotesError::ProposalNotRunning)
                 }
                 p.inner.status = if p.in_favor > p.against {
                     PropStatus::Accepted
@@ -191,7 +192,7 @@ impl Proposal {
                 return;
             }
         }
-        panic!("proposal not found");
+        panic_with_error!(env, VotesError::ProposalNotFound)
     }
 
     pub fn mark_implemented(env: &Env, proposal_id: ProposalId) {
@@ -199,7 +200,7 @@ impl Proposal {
         let mut proposal: Proposal = env.storage().get_unchecked(&key).unwrap();
 
         if proposal.status != PropStatus::Accepted {
-            panic!("proposal was not accepted");
+            panic_with_error!(env, VotesError::UnacceptedProposal)
         }
 
         proposal.status = PropStatus::Implemented;
@@ -241,20 +242,20 @@ impl Metadata {
         for p in active_proposals.iter_unchecked() {
             if p.id == proposal_id {
                 if p.inner.owner != owner {
-                    panic!("only the owner can set metadata");
+                    panic_with_error!(env, VotesError::NotProposalOwner)
                 }
                 let meta = Metadata { url, hash };
                 env.storage().set(&KeyMeta(proposal_id), &meta);
                 return meta;
             }
         }
-        panic!("proposal not found");
+        panic_with_error!(env, VotesError::ProposalNotFound)
     }
 
     pub fn get(env: &Env, proposal_id: ProposalId) -> Self {
         let key = KeyMeta(proposal_id);
         if !env.storage().has(&key) {
-            panic!("metadata does not exist");
+            panic_with_error!(env, VotesError::MetadataNotFound)
         }
         env.storage().get_unchecked(&key).unwrap()
     }
@@ -287,7 +288,7 @@ impl Configuration {
 
     pub fn get(env: &Env, dao_id: Bytes) -> Self {
         if !env.storage().has(&dao_id) {
-            panic!("configuration does not exist");
+            panic_with_error!(env, VotesError::ConfigurationNotFound)
         }
         env.storage().get_unchecked(&dao_id).unwrap()
     }

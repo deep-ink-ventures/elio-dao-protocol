@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, token, Address, Bytes, BytesN, Env, Symbol};
+use soroban_sdk::{contractimpl, token, Address, Bytes, BytesN, Env, Symbol, panic_with_error};
 
 mod test;
 
@@ -14,6 +14,7 @@ use interface::CoreTrait;
 
 mod types;
 use types::{Dao, Metadata};
+use crate::error::CoreError;
 
 mod error;
 
@@ -29,7 +30,7 @@ const RESERVE_AMOUNT: i128 = 1000 * XLM;
 impl CoreTrait for CoreContract {
     fn init(env: Env, votes_id: Address, native_asset_id: Address) {
         if env.storage().has(&VOTES) {
-            panic!("Already initialized")
+            panic_with_error!(env, CoreError::VotesAlreadyInitiated)
         }
 
         env.storage().set(&VOTES, &votes_id);
