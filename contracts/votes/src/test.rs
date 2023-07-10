@@ -264,7 +264,7 @@ fn set_metadata() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(8))")]
+#[should_panic(expected = "Status(ContractError(1007))")]
 fn set_metadata_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -279,7 +279,7 @@ fn set_metadata_only_owner() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(9))")]
+#[should_panic(expected = "Status(ContractError(1008))")]
 fn non_existing_meta_panics() {
     let Clients { votes, .. } = Clients::new();
 
@@ -307,7 +307,7 @@ fn set_configuration() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(2))")]
+#[should_panic(expected = "Status(ContractError(1001))")]
 fn set_configuration_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -323,7 +323,7 @@ fn set_configuration_only_owner() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(10))")]
+#[should_panic(expected = "Status(ContractError(1009))")]
 fn non_existing_configuration_panics() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -335,7 +335,7 @@ fn non_existing_configuration_panics() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(10))")]
+#[should_panic(expected = "Status(ContractError(1009))")]
 fn must_create_configuration_before_proposal() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -365,7 +365,7 @@ fn mark_faulty() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(2))")]
+#[should_panic(expected = "Status(ContractError(1001))")]
 fn mark_faulty_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
