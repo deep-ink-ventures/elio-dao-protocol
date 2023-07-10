@@ -4,7 +4,7 @@ use events::{
     AssetMintedEventData, AssetNewOwnerEventData, AssetSetGovernanceIDEventData,
     AssetTransferredEventData, ASSET, CORE_ADDRESS_CHANGED, MINTED, OWNER_CHANGED, TRANSFERRED,
 };
-use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol};
+use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol, panic_with_error};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -23,13 +23,16 @@ mod interface;
 use interface::AssetTrait;
 
 mod types;
+mod error;
+
 use types::{Checkpoint, Token};
+use crate::error::AssetError;
 
 pub struct AssetContract;
 
-fn check_non_negative_amount(amount: i128) {
+fn check_non_negative_amount(env: &Env, amount: i128) {
     if amount < 0 {
-        panic!("negative amount is not allowed: {}", amount)
+        panic_with_error!(env, AssetError::NegativeAmount)
     }
 }
 
@@ -81,7 +84,7 @@ impl AssetTrait for AssetContract {
     fn incr_allow(env: Env, from: Address, spender: Address, amount: i128) {
         from.require_auth();
 
-        check_non_negative_amount(amount);
+        check_non_negative_amount(&env, amount);
         let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
         let new_allowance = allowance
             .checked_add(amount)
@@ -97,7 +100,7 @@ impl AssetTrait for AssetContract {
     fn decr_allow(env: Env, from: Address, spender: Address, amount: i128) {
         from.require_auth();
 
-        check_non_negative_amount(amount);
+        check_non_negative_amount(&env, amount);
 
         let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
         if amount >= allowance {
@@ -114,7 +117,7 @@ impl AssetTrait for AssetContract {
     fn xfer(env: Env, from: Address, to: Address, amount: i128) {
         from.require_auth();
 
-        check_non_negative_amount(amount);
+        check_non_negative_amount(&env, amount);
         Token::spend_balance(&env, from.clone(), amount);
         Token::receive_balance(&env, to.clone(), amount);
         env.events().publish(
@@ -130,7 +133,7 @@ impl AssetTrait for AssetContract {
     fn xfer_from(env: Env, spender: Address, from: Address, to: Address, amount: i128) {
         spender.require_auth();
 
-        check_non_negative_amount(amount);
+        check_non_negative_amount(&env, amount);
         Token::spend_allowance(&env, from.clone(), spender, amount);
         Token::spend_balance(&env, from.clone(), amount);
         Token::receive_balance(&env, to.clone(), amount);

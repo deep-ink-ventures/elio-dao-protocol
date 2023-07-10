@@ -1,6 +1,7 @@
-use soroban_sdk::{contracttype, Address, Bytes, Env, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, Env, Vec, panic_with_error};
 
 use crate::{core_contract, votes_contract};
+use crate::error::AssetError;
 
 #[derive(Clone)]
 #[contracttype]
@@ -41,7 +42,7 @@ impl Token {
     pub fn get_checkpoint_at(env: &Env, id: Address, i: u32) -> Checkpoint {
         let checkpoints = Self::get_checkpoints(env, id);
         if checkpoints.len() <= i {
-            panic!("Checkpoint index error");
+            panic_with_error!(env, AssetError::CheckpointIndexError)
         }
         checkpoints.get_unchecked(i).unwrap()
     }
@@ -117,7 +118,7 @@ impl Token {
     pub fn spend_allowance(env: &Env, from: Address, spender: Address, amount: i128) {
         let allowance = Self::read_allowance(env, from.clone(), spender.clone());
         if allowance < amount {
-            panic!("insufficient allowance");
+            panic_with_error!(env, AssetError::InsufficientAllowance)
         }
         Self::write_allowance(env, from, spender, allowance - amount);
     }
@@ -147,7 +148,7 @@ impl Token {
         core_address: &Address,
     ) {
         if env.storage().has(&Token::Symbol) {
-            panic!("DAO already issued a token")
+            panic_with_error!(env, AssetError::DaoAlreadyIssuedToken)
         }
         env.storage().set(&Token::Symbol, symbol);
         env.storage().set(&Token::Name, name);
@@ -183,20 +184,20 @@ impl Token {
     pub fn check_auth(env: &Env, owner: &Address) {
         owner.require_auth();
         if owner != &Token::get_owner(env) {
-            panic!("not Token owner")
+            panic_with_error!(env, AssetError::NotTokenOwner)
         }
     }
 
     pub fn check_is_minted(env: &Env, owner: Address) {
         if Token::get_checkpoints(env, owner).len() > 0 {
-            panic!("Token can only be minted once")
+            panic_with_error!(env, AssetError::CanOnlyBeMintedOnce)
         }
     }
 
     pub fn spend_balance(env: &Env, addr: Address, amount: i128) {
         let balance = Token::read_balance(env, addr.clone());
         if balance < amount {
-            panic!("insufficient balance")
+            panic_with_error!(env, AssetError::InsufficientBalance)
         }
         Token::write_balance(env, addr, balance - amount);
     }
