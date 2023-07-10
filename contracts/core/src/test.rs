@@ -48,7 +48,7 @@ fn mint_and_create_dao(clients: &Clients, dao_owner: &Address) -> Dao {
 }
 
 #[test]
-#[should_panic(expected = "Already initialized")]
+#[should_panic(expected = "Status(ContractError(3))")]
 fn cannot_initialize_twice() {
     let core = create_clients().core;
     let fake_id = Address::random(&core.env);
@@ -99,7 +99,7 @@ fn cannot_create_a_dao_twice() {
 }
 
 #[test]
-#[should_panic(expected = "DAO does not exist")]
+#[should_panic(expected = "Status(ContractError(2))")]
 fn destroy_a_dao() {
     let clients = create_clients();
     let core = &clients.core;
@@ -116,7 +116,7 @@ fn destroy_a_dao() {
 }
 
 #[test]
-#[should_panic(expected = "Address not DAO Owner")]
+#[should_panic(expected = "Status(ContractError(4))")]
 fn destroy_a_dao_only_as_owner() {
     let clients = create_clients();
     let core = &clients.core;
@@ -141,7 +141,7 @@ fn change_dao_owner() {
 }
 
 #[test]
-#[should_panic(expected = "Address not DAO Owner")]
+#[should_panic(expected = "Status(ContractError(4))")]
 fn change_dao_owner_only_as_owner() {
     let clients = create_clients();
     let core = &clients.core;
@@ -173,7 +173,7 @@ fn set_metadata() {
 }
 
 #[test]
-#[should_panic(expected = "Address not DAO Owner")]
+#[should_panic(expected = "Status(ContractError(4))")]
 fn set_metadata_only_owner() {
     let clients = create_clients();
     let core = &clients.core;
@@ -190,7 +190,7 @@ fn set_metadata_only_owner() {
 }
 
 #[test]
-#[should_panic(expected = "metadata does not exist")]
+#[should_panic(expected = "Status(ContractError(7))")]
 fn non_existing_meta_panics() {
     let clients = create_clients();
     let core = &clients.core;
@@ -231,8 +231,7 @@ fn issue_token_once() {
 }
 
 #[test]
-#[should_panic(expected = "asset already issued")]
-
+#[should_panic(expected = "Status(ContractError(5))")]
 fn cannot_issue_token_twice() {
     let clients = create_clients();
     let core = &clients.core;
@@ -251,7 +250,7 @@ fn cannot_issue_token_twice() {
 }
 
 #[test]
-#[should_panic(expected = "asset not issued")]
+#[should_panic(expected = "Status(ContractError(6))")]
 fn cannot_get_asset_id_if_non_existing() {
     let clients = create_clients();
     let core = &clients.core;

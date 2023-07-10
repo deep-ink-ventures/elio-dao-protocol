@@ -264,7 +264,7 @@ fn set_metadata() {
 }
 
 #[test]
-#[should_panic(expected = "only the owner can set metadata")]
+#[should_panic(expected = "Status(ContractError(8))")]
 fn set_metadata_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -279,7 +279,7 @@ fn set_metadata_only_owner() {
 }
 
 #[test]
-#[should_panic(expected = "metadata does not exist")]
+#[should_panic(expected = "Status(ContractError(9))")]
 fn non_existing_meta_panics() {
     let Clients { votes, .. } = Clients::new();
 
@@ -307,7 +307,7 @@ fn set_configuration() {
 }
 
 #[test]
-#[should_panic(expected = "not the DAO owner")]
+#[should_panic(expected = "Status(ContractError(2))")]
 fn set_configuration_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -323,7 +323,7 @@ fn set_configuration_only_owner() {
 }
 
 #[test]
-#[should_panic(expected = "configuration does not exist")]
+#[should_panic(expected = "Status(ContractError(10))")]
 fn non_existing_configuration_panics() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -335,20 +335,8 @@ fn non_existing_configuration_panics() {
 }
 
 #[test]
-#[should_panic(expected = "configuration does not exist")]
+#[should_panic(expected = "Status(ContractError(10))")]
 fn must_create_configuration_before_proposal() {
-    let ref clients @ Clients { ref votes, .. } = Clients::new();
-    let env = &votes.env;
-
-    let owner = Address::random(env);
-    let dao = mint_and_create_dao(clients, &owner);
-
-    votes.create_proposal(&dao.id, &owner);
-}
-
-#[test]
-#[should_panic(expected = "configuration does not exist")]
-fn only_shows() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
 
@@ -377,7 +365,7 @@ fn mark_faulty() {
 }
 
 #[test]
-#[should_panic(expected = "not the DAO owner")]
+#[should_panic(expected = "Status(ContractError(2))")]
 fn mark_faulty_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
