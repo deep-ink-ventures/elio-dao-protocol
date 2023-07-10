@@ -1,7 +1,13 @@
-use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec, panic_with_error};
+use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec, token, panic_with_error};
+
+mod core_contract {
+    soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
+}
 use crate::error::VotesError;
 
-use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL};
+use core_contract::Client as CoreContractClient;
+
+use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL, CORE};
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -54,18 +60,27 @@ pub enum Voting {
     CUSTOM,
 }
 
-const PROP_ID: Symbol = Symbol::short("PROP_ID");
-
+pub const XLM: i128 = 10_000_000;
+pub const RESERVE_AMOUNT: i128 = 100 * XLM;
 pub const PROPOSAL_MAX_NR: u32 = 25;
 
+const PROP_ID: Symbol = Symbol::short("PROP_ID");
+
 impl Proposal {
-    pub fn create(env: &Env, dao_id: Bytes, owner: Address) -> ProposalId {
+    pub fn create(env: &Env, dao_id: Bytes, owner: Address, core_id: Address) -> ProposalId {
         owner.require_auth();
 
         let mut proposals = Self::get_active(env, dao_id.clone());
         if proposals.len() == PROPOSAL_MAX_NR {
             panic_with_error!(env, VotesError::MaxProposalsReached)
         }
+
+        // Transfer required amount to prevent spam
+        let core = CoreContractClient::new(&env, &core_id);
+        let native_asset_id = core.get_native_asset_id();
+        let native_token = token::Client::new(&env, &native_asset_id);
+        let contract = env.current_contract_address();
+        native_token.transfer(&owner, &contract, &RESERVE_AMOUNT);
 
         let id = env.storage().get(&PROP_ID).unwrap_or(Ok(0)).unwrap();
         proposals.push_back(ActiveProposal {
@@ -152,6 +167,14 @@ impl Proposal {
             if p.id == proposal_id {
                 p.inner.status = PropStatus::Faulty(reason);
 
+                // return reserved tokens
+                let core_id = env.storage().get_unchecked(&CORE).unwrap();
+                let core = CoreContractClient::new(&env, &core_id);
+                let native_asset_id = core.get_native_asset_id();
+                let native_token = token::Client::new(&env, &native_asset_id);
+                let contract = env.current_contract_address();
+                native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
+
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
                 return;
@@ -179,6 +202,14 @@ impl Proposal {
                 };
 
                 env.storage().set(&ArchiveKey(proposal_id), &p.inner);
+
+                // return reserved tokens
+                let core_id = env.storage().get_unchecked(&CORE).unwrap();
+                let core = CoreContractClient::new(&env, &core_id);
+                let native_asset_id = core.get_native_asset_id();
+                let native_token = token::Client::new(&env, &native_asset_id);
+                let contract = env.current_contract_address();
+                native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
                 active_proposals.set(i as u32, p.clone());
                 env.storage().set(&key, &active_proposals);

@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Address, Bytes, Env, Vec, panic_with_error};
+use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol, Vec, panic_with_error};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -30,6 +30,8 @@ use crate::events::{ProposalCreatedEventData, VoteCastEventData, VOTE_CAST};
 
 pub struct VotesContract;
 
+pub const NATIVE: Symbol = Symbol::short("NATIVE");
+
 #[contractimpl]
 impl VotesTrait for VotesContract {
     fn init(env: Env, core_id: Address) {
@@ -51,7 +53,7 @@ impl VotesTrait for VotesContract {
         let _ = core.get_dao(&dao_id);
         // check that configuration exists
         Self::get_configuration(env.clone(), dao_id.clone());
-        let proposal_id = Proposal::create(&env, dao_id.clone(), proposal_owner.clone());
+        let proposal_id = Proposal::create(&env, dao_id.clone(), proposal_owner.clone(), core_id);
         env.events().publish(
             (PROPOSAL, CREATED),
             ProposalCreatedEventData {

@@ -41,6 +41,10 @@ impl CoreTrait for CoreContract {
         env.storage().get_unchecked(&VOTES).unwrap()
     }
 
+    fn get_native_asset_id(env: Env) -> Address {
+        env.storage().get_unchecked(&NATIVE).unwrap()
+    }
+
     fn create_dao(env: Env, dao_id: Bytes, dao_name: Bytes, dao_owner: Address) -> Dao {
 
         // Reserve DAO Tokens
