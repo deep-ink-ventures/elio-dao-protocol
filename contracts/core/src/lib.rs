@@ -1,5 +1,4 @@
 #![no_std]
-
 use soroban_sdk::{contractimpl, token, Address, Bytes, BytesN, Env, Symbol, panic_with_error};
 
 mod test;
@@ -15,6 +14,7 @@ use interface::CoreTrait;
 mod types;
 use types::{Dao, Metadata};
 use crate::error::CoreError;
+use crate::types::DaoArtifact;
 
 mod error;
 
@@ -130,5 +130,30 @@ impl CoreTrait for CoreContract {
             },
         );
         dao
+    }
+
+    fn get_hookpoint(env: Env, dao_id: Bytes) -> Address {
+        if !env.storage().has(&DaoArtifact::Hookpoint(dao_id.clone())) {
+            panic_with_error!(env, CoreError::NoHookpoint)
+        }
+        env.storage()
+            .get_unchecked(&DaoArtifact::Hookpoint(dao_id))
+            .unwrap()
+    }
+
+    fn has_hookpoint(env: Env, dao_id: Bytes) -> bool {
+        env.storage().has(&DaoArtifact::Hookpoint(dao_id))
+    }
+
+    fn set_hookpoint(env: Env, dao_id: Bytes, hookpoint: Address, dao_owner: Address) {
+        let dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
+        env.storage().set(&DaoArtifact::Hookpoint(dao.id), &hookpoint);
+    }
+
+    fn remove_hookpoint(env: Env, dao_id: Bytes, dao_owner: Address) {
+        let dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
+        if env.storage().has(&DaoArtifact::Hookpoint(dao_id)) {
+            env.storage().remove(&DaoArtifact::Hookpoint(dao.id))
+        }
     }
 }

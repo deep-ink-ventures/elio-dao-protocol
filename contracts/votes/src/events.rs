@@ -43,6 +43,7 @@ pub struct VoteCastEventData {
     pub proposal_id: u32,
     pub voter_id: Address,
     pub in_favor: bool,
+    pub voting_power: i128
 }
 
 #[contracttype]
