@@ -22,7 +22,7 @@ use events::{
     CREATED, FAULTED, METADATA_SET, PROPOSAL, CONF_SET, ProposalConfigurationSetEventData,
 };
 use interface::VotesTrait;
-use types::{ActiveProposal, Metadata, Proposal, ProposalId};
+use types::{ActiveProposal, Metadata, Proposal};
 use crate::error::VotesError;
 use crate::types::{Configuration, Voting};
 
@@ -45,7 +45,7 @@ impl VotesTrait for VotesContract {
         env.storage().get_unchecked(&CORE).unwrap()
     }
 
-    fn create_proposal(env: Env, dao_id: Bytes, proposal_owner: Address) -> ProposalId {
+    fn create_proposal(env: Env, dao_id: Bytes, proposal_owner: Address) -> u32 {
         let core_id = Self::get_core_id(env.clone());
         let core = CoreContractClient::new(&env, &core_id);
 
@@ -68,7 +68,7 @@ impl VotesTrait for VotesContract {
     fn set_metadata(
         env: Env,
         dao_id: Bytes,
-        proposal_id: ProposalId,
+        proposal_id: u32,
         meta: Bytes,
         hash: Bytes,
         proposal_owner: Address,
@@ -92,7 +92,7 @@ impl VotesTrait for VotesContract {
         );
     }
 
-    fn get_metadata(env: Env, proposal_id: ProposalId) -> Metadata {
+    fn get_metadata(env: Env, proposal_id: u32) -> Metadata {
         Metadata::get(&env, proposal_id)
     }
 
@@ -100,7 +100,7 @@ impl VotesTrait for VotesContract {
         Proposal::get_active(&env, dao_id)
     }
 
-    fn get_archived_proposal(env: Env, proposal_id: ProposalId) -> Proposal {
+    fn get_archived_proposal(env: Env, proposal_id: u32) -> Proposal {
         Proposal::get_archived(&env, proposal_id)
     }
 
@@ -136,7 +136,7 @@ impl VotesTrait for VotesContract {
         Configuration::get(&env, dao_id)
     }
 
-    fn vote(env: Env, dao_id: Bytes, proposal_id: ProposalId, in_favor: bool, voter: Address) {
+    fn vote(env: Env, dao_id: Bytes, proposal_id: u32, in_favor: bool, voter: Address) {
         voter.require_auth();
 
         let core_id = Self::get_core_id(env.clone());
@@ -158,7 +158,7 @@ impl VotesTrait for VotesContract {
     fn fault_proposal(
         env: Env,
         dao_id: Bytes,
-        proposal_id: ProposalId,
+        proposal_id: u32,
         reason: Bytes,
         dao_owner: Address,
     ) {
@@ -175,11 +175,11 @@ impl VotesTrait for VotesContract {
         );
     }
 
-    fn finalize_proposal(env: Env, dao_id: Bytes, proposal_id: ProposalId) {
+    fn finalize_proposal(env: Env, dao_id: Bytes, proposal_id: u32) {
         Proposal::finalize(&env, dao_id, proposal_id);
     }
 
-    fn mark_implemented(env: Env, proposal_id: ProposalId, dao_owner: Address) {
+    fn mark_implemented(env: Env, proposal_id: u32, dao_owner: Address) {
         let proposal = Proposal::get_archived(&env, proposal_id);
 
         let core_id = Self::get_core_id(env.clone());

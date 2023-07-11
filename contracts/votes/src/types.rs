@@ -10,20 +10,10 @@ use core_contract::Client as CoreContractClient;
 use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL, CORE};
 
 #[contracttype]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct ProposalId(u32);
-
-impl ProposalId {
-    pub fn new(id: u32) -> Self {
-        Self(id)
-    }
-}
-
-#[contracttype]
 struct ActiveKey(Bytes);
 
 #[contracttype]
-struct ArchiveKey(ProposalId);
+struct ArchiveKey(u32);
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -37,7 +27,7 @@ pub struct Proposal {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ActiveProposal {
-    pub id: ProposalId,
+    pub id: u32,
     pub in_favor: i128,
     pub against: i128,
     pub inner: Proposal,
@@ -67,7 +57,7 @@ pub const PROPOSAL_MAX_NR: u32 = 25;
 const PROP_ID: Symbol = Symbol::short("PROP_ID");
 
 impl Proposal {
-    pub fn create(env: &Env, dao_id: Bytes, owner: Address, core_id: Address) -> ProposalId {
+    pub fn create(env: &Env, dao_id: Bytes, owner: Address, core_id: Address) -> u32 {
         owner.require_auth();
 
         let mut proposals = Self::get_active(env, dao_id.clone());
@@ -84,7 +74,7 @@ impl Proposal {
 
         let id = env.storage().get(&PROP_ID).unwrap_or(Ok(0)).unwrap();
         proposals.push_back(ActiveProposal {
-            id: ProposalId(id),
+            id,
             in_favor: 0,
             against: 0,
             inner: Proposal {
@@ -96,7 +86,7 @@ impl Proposal {
         });
         env.storage().set(&ActiveKey(dao_id), &proposals);
         env.storage().set(&PROP_ID, &(id + 1));
-        ProposalId(id)
+        id
     }
 
     pub fn get_active(env: &Env, dao_id: Bytes) -> Vec<ActiveProposal> {
@@ -123,7 +113,7 @@ impl Proposal {
         filtered_proposals
     }
 
-    pub fn get_archived(env: &Env, proposal_id: ProposalId) -> Proposal {
+    pub fn get_archived(env: &Env, proposal_id: u32) -> Proposal {
         let key = ArchiveKey(proposal_id);
         env.storage().get_unchecked(&key).unwrap()
     }
@@ -131,7 +121,7 @@ impl Proposal {
     pub fn vote(
         env: &Env,
         dao_id: Bytes,
-        proposal_id: ProposalId,
+        proposal_id: u32,
         in_favor: bool,
         voter: Address,
         asset_id: Address,
@@ -160,7 +150,7 @@ impl Proposal {
         panic_with_error!(env, VotesError::ProposalNotFound)
     }
 
-    pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: ProposalId, reason: Bytes) {
+    pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: u32, reason: Bytes) {
         let key = ActiveKey(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
@@ -183,7 +173,7 @@ impl Proposal {
         panic_with_error!(env, VotesError::ProposalNotFound)
     }
 
-    pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: ProposalId) {
+    pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: u32) {
         let key = ActiveKey(dao_id.clone());
         let proposal_duration = Configuration::get(&env, dao_id).proposal_duration;
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
@@ -226,7 +216,7 @@ impl Proposal {
         panic_with_error!(env, VotesError::ProposalNotFound)
     }
 
-    pub fn mark_implemented(env: &Env, proposal_id: ProposalId) {
+    pub fn mark_implemented(env: &Env, proposal_id: u32) {
         let key = ArchiveKey(proposal_id);
         let mut proposal: Proposal = env.storage().get_unchecked(&key).unwrap();
 
@@ -255,13 +245,13 @@ pub struct Metadata {
 }
 
 #[contracttype]
-struct KeyMeta(ProposalId);
+struct KeyMeta(u32);
 
 impl Metadata {
     pub fn set(
         env: &Env,
         dao_id: Bytes,
-        proposal_id: ProposalId,
+        proposal_id: u32,
         url: Bytes,
         hash: Bytes,
         owner: Address,
@@ -283,7 +273,7 @@ impl Metadata {
         panic_with_error!(env, VotesError::ProposalNotFound)
     }
 
-    pub fn get(env: &Env, proposal_id: ProposalId) -> Self {
+    pub fn get(env: &Env, proposal_id: u32) -> Self {
         let key = KeyMeta(proposal_id);
         if !env.storage().has(&key) {
             panic_with_error!(env, VotesError::MetadataNotFound)

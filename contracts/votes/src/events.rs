@@ -1,6 +1,6 @@
 use soroban_sdk::{contracttype, Address, Bytes, Symbol};
 
-use crate::types::{ProposalId, Voting, PropStatus};
+use crate::types::{Voting, PropStatus};
 
 pub const CORE: Symbol = Symbol::short("CORE");
 pub const PROPOSAL: Symbol = Symbol::short("PROPOSAL");
@@ -15,7 +15,7 @@ pub const CONF_SET: Symbol = Symbol::short("conf_set");
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProposalCreatedEventData {
-    pub proposal_id: ProposalId,
+    pub proposal_id: u32,
     pub dao_id: Bytes,
     pub owner_id: Address,
 }
@@ -23,7 +23,7 @@ pub struct ProposalCreatedEventData {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProposalMetadataSetEventData {
-    pub proposal_id: ProposalId,
+    pub proposal_id: u32,
     pub url: Bytes,
     pub hash: Bytes,
 }
@@ -40,7 +40,7 @@ pub struct ProposalConfigurationSetEventData {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VoteCastEventData {
-    pub proposal_id: ProposalId,
+    pub proposal_id: u32,
     pub voter_id: Address,
     pub in_favor: bool,
 }
@@ -48,13 +48,13 @@ pub struct VoteCastEventData {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProposalFaultedEventData {
-    pub proposal_id: ProposalId,
+    pub proposal_id: u32,
     pub reason: Bytes,
 }
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProposalStatusUpdateEventData {
-    pub proposal_id: ProposalId,
+    pub proposal_id: u32,
     pub status: PropStatus,
 }

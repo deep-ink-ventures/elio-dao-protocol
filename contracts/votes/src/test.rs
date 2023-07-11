@@ -8,7 +8,7 @@ use soroban_sdk::{
 use crate::{
     core_contract::{Client as CoreContractClient, Dao, WASM as CoreWASM},
     types::{PropStatus, PROPOSAL_MAX_NR, RESERVE_AMOUNT, XLM},
-    ProposalId, VotesContract, VotesContractClient,
+    VotesContract, VotesContractClient,
 };
 use crate::types::Voting;
 
@@ -94,7 +94,7 @@ fn mint_and_create_dao_with_minted_asset(
     dao
 }
 
-fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao, ProposalId) {
+fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao, u32) {
     let Clients {
         core,
         votes,
@@ -120,7 +120,7 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
 }
 
 
-fn setup_accepted_proposal(clients: &Clients) -> (ProposalId, Address) {
+fn setup_accepted_proposal(clients: &Clients) -> (u32, Address) {
     let (core, votes) = (&clients.core, &clients.votes);
     let env = &core.env;
     env.ledger().set(LedgerInfo {
@@ -283,7 +283,7 @@ fn set_metadata_only_owner() {
 fn non_existing_meta_panics() {
     let Clients { votes, .. } = Clients::new();
 
-    votes.get_metadata(&ProposalId::new(0));
+    votes.get_metadata(&0);
 }
 
 #[test]
