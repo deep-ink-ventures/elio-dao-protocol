@@ -13,6 +13,7 @@ mod types;
 
 mod interface;
 
+mod hooks;
 mod events;
 mod error;
 
@@ -136,7 +137,7 @@ impl VotesTrait for VotesContract {
         Configuration::get(&env, dao_id)
     }
 
-    fn vote(env: Env, dao_id: Bytes, proposal_id: u32, in_favor: bool, voter: Address) {
+    fn vote(env: Env, dao_id: Bytes, proposal_id: u32, in_favor: bool, voter: Address) -> i128 {
         voter.require_auth();
 
         let core_id = Self::get_core_id(env.clone());
@@ -144,15 +145,17 @@ impl VotesTrait for VotesContract {
 
         let asset_id = core.get_dao_asset_id(&dao_id);
 
-        Proposal::vote(&env, dao_id, proposal_id, in_favor, voter.clone(), asset_id);
+        let voting_power = Proposal::vote(&env, dao_id, proposal_id, in_favor, voter.clone(), asset_id);
         env.events().publish(
             (PROPOSAL, VOTE_CAST),
             VoteCastEventData {
                 proposal_id,
                 voter_id: voter,
                 in_favor,
+                voting_power: voting_power.clone()
             },
         );
+        voting_power
     }
 
     fn fault_proposal(

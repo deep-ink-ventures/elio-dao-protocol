@@ -20,18 +20,18 @@ pub trait CoreTrait {
     /// - `dao_owner`: The owner of the freshly created dao
     ///
     fn create_dao(env: Env, dao_id: Bytes, dao_name: Bytes, dao_owner: Address) -> Dao;
-    
+
     /// Load a DAO.
     ///
     /// - `dao_id`: The id of the dao to load;
     fn get_dao(env: Env, dao_id: Bytes) -> Dao;
-    
+
     /// Destroy a DAO.
     ///
     /// - `dao_id`: The DAO to destroy
     /// - `dao_owner`: The owner of to-be-destroyed dao
     fn destroy_dao(env: Env, dao_id: Bytes, dao_owner: Address);
-    
+
     /// Issue the DAO token
     ///
     /// - `dao_id`: The DAO for which to issue a token
@@ -48,7 +48,7 @@ pub trait CoreTrait {
     /// - `dao_id`: The id of the dao to load;
     ///
     fn get_dao_asset_id(env: Env, dao_id: Bytes) -> Address;
-    
+
     /// Set metadata
     ///
     /// - `dao_id`: The DAO for which to set metadata
@@ -61,7 +61,30 @@ pub trait CoreTrait {
     ///
     /// - `dao_id`: The id of the dao to load meta data for;
     fn get_metadata(env: Env, dao_id: Bytes) -> Metadata;
-    
+
+    /// Checks if the dao has a registered hookpoint
+    ///
+    /// - `dao_id`: The DAO for which to set the hookpoint
+    fn has_hookpoint(env: Env, dao_id: Bytes) -> bool;
+
+    /// Get the hookpoint if configured for this contract
+    ///
+    /// - `dao_id`: The DAO for which to set the hookpoint
+    fn get_hookpoint(env: Env, dao_id: Bytes) -> Address;
+
+    /// Set the hookpoint for this contract
+    ///
+    /// - `dao_id`: The DAO for which to set the hookpoint
+    /// - `hookpoint`: The address of the deployed hookpoint contract
+    /// - `dao_owner`: the current owner of the dao
+    fn set_hookpoint(env: Env, dao_id: Bytes, hookpoint: Address, dao_owner: Address);
+
+    /// Remove the hookpoint
+    ///
+    /// - `dao_id`: The DAO for which to set the hookpoint
+    /// - `dao_owner`: the current owner of the dao
+    fn remove_hookpoint(env: Env, dao_id: Bytes, dao_owner: Address);
+
     /// Change owner
     ///
     /// - `dao_id`: the DAO to transfer ownership of

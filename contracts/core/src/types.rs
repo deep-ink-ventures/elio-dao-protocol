@@ -23,6 +23,7 @@ pub struct Metadata {
 pub enum DaoArtifact {
     Metadata(Bytes),
     Asset(Bytes),
+    Hookpoint(Bytes)
 }
 
 impl Dao {
@@ -112,6 +113,7 @@ impl Dao {
         env.storage().remove(&self.id);
     }
 
+    /// Saves a dao
     pub fn save(&self, env: &Env) {
         env.storage().set(&self.id, self);
     }

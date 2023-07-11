@@ -3,11 +3,13 @@ use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec, token
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
 }
-use crate::error::VotesError;
-
 use core_contract::Client as CoreContractClient;
 
+use crate::error::VotesError;
+
+
 use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL, CORE};
+use crate::hooks::on_vote;
 
 #[contracttype]
 struct ActiveKey(Bytes);
@@ -125,17 +127,17 @@ impl Proposal {
         in_favor: bool,
         voter: Address,
         asset_id: Address,
-    ) {
-        let key = ActiveKey(dao_id);
+    ) -> i128 {
+        let key = ActiveKey(dao_id.clone());
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
-            if p.id == proposal_id {
-                // let voting_power = asset.get_balance_at(&voter, &p.inner.ledger);
-                let voting_power: i128 = env.invoke_contract(
+            if p.id == proposal_id.clone() {
+                let voting_power_pre_hook: i128 = env.invoke_contract(
                     &asset_id,
                     &Symbol::new(env, "get_balance_at"),
-                    (voter, p.inner.ledger).into_val(env),
+                    (voter.clone(), p.inner.ledger).into_val(env),
                 );
+                let voting_power = on_vote(env, &dao_id, &proposal_id, &voter, voting_power_pre_hook);
 
                 if in_favor {
                     p.in_favor += voting_power;
@@ -144,7 +146,7 @@ impl Proposal {
                 }
                 active_proposals.set(i as u32, p);
                 env.storage().set(&key, &active_proposals);
-                return;
+                return voting_power
             }
         }
         panic_with_error!(env, VotesError::ProposalNotFound)
