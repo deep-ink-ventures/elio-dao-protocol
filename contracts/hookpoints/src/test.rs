@@ -68,8 +68,16 @@ impl Protocol {
 
         let proposal_duration: u32 = 10_000;
         let proposal_token_deposit: u128 = 100_000_000;
+        let min_threshold_configuration: i128 = 1_000;
         let voting = Voting::MAJORITY;
-        votes.set_configuration(&dao_id, &proposal_duration, &proposal_token_deposit, &voting, &dao_owner);
+        votes.set_configuration(
+            &dao_id,
+            &proposal_duration,
+            &proposal_token_deposit,
+            &min_threshold_configuration,
+            &voting,
+            &dao_owner
+        );
 
         let proposal_id = votes.create_proposal(&dao_id, &dao_owner);
 

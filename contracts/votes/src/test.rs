@@ -111,8 +111,15 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
     let voting = Voting::MAJORITY;
-    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit, &min_threshold_configuration,
+        &voting,
+        &dao.owner
+    );
 
     let proposal_id = votes.create_proposal(&dao.id, &proposal_owner);
 
@@ -190,8 +197,15 @@ fn active_proposals_are_managed() {
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
     let voting = Voting::MAJORITY;
-    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit, &min_threshold_configuration,
+        &voting,
+        &dao.owner
+    );
 
     let owner = Address::random(env);
     fund_account(&env, &core.get_native_asset_id(),&owner);
@@ -296,9 +310,16 @@ fn set_configuration() {
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
     let voting = Voting::MAJORITY;
-
-    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
+        &voting,
+        &dao.owner
+    );
 
     let configuration = votes.get_configuration(&dao.id);
     assert_eq!(configuration.proposal_duration, proposal_duration);
@@ -317,9 +338,17 @@ fn set_configuration_only_owner() {
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
     let voting = Voting::MAJORITY;
     let whoever = Address::random(env);
-    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &whoever);
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
+        &voting,
+        &whoever
+    );
 }
 
 #[test]
@@ -388,8 +417,16 @@ fn vote() {
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
     let voting = Voting::MAJORITY;
-    votes.set_configuration(&dao.id, &proposal_duration, &proposal_token_deposit, &voting, &dao.owner);
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
+        &voting,
+        &dao.owner
+    );
 
     let owner = Address::random(env);
     fund_account(&env, &clients.core.get_native_asset_id(),&owner);
@@ -404,9 +441,11 @@ fn vote() {
     assert_eq!(proposal.in_favor, supply);
 }
 
+
+
 #[test]
 fn finalize() {
-    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let ref clients @ Clients { ref votes, ..} = Clients::new();
     let env = &votes.env;
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
