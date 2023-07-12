@@ -177,7 +177,9 @@ impl Proposal {
 
     pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: u32) {
         let key = ActiveKey(dao_id.clone());
-        let proposal_duration = Configuration::get(&env, dao_id).proposal_duration;
+        let configuration = Configuration::get(&env, dao_id);
+        let proposal_duration = configuration.proposal_duration;
+        let min_threshold_configuration = configuration.min_threshold_configuration;
         let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
         for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
             if p.id == proposal_id {
@@ -187,7 +189,7 @@ impl Proposal {
                 if p.inner.status != PropStatus::Running {
                    panic_with_error!(env, VotesError::ProposalNotRunning)
                 }
-                p.inner.status = if p.in_favor > p.against {
+                p.inner.status = if p.in_favor > p.against && min_threshold_configuration < (p.in_favor + p.against) {
                     PropStatus::Accepted
                 } else {
                     PropStatus::Rejected
@@ -289,6 +291,7 @@ impl Metadata {
 pub struct Configuration {
     pub proposal_duration: u32,
     pub proposal_token_deposit: u128,
+    pub min_threshold_configuration: i128,
     pub voting: Voting,
 }
 
@@ -298,11 +301,13 @@ impl Configuration {
         dao_id: Bytes,
         proposal_duration: u32,
         proposal_token_deposit: u128,
+        min_threshold_configuration: i128,
         voting: Voting,
     ) -> Self {
         let configuration = Configuration {
             proposal_duration,
             proposal_token_deposit,
+            min_threshold_configuration,
             voting,
         };
         env.storage().set(&dao_id, &configuration);

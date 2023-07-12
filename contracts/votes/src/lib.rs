@@ -110,6 +110,7 @@ impl VotesTrait for VotesContract {
         dao_id: Bytes,
         proposal_duration: u32,
         proposal_token_deposit: u128,
+        min_threshold_configuration: i128,
         voting: Voting,
         dao_owner: Address,
     ) {
@@ -118,6 +119,7 @@ impl VotesTrait for VotesContract {
             dao_id.clone(),
             proposal_duration,
             proposal_token_deposit,
+            min_threshold_configuration,
             voting.clone(),
         );
         verify_dao_owner(&env, &dao_id, dao_owner, Self::get_core_id(env.clone()));
