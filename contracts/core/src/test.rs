@@ -66,7 +66,6 @@ fn create_a_dao() {
 
     let id = "DIV".into_val(env);
     let name = "Deep Ink Ventures".into_val(env);
-    // todo: finalize asset integration
     let balance_before = clients.native_asset.balance(&user);
     core.create_dao(&id, &name, &user);
     let balance_after = clients.native_asset.balance(&user);
@@ -82,7 +81,6 @@ fn create_a_dao() {
 #[ignore]
 #[should_panic(expected = "balance is not sufficient to spend")]
 fn cannot_create_a_dao_without_funds() {
-    // todo: finalize asset integration
     let core = create_clients().core;
     create_dao(&core, &Address::random(&core.env));
 }
