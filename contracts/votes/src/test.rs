@@ -116,7 +116,8 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit, &min_threshold_configuration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
         &voting,
         &dao.owner
     );

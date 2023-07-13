@@ -7,9 +7,6 @@ use soroban_sdk::{
 
 use crate::{core_contract, votes_contract, AssetContract, AssetContractClient};
 
-const FINALIZATION_DURATION: u32 = 5_000;
-const PROPOSAL_DURATION: u32 = 10_000;
-
 const SUPPLY: i128 = 1_000_000;
 
 fn create_all_clients() -> (
@@ -45,6 +42,14 @@ fn create_token(client: &AssetContractClient, core_client: &core_contract::Clien
     client.init(&symbol, &name, &address, &core_address);
     client.mint(&address, &SUPPLY);
     address
+}
+
+fn fund_account(env: &Env, native_asset_id: &Address, address: &Address) {
+    const XLM: i128 = 10_000_000;
+    const MINT: i128 = 10_000 * XLM;
+
+    let native_token = AssetContractClient::new(&env, &native_asset_id);
+    native_token.mint(&address, &MINT);
 }
 
 #[test]
@@ -177,9 +182,6 @@ fn xfer_from() {
 }
 
 #[test]
-#[ignore]
-// this test counts exact number of checkpoints which currently
-// fails due to checkpoint filtering being disabled
 fn checkpoints() {
     let (client, core_client, votes_client) = create_all_clients();
 
@@ -227,8 +229,29 @@ fn checkpoints() {
         base_reserve: 10,
     });
 
+    let dao_id = "DIV".into_val(&client.env);
+    let dao_name = "Deep Ink Ventures".into_val(&client.env);
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
+    let voting = votes_contract::Voting::MAJORITY;
+
+    fund_account(&client.env, &core_client.get_native_asset_id(), &owner);
+    core_client.create_dao(&dao_id, &dao_name, &owner);
+    votes_client.set_configuration(
+        &dao_id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
+        &voting,
+        &owner
+    );
+
+    let proposal_owner_1 = Address::random(&client.env);
+    fund_account(&client.env, &core_client.get_native_asset_id(), &proposal_owner_1);
+
     // let's create a proposal
-    votes_client.create_proposal(&"DIV".into_val(&client.env), &Address::random(&client.env));
+    votes_client.create_proposal(&dao_id, &proposal_owner_1);
     client.xfer(&owner, &whoever, &100_000);
 
     assert_eq!(client.get_checkpoint_count(&owner), 2);
@@ -252,7 +275,9 @@ fn checkpoints() {
         network_id: Default::default(),
         base_reserve: 10,
     });
-    votes_client.create_proposal(&"DIV".into_val(&client.env), &Address::random(&client.env));
+    let proposal_owner_2 = Address::random(&client.env);
+    fund_account(&client.env, &core_client.get_native_asset_id(), &proposal_owner_2);
+    votes_client.create_proposal(&dao_id, &proposal_owner_2);
     client.xfer(&owner, &whoever, &100_000);
 
     assert_eq!(client.get_checkpoint_count(&owner), 3);
@@ -268,11 +293,13 @@ fn checkpoints() {
     assert_eq!(cp3.ledger, 20);
     assert_eq!(cp3.balance, 300_000);
 
+    client.env.budget().reset_default();
+
     // now let's outdate the first one
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
-        sequence_number: 10 + FINALIZATION_DURATION + PROPOSAL_DURATION + 1,
+        sequence_number: 10 + proposal_duration + 1,
         network_id: Default::default(),
         base_reserve: 10,
     });
@@ -289,4 +316,21 @@ fn checkpoints() {
     assert_eq!(client.get_balance_at(&whoever, &19), 300_000);
     assert_eq!(client.get_balance_at(&whoever, &20), 300_000);
     assert_eq!(client.get_balance_at(&whoever, &20_000), 400_000);
+}
+
+#[test]
+#[should_panic(expected = "Status(ContractError(2007))")]
+fn checkpoint_at_fails_when_no_checkpoint() {
+    let (client, ..) = create_all_clients();
+
+    client.get_checkpoint_at(&Address::random(&client.env), &0);
+}
+
+#[test]
+#[should_panic(expected = "Status(ContractError(2001))")]
+fn checkpoint_at_fails_when_out_of_bounds() {
+    let (client, core_client, ..) = create_all_clients();
+    let owner = create_token(&client, &core_client);
+
+    client.get_checkpoint_at(&owner, &2);
 }
