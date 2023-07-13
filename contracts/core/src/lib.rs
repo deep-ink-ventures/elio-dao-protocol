@@ -1,6 +1,10 @@
 #![no_std]
 use soroban_sdk::{contractimpl, token, Address, Bytes, BytesN, Env, Symbol, panic_with_error};
 
+mod votes_contract {
+    soroban_sdk::contractimport!(file = "../../wasm/elio_votes.wasm");
+}
+
 mod test;
 
 mod events;
@@ -73,10 +77,15 @@ impl CoreTrait for CoreContract {
     fn destroy_dao(env: Env, dao_id: Bytes, dao_owner: Address) {
         Dao::load_for_owner(&env, &dao_id, &dao_owner).destroy(&env);
 
-       let native_asset_id = env.storage().get_unchecked(&NATIVE).unwrap();
-       let native_token = token::Client::new(&env, &native_asset_id);
-       let contract = &env.current_contract_address();
-       native_token.transfer(&contract, &dao_owner, &RESERVE_AMOUNT);
+        let native_asset_id = env.storage().get_unchecked(&NATIVE).unwrap();
+        let native_token = token::Client::new(&env, &native_asset_id);
+        let contract = &env.current_contract_address();
+        native_token.transfer(&contract, &dao_owner, &RESERVE_AMOUNT);
+
+        let votes_id = Self::get_votes_id(env.clone());
+        let votes_contract = votes_contract::Client::new(&env, &votes_id);
+
+        votes_contract.remove_configuration(&dao_id);
 
         env.events()
             .publish((DAO, DESTROYED), DaoDestroyedEventData { dao_id });

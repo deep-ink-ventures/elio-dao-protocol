@@ -137,6 +137,10 @@ impl VotesTrait for VotesContract {
         Configuration::get(&env, dao_id)
     }
 
+    fn remove_configuration(env: Env, dao_id: Bytes) {
+        Configuration::remove(&env, dao_id)
+    }
+
     fn vote(env: Env, dao_id: Bytes, proposal_id: u32, in_favor: bool, voter: Address) -> i128 {
         voter.require_auth();
 

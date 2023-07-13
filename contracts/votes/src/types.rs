@@ -315,4 +315,11 @@ impl Configuration {
         }
         env.storage().get_unchecked(&dao_id).unwrap()
     }
+
+    pub fn remove(env: &Env, dao_id: Bytes) {
+        if !env.storage().has(&dao_id) {
+            panic_with_error!(env, VotesError::ConfigurationNotFound)
+        }
+        env.storage().remove(&dao_id)
+    }
 }

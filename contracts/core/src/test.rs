@@ -11,9 +11,11 @@ mod assets_contract {
 use soroban_sdk::{log, testutils::Address as _, token, Address, BytesN, Env, IntoVal};
 
 use crate::{types::Dao, CoreContract, CoreContractClient};
+use votes_contract::Client as VotesContractClient;
 
 struct Clients {
     core: CoreContractClient<'static>,
+    votes: VotesContractClient<'static>,
     native_asset: token::Client<'static>,
 }
 
@@ -25,12 +27,14 @@ fn create_clients() -> Clients {
     let votes_id = env.register_contract_wasm(None, votes_contract::WASM);
 
     let core = CoreContractClient::new(&env, &core_id);
+    let votes = VotesContractClient::new(&env,&votes_id);
 
     let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
     let native_asset = token::Client::new(&env, &native_asset_id);
 
     core.init(&votes_id, &native_asset_id);
-    Clients { core, native_asset }
+    votes.init(&core_id);
+    Clients { core, votes,  native_asset }
 }
 
 fn create_dao(core: &CoreContractClient<'static>, dao_owner: &Address) -> Dao {
@@ -106,11 +110,49 @@ fn destroy_a_dao() {
 
     let dao = mint_and_create_dao(&clients, &user);
     let balance_before = clients.native_asset.balance(&user);
+
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let voting = votes_contract::Voting::MAJORITY;
+    clients.votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &voting,
+        &dao.owner
+    );
+
     core.destroy_dao(&dao.id, &user);
     let balance_after = clients.native_asset.balance(&user);
     assert!(balance_after > balance_before);
 
     core.get_dao(&dao.id);
+}
+
+#[test]
+#[should_panic(expected = "Status(ContractError(1009))")]
+fn destroy_a_dao_destroys_configuration() {
+    let clients = create_clients();
+    let core = &clients.core;
+    let env = &core.env;
+    let user = Address::random(env);
+
+    let dao = mint_and_create_dao(&clients, &user);
+
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let voting = votes_contract::Voting::MAJORITY;
+    clients.votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &voting,
+        &dao.owner
+    );
+
+    core.destroy_dao(&dao.id, &user);
+
+    clients.votes.get_configuration(&dao.id);
 }
 
 #[test]
