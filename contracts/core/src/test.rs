@@ -111,19 +111,6 @@ fn destroy_a_dao() {
     let dao = mint_and_create_dao(&clients, &user);
     let balance_before = clients.native_asset.balance(&user);
 
-    let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
-    let min_threshold_configuration: i128 = 1_000;
-    let voting = votes_contract::Voting::MAJORITY;
-    clients.votes.set_configuration(
-        &dao.id,
-        &proposal_duration,
-        &proposal_token_deposit,
-        &min_threshold_configuration,
-        &voting,
-        &dao.owner
-    );
-
     core.destroy_dao(&dao.id, &user);
     let balance_after = clients.native_asset.balance(&user);
     assert!(balance_after > balance_before);
