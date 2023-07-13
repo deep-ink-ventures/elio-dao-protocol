@@ -113,11 +113,13 @@ fn destroy_a_dao() {
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
     let voting = votes_contract::Voting::MAJORITY;
     clients.votes.set_configuration(
         &dao.id,
         &proposal_duration,
         &proposal_token_deposit,
+        &min_threshold_configuration,
         &voting,
         &dao.owner
     );
@@ -141,11 +143,13 @@ fn destroy_a_dao_destroys_configuration() {
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
     let voting = votes_contract::Voting::MAJORITY;
     clients.votes.set_configuration(
         &dao.id,
         &proposal_duration,
         &proposal_token_deposit,
+        &min_threshold_configuration,
         &voting,
         &dao.owner
     );
@@ -154,6 +158,7 @@ fn destroy_a_dao_destroys_configuration() {
 
     clients.votes.get_configuration(&dao.id);
 }
+
 
 #[test]
 #[should_panic(expected = "Status(ContractError(4))")]

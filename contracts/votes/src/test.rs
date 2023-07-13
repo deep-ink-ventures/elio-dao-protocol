@@ -352,6 +352,31 @@ fn set_configuration_only_owner() {
 }
 
 #[test]
+#[should_panic(expected = "Status(ContractError(1001))")]
+fn remove_configuration_only_owner() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+
+    let owner = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &owner);
+
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
+    let voting = Voting::MAJORITY;
+    let whoever = Address::random(env);
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
+        &voting,
+        &owner
+    );
+    votes.remove_configuration(&dao.id, &whoever);
+}
+
+#[test]
 #[should_panic(expected = "Status(ContractError(1009))")]
 fn non_existing_configuration_panics() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
@@ -440,8 +465,6 @@ fn vote() {
         .unwrap();
     assert_eq!(proposal.in_favor, supply);
 }
-
-
 
 #[test]
 fn rejected_finalize() {

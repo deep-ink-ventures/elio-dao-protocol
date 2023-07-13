@@ -1,4 +1,5 @@
 #![no_std]
+
 use soroban_sdk::{contractimpl, token, Address, Bytes, BytesN, Env, Symbol, panic_with_error};
 
 mod votes_contract {
@@ -84,8 +85,7 @@ impl CoreTrait for CoreContract {
 
         let votes_id = Self::get_votes_id(env.clone());
         let votes_contract = votes_contract::Client::new(&env, &votes_id);
-
-        votes_contract.remove_configuration(&dao_id);
+        votes_contract.remove_configuration(&dao_id, &dao_owner);
 
         env.events()
             .publish((DAO, DESTROYED), DaoDestroyedEventData { dao_id });

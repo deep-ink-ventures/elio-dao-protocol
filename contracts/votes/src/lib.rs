@@ -139,7 +139,10 @@ impl VotesTrait for VotesContract {
         Configuration::get(&env, dao_id)
     }
 
-    fn remove_configuration(env: Env, dao_id: Bytes) {
+    fn remove_configuration(env: Env, dao_id: Bytes, dao_owner: Address) {
+        let core_id = Self::get_core_id(env.clone());
+
+        verify_dao_owner(&env, &dao_id, dao_owner, core_id);
         Configuration::remove(&env, dao_id)
     }
 
