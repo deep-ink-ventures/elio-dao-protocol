@@ -320,4 +320,10 @@ impl Configuration {
         }
         env.storage().get_unchecked(&dao_id).unwrap()
     }
+
+    pub fn remove(env: &Env, dao_id: Bytes) {
+        if env.storage().has(&dao_id) {
+            env.storage().remove(&dao_id)
+        }
+    }
 }
