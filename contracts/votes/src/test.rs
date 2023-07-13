@@ -17,7 +17,7 @@ mod assets_contract {
 }
 
 const PROPOSAL_DURATION: u32 = 10_000;
-const MINT: i128 = 1_000 * XLM;
+const MINT: i128 = 10_000 * XLM;
 
 struct Clients {
     core: CoreContractClient<'static>,
@@ -444,7 +444,7 @@ fn vote() {
 
 
 #[test]
-fn finalize() {
+fn rejected_finalize() {
     let ref clients @ Clients { ref votes, ..} = Clients::new();
     let env = &votes.env;
     env.ledger().set(LedgerInfo {
@@ -472,6 +472,53 @@ fn finalize() {
 
     let proposal = votes.get_archived_proposal(&proposal_id);
     assert_eq!(proposal.status, PropStatus::Rejected);
+}
+
+#[test]
+fn accepted_finalize() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+    env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+
+    let dao_owner = Address::random(env);
+    let supply = 1_000_000;
+    let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
+
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
+    let voting = Voting::MAJORITY;
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
+        &voting,
+        &dao.owner
+    );
+
+    let proposal_id = votes.create_proposal(&dao.id, &dao_owner);
+
+    votes.vote(&dao.id, &proposal_id, &true, &dao.owner);
+
+    votes.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 100 + proposal_duration + 1,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+
+    votes.finalize_proposal(&dao.id, &proposal_id);
+
+    let proposal = votes.get_archived_proposal(&proposal_id);
+    assert_eq!(proposal.status, PropStatus::Accepted);
 }
 
 #[test]
