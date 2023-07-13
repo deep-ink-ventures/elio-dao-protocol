@@ -10,5 +10,6 @@ pub enum AssetError {
     DaoAlreadyIssuedToken = 2003,
     NotTokenOwner = 2004,
     CanOnlyBeMintedOnce = 2005,
-    InsufficientBalance = 2006
+    InsufficientBalance = 2006,
+    NoCheckpoint = 2007,
 }
