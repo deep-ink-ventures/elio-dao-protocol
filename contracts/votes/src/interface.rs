@@ -29,6 +29,7 @@ pub trait VotesTrait {
         dao_id: Bytes,
         proposal_duration: u32,
         proposal_token_deposit: u128,
+        min_threshold_configuration: i128,
         voting: Voting,
         dao_owner: Address,
     );
