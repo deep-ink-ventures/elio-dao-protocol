@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol, Vec, panic_with_error, symbol_short};
+use soroban_sdk::{contractimpl, contract, Address, Bytes, Env, Symbol, Vec, panic_with_error, symbol_short};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -29,6 +29,7 @@ use crate::types::{Configuration, Voting};
 
 use crate::events::{ProposalCreatedEventData, VoteCastEventData, VOTE_CAST};
 
+#[contract]
 pub struct VotesContract;
 
 pub const NATIVE: Symbol = symbol_short!("NATIVE");

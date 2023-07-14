@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contractimpl, token, Address, Bytes, BytesN, Env, Symbol, panic_with_error, symbol_short};
+use soroban_sdk::{contractimpl, contract, token, Address, Bytes, BytesN, Env, Symbol, panic_with_error, symbol_short};
 
 mod test;
 
@@ -20,11 +20,12 @@ mod error;
 
 pub const NATIVE: Symbol = symbol_short!("NATIVE");
 
-pub struct CoreContract;
 
 const XLM: i128 = 10_000_000;
 const RESERVE_AMOUNT: i128 = 1000 * XLM;
 
+#[contract]
+pub struct CoreContract;
 
 #[contractimpl]
 impl CoreTrait for CoreContract {

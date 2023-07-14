@@ -4,7 +4,7 @@ use events::{
     AssetMintedEventData, AssetNewOwnerEventData, AssetSetGovernanceIDEventData,
     AssetTransferredEventData, ASSET, CORE_ADDRESS_CHANGED, MINTED, OWNER_CHANGED, TRANSFERRED,
 };
-use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol, panic_with_error};
+use soroban_sdk::{contractimpl, contract, Address, Bytes, Env, Symbol, panic_with_error};
 use soroban_sdk::arbitrary::arbitrary::unstructured::Int;
 
 mod core_contract {
@@ -29,6 +29,7 @@ mod error;
 use types::{Checkpoint, Token};
 use crate::error::AssetError;
 
+#[contract]
 pub struct AssetContract;
 
 fn check_non_negative_amount(env: &Env, amount: i128) {

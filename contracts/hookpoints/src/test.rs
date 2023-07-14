@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use soroban_sdk::{testutils::{Address as _}, contractimpl, token, Address, BytesN, Env, IntoVal, Bytes};
+use soroban_sdk::{testutils::{Address as _}, contractimpl, contract, token, Address, BytesN, Env, IntoVal, Bytes};
 
 use crate::{
     core_contract::{WASM as CoreWASM, Client as CoreClient},
@@ -11,6 +11,7 @@ use crate::interface::HookpointsTrait;
 
 
 /// *** This is a simple contract that is just altering things a bit for us to get going with tests
+#[contract]
 pub struct TestHookpointsContract;
 
 #[contractimpl]
