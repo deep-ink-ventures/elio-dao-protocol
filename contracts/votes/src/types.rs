@@ -130,7 +130,7 @@ impl Proposal {
     ) -> i128 {
         let key = ActiveKey(dao_id.clone());
         let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
-        for (i, mut p) in active_proposals.into_iter().enumerate() {
+        for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
             if p.id == proposal_id.clone() {
                 let voting_power_pre_hook: i128 = env.invoke_contract(
                     &asset_id,
@@ -155,7 +155,7 @@ impl Proposal {
     pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: u32, reason: Bytes) {
         let key = ActiveKey(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
-        for (i, mut p) in active_proposals.into_iter().enumerate() {
+        for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
             if p.id == proposal_id {
                 p.inner.status = PropStatus::Faulty(reason);
 
@@ -181,7 +181,7 @@ impl Proposal {
         let proposal_duration = configuration.proposal_duration;
         let min_threshold_configuration = configuration.min_threshold_configuration;
         let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
-        for (i, mut p) in active_proposals.into_iter().enumerate() {
+        for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
             if p.id == proposal_id {
                 if env.ledger().sequence() <= p.inner.ledger + proposal_duration {
                     panic_with_error!(env, VotesError::ProposalStillActive)

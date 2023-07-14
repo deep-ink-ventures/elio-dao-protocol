@@ -5,7 +5,6 @@ use events::{
     AssetTransferredEventData, ASSET, CORE_ADDRESS_CHANGED, MINTED, OWNER_CHANGED, TRANSFERRED,
 };
 use soroban_sdk::{contractimpl, contract, Address, Bytes, Env, Symbol, panic_with_error};
-use soroban_sdk::arbitrary::arbitrary::unstructured::Int;
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -88,9 +87,7 @@ impl AssetTrait for AssetContract {
 
         check_non_negative_amount(&env, amount);
         let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
-        let new_allowance = allowance
-            .checked_add(amount)
-            .expect("Updated allowance doesn't fit in an i128");
+        let new_allowance = allowance + amount;
 
         Token::write_allowance(&env, from.clone(), spender.clone(), new_allowance);
         env.events().publish(

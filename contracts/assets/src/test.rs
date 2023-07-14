@@ -1,9 +1,6 @@
 #![cfg(test)]
 
-use soroban_sdk::{
-    testutils::{Address as _, Ledger, LedgerInfo},
-    Address, Env, IntoVal,
-};
+use soroban_sdk::{testutils::{Address as _, Ledger, LedgerInfo}, Address, Env, IntoVal};
 
 use crate::{core_contract, votes_contract, AssetContract, AssetContractClient};
 
@@ -201,6 +198,9 @@ fn checkpoints() {
         sequence_number: 1,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
 
     client.xfer(&owner, &whoever, &100_000);
@@ -225,6 +225,9 @@ fn checkpoints() {
         sequence_number: 10,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
 
     // let's create a proposal
@@ -251,6 +254,9 @@ fn checkpoints() {
         sequence_number: 20,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
     votes_client.create_proposal(&"DIV".into_val(&client.env), &Address::random(&client.env));
     client.xfer(&owner, &whoever, &100_000);
@@ -275,6 +281,9 @@ fn checkpoints() {
         sequence_number: 10 + FINALIZATION_DURATION + PROPOSAL_DURATION + 1,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
     client.xfer(&owner, &whoever, &100_000);
 

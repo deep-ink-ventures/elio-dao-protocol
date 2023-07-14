@@ -24,6 +24,7 @@ impl HookpointsTrait for TestHookpointsContract {
 
 
 const MINT: i128 = 1_000 * 10_000_000;
+pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
 
 /// *** A fully working testing env for  tests
 struct Protocol {
@@ -49,17 +50,19 @@ impl Protocol {
         let votes = VotesClient::new(&env, &votes_id);
 
         let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
-        let native_asset = token::Client::new(&env, &native_asset_id);
+
+        let native_asset_admin_id = env.register_stellar_asset_contract(Address::random(&env));
+        let native_asset_admin = token::AdminClient::new(&env, &native_asset_admin_id);
 
         core.init(&votes_id, &native_asset_id);
         votes.init(&core_id);
 
-        native_asset.mint(&dao_owner, &i128::MAX);
+        native_asset_admin.mint(&dao_owner, &MAX_I128);
         let dao_id = "DIV".into_val(&env);
         let dao_name = "Deep Ink Ventures".into_val(&env);
         core.create_dao(&dao_id, &dao_name, &dao_owner);
 
-        let assets_wasm_hash = env.install_contract_wasm(AssetsWASM);
+        let assets_wasm_hash = env.deployer().upload_contract_wasm(AssetsWASM);
         let salt = BytesN::from_array(&env, &[1; 32]);
         core.issue_token(&dao_id, &dao_owner, &assets_wasm_hash, &salt);
 

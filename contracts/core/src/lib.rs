@@ -47,7 +47,6 @@ impl CoreTrait for CoreContract {
     }
 
     fn create_dao(env: Env, dao_id: Bytes, dao_name: Bytes, dao_owner: Address) -> Dao {
-
         // Reserve DAO Tokens
         let native_asset_id = env.storage().instance().get(&NATIVE).unwrap();
         let native_token = token::Client::new(&env, &native_asset_id);
@@ -120,28 +119,28 @@ impl CoreTrait for CoreContract {
     }
 
     fn has_hookpoint(env: Env, dao_id: Bytes) -> bool {
-        env.storage().persistent().has(&DaoArtifact::Hookpoint(dao_id))
+        env.storage().instance().has(&DaoArtifact::Hookpoint(dao_id))
     }
 
     fn get_hookpoint(env: Env, dao_id: Bytes) -> Address {
-        if !env.storage().persistent().has(&DaoArtifact::Hookpoint(dao_id.clone())) {
+        if !env.storage().instance().has(&DaoArtifact::Hookpoint(dao_id.clone())) {
             panic_with_error!(env, CoreError::NoHookpoint)
         }
         env.storage()
-            .persistent()
+            .instance()
             .get(&DaoArtifact::Hookpoint(dao_id))
             .unwrap()
     }
 
     fn set_hookpoint(env: Env, dao_id: Bytes, hookpoint: Address, dao_owner: Address) {
         let dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
-        env.storage().persistent().set(&DaoArtifact::Hookpoint(dao.id), &hookpoint);
+        env.storage().instance().set(&DaoArtifact::Hookpoint(dao.id), &hookpoint);
     }
 
     fn remove_hookpoint(env: Env, dao_id: Bytes, dao_owner: Address) {
         let dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
-        if env.storage().persistent().has(&DaoArtifact::Hookpoint(dao_id)) {
-            env.storage().persistent().remove(&DaoArtifact::Hookpoint(dao.id))
+        if env.storage().instance().has(&DaoArtifact::Hookpoint(dao_id)) {
+            env.storage().instance().remove(&DaoArtifact::Hookpoint(dao.id))
         }
     }
 

@@ -19,10 +19,13 @@ mod assets_contract {
 const PROPOSAL_DURATION: u32 = 10_000;
 const MINT: i128 = 10_000 * XLM;
 
+pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
+
 struct Clients {
     core: CoreContractClient<'static>,
     votes: VotesContractClient<'static>,
     native_asset: token::Client<'static>,
+    native_asset_admin: token::AdminClient<'static>,
 }
 
 impl Clients {
@@ -39,6 +42,8 @@ impl Clients {
         let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
         let native_asset = token::Client::new(&env, &native_asset_id);
 
+        let native_asset_admin = token::AdminClient::new(&env, &native_asset_id);
+
         core.init(&votes_id, &native_asset_id);
         votes.init(&core_id);
 
@@ -46,6 +51,7 @@ impl Clients {
             core,
             votes,
             native_asset,
+            native_asset_admin,
         }
     }
 }
@@ -60,7 +66,7 @@ fn create_dao(core: &CoreContractClient<'static>, dao_owner: &Address) -> Dao {
 }
 
 fn mint_and_create_dao(clients: &Clients, dao_owner: &Address) -> Dao {
-    clients.native_asset.mint(&dao_owner, &i128::MAX);
+    clients.native_asset_admin.mint(&dao_owner, &MAX_I128);
     create_dao(&clients.core, &dao_owner)
 }
 
@@ -70,7 +76,7 @@ fn mint_and_create_dao_with_asset(clients: &Clients, dao_owner: &Address) -> Dao
     let core = &clients.core;
     let env = &core.env;
 
-    let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
+    let assets_wasm_hash = env.deployer().upload_contract_wasm(assets_contract::WASM);
     let salt = BytesN::from_array(env, &[1; 32]);
     core.issue_token(&dao.id, &dao_owner, &assets_wasm_hash, &salt);
 
@@ -99,11 +105,12 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
         core,
         votes,
         native_asset,
+        native_asset_admin,
     } = clients;
     let env = &core.env;
 
     let dao_owner = Address::random(env);
-    native_asset.mint(&dao_owner, &i128::MAX);
+    native_asset_admin.mint(&dao_owner, &MAX_I128);
     let dao = create_dao(&core, &dao_owner);
 
     let native_asset_id = core.get_native_asset_id();
@@ -136,11 +143,14 @@ fn setup_accepted_proposal(clients: &Clients) -> (u32, Address) {
         sequence_number: 100,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
 
-    let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
+    let assets_wasm_hash = env.deployer().upload_contract_wasm(assets_contract::WASM);
     let salt = BytesN::from_array(env, &[1; 32]);
     core.issue_token(&dao.id, &dao.owner, &assets_wasm_hash, &salt);
 
@@ -160,21 +170,23 @@ fn setup_accepted_proposal(clients: &Clients) -> (u32, Address) {
         sequence_number: 100 + PROPOSAL_DURATION + 1,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
 
     votes.finalize_proposal(&dao.id, &proposal_id);
 
     let proposal = votes
         .get_active_proposals(&dao.id)
-        .get_unchecked(0)
-        .unwrap();
+        .get_unchecked(0);
     assert_eq!(proposal.inner.status, PropStatus::Accepted);
     assert_eq!(proposal.inner, votes.get_archived_proposal(&proposal_id));
     (proposal_id, dao.owner)
 }
 
 fn fund_account(env: &Env, native_asset_id: &Address, address: &Address) {
-    let native_token = token::Client::new(&env, &native_asset_id);
+    let native_token = token::AdminClient::new(&env, &native_asset_id);
     native_token.mint(&address, &MINT);
 }
 
@@ -190,6 +202,9 @@ fn active_proposals_are_managed() {
         sequence_number: 100,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
 
     let dao_owner = Address::random(env);
@@ -217,13 +232,16 @@ fn active_proposals_are_managed() {
         sequence_number: 200,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
     let proposal_2_id = votes.create_proposal(&dao.id, &owner);
 
     let all_proposals = votes.get_active_proposals(&dao.id);
     assert_eq!(all_proposals.len(), 2);
-    let p1 = all_proposals.get_unchecked(0).unwrap();
-    let p2 = all_proposals.get_unchecked(1).unwrap();
+    let p1 = all_proposals.get_unchecked(0);
+    let p2 = all_proposals.get_unchecked(1);
     assert_eq!(p1.id, proposal_1_id);
     assert_eq!(p2.id, proposal_2_id);
 
@@ -237,11 +255,14 @@ fn active_proposals_are_managed() {
         sequence_number: 100 + PROPOSAL_DURATION + 1,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
 
     let all_proposals = votes.get_active_proposals(&dao.id);
     assert_eq!(all_proposals.len(), 1);
-    let p = all_proposals.get_unchecked(0).unwrap();
+    let p = all_proposals.get_unchecked(0);
     assert_eq!(p.id, proposal_2_id);
 }
 
@@ -388,8 +409,7 @@ fn mark_faulty() {
 
     let proposal = votes
         .get_active_proposals(&dao.id)
-        .get_unchecked(0)
-        .unwrap();
+        .get_unchecked(0);
     assert_eq!(proposal.inner.status, PropStatus::Faulty(reason));
 }
 
@@ -436,8 +456,7 @@ fn vote() {
     votes.vote(&dao.id, &proposal_id, &true, &voter);
     let proposal = votes
         .get_active_proposals(&dao.id)
-        .get_unchecked(0)
-        .unwrap();
+        .get_unchecked(0);
     assert_eq!(proposal.in_favor, supply);
 }
 
@@ -453,6 +472,9 @@ fn rejected_finalize() {
         sequence_number: 100,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
@@ -466,6 +488,9 @@ fn rejected_finalize() {
         sequence_number: 100 + proposal_duration + 1,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
 
     votes.finalize_proposal(&dao.id, &proposal_id);
@@ -484,6 +509,9 @@ fn accepted_finalize() {
         sequence_number: 100,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
 
     let dao_owner = Address::random(env);
@@ -513,6 +541,9 @@ fn accepted_finalize() {
         sequence_number: 100 + proposal_duration + 1,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
 
     votes.finalize_proposal(&dao.id, &proposal_id);
@@ -594,6 +625,9 @@ fn returns_tokens_on_finalize() {
         sequence_number: 100,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
     let owner = Address::random(env);
     let native_asset_id = &clients.core.get_native_asset_id();
@@ -614,6 +648,9 @@ fn returns_tokens_on_finalize() {
         sequence_number: 100 + proposal_duration + 1,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
 
     votes.finalize_proposal(&dao.id, &proposal_id);

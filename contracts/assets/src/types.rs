@@ -103,12 +103,12 @@ impl Token {
 
     pub fn read_allowance(env: &Env, from: Address, spender: Address) -> i128 {
         let key = Self::Allowance(Allowances { from, spender });
-        env.storage().persistent().get(&key).unwrap()
+        env.storage().instance().get(&key).unwrap()
     }
 
     pub fn write_allowance(env: &Env, from: Address, spender: Address, amount: i128) {
         let key = Self::Allowance(Allowances { from, spender });
-        env.storage().persistent().set(&key, &amount);
+        env.storage().instance().set(&key, &amount);
     }
 
     pub fn spend_allowance(env: &Env, from: Address, spender: Address, amount: i128) {
@@ -170,7 +170,7 @@ impl Token {
 
     pub fn read_balance(env: &Env, addr: Address) -> i128 {
         let key = Token::Balance(addr);
-        env.storage().persistent().get(&key).unwrap()
+        env.storage().instance().get(&key).unwrap()
     }
 
     pub fn check_auth(env: &Env, owner: &Address) {
