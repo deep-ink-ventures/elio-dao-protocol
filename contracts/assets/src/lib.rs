@@ -5,6 +5,7 @@ use events::{
     AssetTransferredEventData, ASSET, CORE_ADDRESS_CHANGED, MINTED, OWNER_CHANGED, TRANSFERRED,
 };
 use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol, panic_with_error};
+use soroban_sdk::arbitrary::arbitrary::unstructured::Int;
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");

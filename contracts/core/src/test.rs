@@ -9,6 +9,7 @@ mod assets_contract {
 }
 
 use soroban_sdk::{log, testutils::Address as _, token, Address, BytesN, Env, IntoVal};
+use soroban_sdk::arbitrary::arbitrary::unstructured::Int;
 
 use crate::{types::Dao, CoreContract, CoreContractClient};
 

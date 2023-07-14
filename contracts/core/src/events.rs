@@ -1,13 +1,13 @@
-use soroban_sdk::{contracttype, Address, Bytes, Symbol};
+use soroban_sdk::{contracttype, Address, Bytes, Symbol, symbol_short};
 
-pub const DAO: Symbol = Symbol::short("DAO");
-pub const ASSET: Symbol = Symbol::short("ASSET");
-pub const VOTES: Symbol = Symbol::short("VOTES");
+pub const DAO: Symbol = symbol_short!("DAO");
+pub const ASSET: Symbol = symbol_short!("ASSET");
+pub const VOTES: Symbol = symbol_short!("VOTES");
 
-pub const CREATED: Symbol = Symbol::short("created");
-pub const DESTROYED: Symbol = Symbol::short("destroyed");
-pub const METADATA_SET: Symbol = Symbol::short("meta_set");
-pub const OWNER_CHANGED: Symbol = Symbol::short("new_owner");
+pub const CREATED: Symbol = symbol_short!("created");
+pub const DESTROYED: Symbol = symbol_short!("destroyed");
+pub const METADATA_SET: Symbol = symbol_short!("meta_set");
+pub const OWNER_CHANGED: Symbol = symbol_short!("new_owner");
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]

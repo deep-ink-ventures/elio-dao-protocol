@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol, Vec, panic_with_error};
+use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol, Vec, panic_with_error, symbol_short};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -31,19 +31,19 @@ use crate::events::{ProposalCreatedEventData, VoteCastEventData, VOTE_CAST};
 
 pub struct VotesContract;
 
-pub const NATIVE: Symbol = Symbol::short("NATIVE");
+pub const NATIVE: Symbol = symbol_short!("NATIVE");
 
 #[contractimpl]
 impl VotesTrait for VotesContract {
     fn init(env: Env, core_id: Address) {
-        if env.storage().has(&CORE) {
+        if env.storage().instance().has(&CORE) {
             panic_with_error!(env, VotesError::CoreAlreadyInitialized)
         }
-        env.storage().set(&CORE, &core_id);
+        env.storage().instance().set(&CORE, &core_id);
     }
 
     fn get_core_id(env: Env) -> Address {
-        env.storage().get_unchecked(&CORE).unwrap()
+        env.storage().instance().get(&CORE).unwrap()
     }
 
     fn create_proposal(env: Env, dao_id: Bytes, proposal_owner: Address) -> u32 {

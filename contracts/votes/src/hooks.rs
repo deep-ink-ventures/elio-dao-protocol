@@ -12,7 +12,7 @@ use core_contract::Client as CoreContractClient;
 use hookpoints_contract::Client as HookpointsContractClient;
 
 fn get_hookpoint(env: &Env, dao_id: &Bytes) -> Option<Address> {
-    let core_id = env.storage().get_unchecked(&CORE).unwrap();
+    let core_id = env.storage().instance().get(&CORE).unwrap();
     let core = CoreContractClient::new(&env, &core_id);
 
     if core.has_hookpoint(&dao_id) {
