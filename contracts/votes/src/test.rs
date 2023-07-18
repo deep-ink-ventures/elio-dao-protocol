@@ -247,17 +247,65 @@ fn active_proposals_are_managed() {
 }
 
 #[test]
-#[ignore] // getting TrapCpuLimitExceeded
-#[should_panic(expected = "maximum number")]
 fn max_number_of_proposals() {
-    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let ref clients @ Clients { ref votes, ref core, .. } = Clients::new();
     let env = &votes.env;
 
     let dao_owner = Address::random(env);
     let dao = mint_and_create_dao(&clients, &dao_owner);
 
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
+    let voting = Voting::MAJORITY;
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
+        &voting,
+        &dao.owner
+    );
+
+    let native_asset_id = &core.get_native_asset_id();
+
+    for _ in 0..=(PROPOSAL_MAX_NR - 1) {
+        env.budget().reset_default();
+        let proposal_owner = &Address::random(&env);
+        fund_account(&env, &native_asset_id, &proposal_owner);
+        let _ = votes.create_proposal(&dao.id, proposal_owner);
+    }
+}
+
+#[test]
+#[should_panic(expected = "Status(ContractError(1002))")]
+fn error_on_max_number_of_proposals() {
+    let ref clients @ Clients { ref votes, ref core, .. } = Clients::new();
+    let env = &votes.env;
+
+    let dao_owner = Address::random(env);
+    let dao = mint_and_create_dao(&clients, &dao_owner);
+
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
+    let voting = Voting::MAJORITY;
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
+        &voting,
+        &dao.owner
+    );
+
+    let native_asset_id = &core.get_native_asset_id();
+
     for _ in 0..=PROPOSAL_MAX_NR {
-        let _ = votes.create_proposal(&dao.id, &Address::random(env));
+        env.budget().reset_default();
+        let proposal_owner = &Address::random(&env);
+        fund_account(&env, &native_asset_id, &proposal_owner);
+        let _ = votes.create_proposal(&dao.id, proposal_owner);
     }
 }
 
