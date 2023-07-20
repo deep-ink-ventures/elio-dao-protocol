@@ -50,6 +50,6 @@ curl -XPATCH -H "Config-Secret: ${CONFIG_SECRET}" -H "Content-type: application/
   \"assets_wasm_hash\": \"${ASSETS_WASM_HASH}\"
 }" "${SERVICE_URL}/update-config/"
 
-printf "\nCORE ADDRESS: $CORE_ADDRESS"
-printf "\nVOTES ADDRESS: $VOTES_ADDRESS"
-printf "\nASSETS WASM HASH: $ASSETS_WASM_HASH\n"
+printf "\nCORE_ADDRESS=$CORE_ADDRESS"
+printf "\nVOTES_ADDRESS=$VOTES_ADDRESS"
+printf "\nASSETS_WASM_HASH=$ASSETS_WASM_HASH\n"
