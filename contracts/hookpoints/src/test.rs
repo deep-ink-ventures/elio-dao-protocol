@@ -50,13 +50,13 @@ impl Protocol {
         let votes = VotesClient::new(&env, &votes_id);
 
         let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
-
-        let native_asset_admin_id = env.register_stellar_asset_contract(Address::random(&env));
-        let native_asset_admin = token::AdminClient::new(&env, &native_asset_admin_id);
+        let native_asset_admin = token::AdminClient::new(&env, &native_asset_id);
 
         core.init(&votes_id, &native_asset_id);
         votes.init(&core_id);
 
+
+        env.budget().reset_default();
         native_asset_admin.mint(&dao_owner, &MAX_I128);
         let dao_id = "DIV".into_val(&env);
         let dao_name = "Deep Ink Ventures".into_val(&env);
@@ -66,10 +66,12 @@ impl Protocol {
         let salt = BytesN::from_array(&env, &[1; 32]);
         core.issue_token(&dao_id, &dao_owner, &assets_wasm_hash, &salt);
 
+        env.budget().reset_default();
         let asset_id = core.get_dao_asset_id(&dao_id);
         let asset = AssetsClient::new(&env, &asset_id);
         asset.mint(&dao_owner, &MINT);
 
+        env.budget().reset_default();
         let proposal_duration: u32 = 10_000;
         let proposal_token_deposit: u128 = 100_000_000;
         let min_threshold_configuration: i128 = 1_000;
@@ -85,6 +87,7 @@ impl Protocol {
 
         let proposal_id = votes.create_proposal(&dao_id, &dao_owner);
 
+        env.budget().reset_default();
         Self {
             env,
             core,
