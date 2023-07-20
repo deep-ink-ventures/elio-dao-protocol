@@ -24,7 +24,6 @@ pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
 struct Clients {
     core: CoreContractClient<'static>,
     votes: VotesContractClient<'static>,
-    native_asset: token::Client<'static>,
     native_asset_admin: token::AdminClient<'static>,
 }
 
@@ -40,8 +39,6 @@ impl Clients {
         let votes = VotesContractClient::new(&env, &votes_id);
 
         let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
-        let native_asset = token::Client::new(&env, &native_asset_id);
-
         let native_asset_admin = token::AdminClient::new(&env, &native_asset_id);
 
         core.init(&votes_id, &native_asset_id);
@@ -50,7 +47,6 @@ impl Clients {
         Self {
             core,
             votes,
-            native_asset,
             native_asset_admin,
         }
     }
@@ -104,7 +100,6 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
     let Clients {
         core,
         votes,
-        native_asset,
         native_asset_admin,
     } = clients;
     let env = &core.env;
@@ -238,6 +233,9 @@ fn active_proposals_are_managed() {
     });
     let proposal_2_id = votes.create_proposal(&dao.id, &owner);
 
+    // budget reset
+    env.budget().reset_default();
+
     let all_proposals = votes.get_active_proposals(&dao.id);
     assert_eq!(all_proposals.len(), 2);
     let p1 = all_proposals.get_unchecked(0);
@@ -299,7 +297,7 @@ fn set_metadata() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(1007))")]
+#[should_panic(expected = "#7")]
 fn set_metadata_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -314,7 +312,7 @@ fn set_metadata_only_owner() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(1008))")]
+#[should_panic(expected = "#8")]
 fn non_existing_meta_panics() {
     let Clients { votes, .. } = Clients::new();
 
@@ -349,7 +347,7 @@ fn set_configuration() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(1001))")]
+#[should_panic(expected = "#1")]
 fn set_configuration_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -373,7 +371,7 @@ fn set_configuration_only_owner() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(1009))")]
+#[should_panic(expected = "#9")]
 fn non_existing_configuration_panics() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -385,7 +383,7 @@ fn non_existing_configuration_panics() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(1009))")]
+#[should_panic(expected = "#9")]
 fn must_create_configuration_before_proposal() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -414,7 +412,7 @@ fn mark_faulty() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(1001))")]
+#[should_panic(expected = "#1")]
 fn mark_faulty_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -434,6 +432,9 @@ fn vote() {
     let dao_owner = Address::random(env);
     let supply = 1_000_000;
     let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
+
+    // budget reset
+    env.budget().reset_default();
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
@@ -517,6 +518,8 @@ fn accepted_finalize() {
     let dao_owner = Address::random(env);
     let supply = 1_000_000;
     let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
+
+    env.budget().reset_default();
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
@@ -606,6 +609,9 @@ fn return_tokens_when_faulty() {
     // Checks if balance deducted after proposal creation
     let current_balance = native_token.balance(&owner);
     assert_eq!(current_balance, &MINT - &RESERVE_AMOUNT);
+
+    // budget reset
+    env.budget().reset_default();
 
     let reason = "bad".into_val(env);
     votes.fault_proposal(&dao.id, &proposal_id, &reason, &dao.owner);

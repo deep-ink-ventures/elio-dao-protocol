@@ -74,7 +74,7 @@ impl Proposal {
         let contract = env.current_contract_address();
         native_token.transfer(&owner, &contract, &RESERVE_AMOUNT);
 
-        let id = env.storage().instance().get(&PROP_ID).unwrap();
+        let id = env.storage().instance().get(&PROP_ID).unwrap_or(0);
         proposals.push_back(ActiveProposal {
             id,
             in_favor: 0,

@@ -33,7 +33,7 @@ impl Dao {
             panic_with_error!(env, CoreError::DaoAlreadyExists)
         }
         let dao = Dao { id, name, owner };
-        env.storage().instance().set(&dao.id, &dao);
+        env.storage().persistent().set(&dao.id, &dao);
         dao
     }
 
@@ -42,7 +42,7 @@ impl Dao {
         if !Self::exists(env, id) {
             panic_with_error!(env, CoreError::DaoDoesNotExist)
         }
-        env.storage().instance().get(id).unwrap()
+        env.storage().persistent().get(id).unwrap()
     }
 
     /// Loads the DAO but with checks for the owner
@@ -58,7 +58,7 @@ impl Dao {
 
     /// Checks if a DAO exists
     pub fn exists(env: &Env, id: &Bytes) -> bool {
-        env.storage().instance().has(id)
+        env.storage().persistent().has(id)
     }
 
     /// +++ Member functions +
@@ -66,7 +66,7 @@ impl Dao {
     pub fn issue_token(self, env: &Env, assets_wasm_hash: BytesN<32>, asset_salt: BytesN<32>) -> Address {
         let key = DaoArtifact::Asset(self.id.clone());
 
-        if env.storage().instance().has(&key) {
+        if env.storage().persistent().has(&key) {
             panic_with_error!(env, CoreError::AssetAlreadyIssued)
         }
 
@@ -75,7 +75,7 @@ impl Dao {
             .with_current_contract(asset_salt)
             .deploy(assets_wasm_hash);
 
-        env.storage().instance().set(&key, &asset_id);
+        env.storage().persistent().set(&key, &asset_id);
 
         let init_fn = symbol_short!("init");
 
@@ -102,20 +102,20 @@ impl Dao {
 
     pub fn get_asset_id(&self, env: &Env) -> Address {
         let key = DaoArtifact::Asset(self.id.clone());
-        if !env.storage().instance().has(&key) {
+        if !env.storage().persistent().has(&key) {
             panic_with_error!(env, CoreError::AssetNotIssued)
         }
-        env.storage().instance().get(&key).unwrap()
+        env.storage().persistent().get(&key).unwrap()
     }
 
     /// Destroys a dao
     pub fn destroy(&self, env: &Env) {
-        env.storage().instance().remove(&self.id);
+        env.storage().persistent().remove(&self.id);
     }
 
     /// Saves a dao
     pub fn save(&self, env: &Env) {
-        env.storage().instance().set(&self.id, self);
+        env.storage().persistent().set(&self.id, self);
     }
 }
 
@@ -123,7 +123,7 @@ impl Metadata {
     /// Create metadata for the dao
     pub fn create(env: &Env, dao_id: Bytes, url: Bytes, hash: Bytes) -> Self {
         let meta = Metadata { url, hash };
-        env.storage().instance().set(&DaoArtifact::Metadata(dao_id), &meta);
+        env.storage().persistent().set(&DaoArtifact::Metadata(dao_id), &meta);
         meta
     }
 
@@ -132,11 +132,11 @@ impl Metadata {
         if !Self::exists(env, dao_id) {
             panic_with_error!(env, CoreError::NoMetadata)
         }
-        env.storage().instance().get(&DaoArtifact::Metadata(dao_id.clone())).unwrap()
+        env.storage().persistent().get(&DaoArtifact::Metadata(dao_id.clone())).unwrap()
     }
 
     /// Checks if metadata for the dao_id exists
     pub fn exists(env: &Env, dao_id: &Bytes) -> bool {
-        env.storage().instance().has(&DaoArtifact::Metadata(dao_id.clone()))
+        env.storage().persistent().has(&DaoArtifact::Metadata(dao_id.clone()))
     }
 }

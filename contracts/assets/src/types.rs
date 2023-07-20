@@ -33,10 +33,10 @@ pub struct Checkpoint {
 impl Token {
     pub fn get_checkpoints(env: &Env, id: Address) -> Vec<Checkpoint> {
         let key = Token::Checkpoints(id);
-        if !env.storage().temporary().has(&key) {
+        if !env.storage().persistent().has(&key) {
             return Vec::new(env);
         }
-        env.storage().instance().get(&key).unwrap()
+        env.storage().persistent().get(&key).unwrap()
     }
 
     pub fn get_checkpoint_at(env: &Env, id: Address, i: u32) -> Checkpoint {
@@ -98,17 +98,17 @@ impl Token {
             balance: Token::read_balance(env, id),
             ledger: env.ledger().sequence(),
         });
-        env.storage().temporary().set(&key, &filtered_checkpoints);
+        env.storage().persistent().set(&key, &filtered_checkpoints);
     }
 
     pub fn read_allowance(env: &Env, from: Address, spender: Address) -> i128 {
         let key = Self::Allowance(Allowances { from, spender });
-        env.storage().instance().get(&key).unwrap()
+        env.storage().persistent().get(&key).unwrap_or(0)
     }
 
     pub fn write_allowance(env: &Env, from: Address, spender: Address, amount: i128) {
         let key = Self::Allowance(Allowances { from, spender });
-        env.storage().instance().set(&key, &amount);
+        env.storage().persistent().set(&key, &amount);
     }
 
     pub fn spend_allowance(env: &Env, from: Address, spender: Address, amount: i128) {
@@ -120,19 +120,19 @@ impl Token {
     }
 
     pub fn get_symbol(env: &Env) -> Bytes {
-        env.storage().instance().get(&Token::Symbol).unwrap()
+        env.storage().persistent().get(&Token::Symbol).unwrap()
     }
 
     pub fn get_name(env: &Env) -> Bytes {
-        env.storage().instance().get(&Token::Name).unwrap()
+        env.storage().persistent().get(&Token::Name).unwrap()
     }
 
     pub fn get_owner(env: &Env) -> Address {
-        env.storage().instance().get(&Token::Owner).unwrap()
+        env.storage().persistent().get(&Token::Owner).unwrap()
     }
 
     pub fn get_core_address(env: &Env) -> Address {
-        env.storage().instance().get(&Token::CoreAddress).unwrap()
+        env.storage().persistent().get(&Token::CoreAddress).unwrap()
     }
 
     /// Create a new token
@@ -143,34 +143,34 @@ impl Token {
         owner: &Address,
         core_address: &Address,
     ) {
-        if env.storage().instance().has(&Token::Symbol) {
+        if env.storage().persistent().has(&Token::Symbol) {
             panic_with_error!(env, AssetError::DaoAlreadyIssuedToken)
         }
-        env.storage().instance().set(&Token::Symbol, symbol);
-        env.storage().instance().set(&Token::Name, name);
-        env.storage().instance().set(&Token::Owner, owner);
-        env.storage().instance().set(&Token::CoreAddress, core_address);
+        env.storage().persistent().set(&Token::Symbol, symbol);
+        env.storage().persistent().set(&Token::Name, name);
+        env.storage().persistent().set(&Token::Owner, owner);
+        env.storage().persistent().set(&Token::CoreAddress, core_address);
     }
 
     pub fn set_owner(env: &Env, owner: &Address, new_owner: &Address) {
         Token::check_auth(env, owner);
-        env.storage().instance().set(&Token::Owner, &new_owner);
+        env.storage().persistent().set(&Token::Owner, &new_owner);
     }
 
     pub fn set_core_address(env: &Env, owner: &Address, core_address: &Address) {
         Token::check_auth(env, owner);
-        env.storage().instance().set(&Token::CoreAddress, core_address);
+        env.storage().persistent().set(&Token::CoreAddress, core_address);
     }
 
     pub fn write_balance(env: &Env, addr: Address, amount: i128) {
         let key = Token::Balance(addr.clone());
-        env.storage().instance().set(&key, &amount);
+        env.storage().persistent().set(&key, &amount);
         Token::write_checkpoint(env, addr);
     }
 
     pub fn read_balance(env: &Env, addr: Address) -> i128 {
         let key = Token::Balance(addr);
-        env.storage().instance().get(&key).unwrap()
+        env.storage().persistent().get(&key).unwrap_or(0)
     }
 
     pub fn check_auth(env: &Env, owner: &Address) {

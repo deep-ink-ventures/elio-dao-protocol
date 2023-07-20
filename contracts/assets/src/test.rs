@@ -64,7 +64,7 @@ fn create_a_token() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(2003))")]
+#[should_panic(expected = "#3")]
 fn create_a_token_only_once() {
     let (client, core_client, _) = create_all_clients();
     create_token(&client, &core_client);
@@ -72,7 +72,7 @@ fn create_a_token_only_once() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(2005))")]
+#[should_panic(expected = "#5")]
 fn mint_only_once() {
     let (client, core_client, _) = create_all_clients();
     let address= create_token(&client, &core_client);
@@ -81,7 +81,7 @@ fn mint_only_once() {
 
 #[test]
 fn set_owner() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let address = Address::random(&client.env);
 
@@ -94,9 +94,9 @@ fn set_owner() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(2004))")]
+#[should_panic(expected = "#4")]
 fn set_owner_auth() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let address = Address::random(&client.env);
     client.set_owner(&address, &address);
@@ -104,7 +104,7 @@ fn set_owner_auth() {
 
 #[test]
 fn set_core_address() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let owner = client.owner();
 
@@ -115,9 +115,9 @@ fn set_core_address() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(2004))")]
+#[should_panic(expected = "#4")]
 fn set_core_address_auth() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let address = Address::random(&client.env);
     client.set_core_address(&address, &client.address);
@@ -125,27 +125,30 @@ fn set_core_address_auth() {
 
 #[test]
 fn spendable_equals_balance() {
-    let (client, _, __) = create_all_clients();
+    let (client, ..) = create_all_clients();
     let address = Address::random(&client.env);
     assert_eq!(client.balance(&address), client.spendable(&address));
 }
 
 #[test]
 fn token_assets_are_always_authorized() {
-    let (client, _, __) = create_all_clients();
+    let (client, ..) = create_all_clients();
     let address = Address::random(&client.env);
     assert_eq!(client.authorized(&address), true);
 }
 
 #[test]
 fn xfer() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let from = client.owner();
     let to = Address::random(&client.env);
 
     assert_eq!(client.balance(&from), 1_000_000);
     assert_eq!(client.balance(&to), 0);
+
+    // budget reset
+    client.env.budget().reset_default();
 
     client.xfer(&from, &to, &500_000);
 
@@ -155,7 +158,7 @@ fn xfer() {
 
 #[test]
 fn xfer_from() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let from = client.owner();
     let to = Address::random(&client.env);
@@ -165,6 +168,9 @@ fn xfer_from() {
     assert_eq!(client.balance(&from), 1_000_000);
     assert_eq!(client.balance(&to), 0);
     assert_eq!(client.allowance(&from, &spender), 250_000);
+
+    // budget reset
+    client.env.budget().reset_default();
 
     client.xfer_from(&spender, &from, &to, &100_000);
 
