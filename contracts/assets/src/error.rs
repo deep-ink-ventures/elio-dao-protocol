@@ -11,4 +11,5 @@ pub enum AssetError {
     NotTokenOwner = 4,
     CanOnlyBeMintedOnce = 5,
     InsufficientBalance = 6,
+    NoCheckpoint = 7
 }

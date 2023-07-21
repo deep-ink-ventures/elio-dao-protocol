@@ -243,7 +243,7 @@ fn checkpoints() {
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = votes_contract::Voting::MAJORITY;
+    let voting = votes_contract::Voting::Majority;
 
     fund_account(&client.env, &core_client.get_native_asset_id(), &owner);
     core_client.create_dao(&dao_id, &dao_name, &owner);

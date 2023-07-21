@@ -278,7 +278,7 @@ fn max_number_of_proposals() {
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::MAJORITY;
+    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
@@ -310,7 +310,7 @@ fn error_on_max_number_of_proposals() {
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::MAJORITY;
+    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
