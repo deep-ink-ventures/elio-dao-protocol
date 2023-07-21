@@ -181,7 +181,7 @@ impl Token {
     }
 
     pub fn check_is_minted(env: &Env, owner: Address) {
-        if Token::get_checkpoints(env, owner).len() > 0 {
+        if !Token::get_checkpoints(env, owner).is_empty() {
             panic_with_error!(env, AssetError::CanOnlyBeMintedOnce)
         }
     }
