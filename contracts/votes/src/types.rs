@@ -49,7 +49,6 @@ pub enum PropStatus {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Voting {
     Majority,
-    Custom,
 }
 
 pub const XLM: i128 = 10_000_000;
