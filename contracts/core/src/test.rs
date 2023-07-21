@@ -38,9 +38,7 @@ fn create_clients() -> Clients {
     let native_asset_admin = token::AdminClient::new(&env, &native_asset_id);
 
     core.init(&votes_id, &native_asset_id);
-    Clients { core, native_asset, native_asset_admin }
-    votes.init(&core_id);
-    Clients { core, votes,  native_asset }
+    Clients { core, votes, native_asset, native_asset_admin }
 }
 
 fn create_dao(core: &CoreContractClient<'static>, dao_owner: &Address) -> Dao {
@@ -126,7 +124,7 @@ fn destroy_a_dao() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(1009))")]
+#[should_panic(expected = "#9")]
 fn destroy_a_dao_destroys_configuration() {
     let clients = create_clients();
     let core = &clients.core;
@@ -138,14 +136,15 @@ fn destroy_a_dao_destroys_configuration() {
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = votes_contract::Voting::MAJORITY;
+    let voting = votes_contract::Voting::Majority;
+
     clients.votes.set_configuration(
         &dao.id,
         &proposal_duration,
         &proposal_token_deposit,
         &min_threshold_configuration,
         &voting,
-        &dao.owner
+        &dao.owner,
     );
 
     core.destroy_dao(&dao.id, &user);

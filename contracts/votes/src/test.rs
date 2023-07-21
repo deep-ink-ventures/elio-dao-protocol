@@ -422,7 +422,7 @@ fn set_configuration_only_owner() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(1001))")]
+#[should_panic(expected = "#1")]
 fn remove_configuration_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
@@ -433,7 +433,7 @@ fn remove_configuration_only_owner() {
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::MAJORITY;
+    let voting = Voting::Majority;
     let whoever = Address::random(env);
     votes.set_configuration(
         &dao.id,

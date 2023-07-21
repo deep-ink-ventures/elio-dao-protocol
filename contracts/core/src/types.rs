@@ -84,7 +84,7 @@ impl Dao {
             self.id.clone(),
             self.name,
             self.owner.clone(),
-            core_address.clone(),
+            core_address,
         )
             .into_val(env);
         env.invoke_contract::<()>(&asset_id, &init_fn, init_args);

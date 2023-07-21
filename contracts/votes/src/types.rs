@@ -322,8 +322,6 @@ impl Configuration {
     }
 
     pub fn remove(env: &Env, dao_id: Bytes) {
-        if env.storage().has(&dao_id) {
-            env.storage().remove(&dao_id)
-        }
+        env.storage().instance().remove(&dao_id)
     }
 }

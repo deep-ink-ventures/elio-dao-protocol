@@ -35,6 +35,7 @@ pub trait VotesTrait {
     );
 
     fn get_configuration(env: Env, dao_id: Bytes) -> Configuration;
+    fn has_configuration(env: Env, dao_id: Bytes) -> bool;
     fn remove_configuration(env: Env, dao_id: Bytes, dao_owner: Address);
 
     fn vote(env: Env, dao_id: Bytes, proposal_id: u32, in_favor: bool, voter: Address) -> i128 ;

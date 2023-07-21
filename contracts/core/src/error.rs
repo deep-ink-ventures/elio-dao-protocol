@@ -12,4 +12,5 @@ pub enum CoreError {
     AssetNotIssued = 5,
     NoMetadata = 6,
     NoHookpoint = 7,
+    MustRemoveConfigFirst = 8,
 }
