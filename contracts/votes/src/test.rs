@@ -217,6 +217,8 @@ fn active_proposals_are_managed() {
         &dao.owner
     );
 
+    env.budget().reset_default();
+
     let owner = Address::random(env);
     fund_account(&env, &core.get_native_asset_id(),&owner);
     let proposal_1_id = votes.create_proposal(&dao.id, &owner);
@@ -402,6 +404,7 @@ fn mark_faulty() {
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
 
+    env.budget().reset_default();
     let reason = "bad".into_val(env);
     votes.fault_proposal(&dao.id, &proposal_id, &reason, &dao.owner);
 
@@ -647,6 +650,7 @@ fn returns_tokens_on_finalize() {
 
     let proposal_duration: u32 = 10_000;
 
+    env.budget().reset_default();
     // make finalization possible
     votes.env.ledger().set(LedgerInfo {
         timestamp: 12345,
