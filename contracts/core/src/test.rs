@@ -30,7 +30,7 @@ fn create_clients() -> Clients {
     let votes_id = env.register_contract_wasm(None, votes_contract::WASM);
 
     let core = CoreContractClient::new(&env, &core_id);
-    let votes = VotesContractClient::new(&env,&votes_id);
+    let votes = VotesContractClient::new(&env, &votes_id);
 
     let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
     let native_asset = token::Client::new(&env, &native_asset_id);
@@ -133,17 +133,12 @@ fn destroy_a_dao_destroys_configuration() {
 
     let dao = mint_and_create_dao(&clients, &user);
 
-    let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
-    let min_threshold_configuration: i128 = 1_000;
-    let voting = votes_contract::Voting::Majority;
-
     clients.votes.set_configuration(
         &dao.id,
-        &proposal_duration,
-        &proposal_token_deposit,
-        &min_threshold_configuration,
-        &voting,
+        &10_000,
+        &100_000_000,
+        &1_000,
+        &votes_contract::Voting::Majority,
         &dao.owner,
     );
 

@@ -115,6 +115,7 @@ impl VotesTrait for VotesContract {
         voting: Voting,
         dao_owner: Address,
     ) {
+        verify_dao_owner(&env, &dao_id, dao_owner, Self::get_core_id(env.clone()));
         Configuration::set(
             &env,
             dao_id.clone(),
@@ -123,7 +124,6 @@ impl VotesTrait for VotesContract {
             min_threshold_configuration,
             voting.clone(),
         );
-        verify_dao_owner(&env, &dao_id, dao_owner, Self::get_core_id(env.clone()));
         env.events()
             .publish(
                 (PROPOSAL, CONF_SET),
