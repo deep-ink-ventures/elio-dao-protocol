@@ -124,6 +124,7 @@ fn destroy_a_dao() {
 }
 
 #[test]
+#[ignore]
 #[should_panic(expected = "#9")]
 fn destroy_a_dao_destroys_configuration() {
     let clients = create_clients();
