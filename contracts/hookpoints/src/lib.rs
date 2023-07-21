@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contractimpl, Address, Env, Bytes};
+use soroban_sdk::{contractimpl, contract, Address, Env, Bytes};
 
 mod votes_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_votes.wasm");
@@ -23,6 +23,7 @@ mod test;
 mod interface;
 use interface::HookpointsTrait;
 
+#[contract]
 pub struct HookpointsContract;
 
 #[contractimpl]

@@ -15,7 +15,10 @@ use crate::{types::Dao, CoreContract, CoreContractClient};
 struct Clients {
     core: CoreContractClient<'static>,
     native_asset: token::Client<'static>,
+    native_asset_admin: token::AdminClient<'static>,
 }
+
+pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
 
 fn create_clients() -> Clients {
     let env = Env::default();
@@ -29,8 +32,10 @@ fn create_clients() -> Clients {
     let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
     let native_asset = token::Client::new(&env, &native_asset_id);
 
+    let native_asset_admin = token::AdminClient::new(&env, &native_asset_id);
+
     core.init(&votes_id, &native_asset_id);
-    Clients { core, native_asset }
+    Clients { core, native_asset, native_asset_admin }
 }
 
 fn create_dao(core: &CoreContractClient<'static>, dao_owner: &Address) -> Dao {
@@ -43,12 +48,12 @@ fn create_dao(core: &CoreContractClient<'static>, dao_owner: &Address) -> Dao {
 }
 
 fn mint_and_create_dao(clients: &Clients, dao_owner: &Address) -> Dao {
-    clients.native_asset.mint(&dao_owner, &i128::MAX);
+    clients.native_asset_admin.mint(&dao_owner, &MAX_I128);
     create_dao(&clients.core, &dao_owner)
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(3))")]
+#[should_panic(expected = "#2")]
 fn cannot_initialize_twice() {
     let core = create_clients().core;
     let fake_id = Address::random(&core.env);
@@ -62,11 +67,12 @@ fn create_a_dao() {
     let core = &clients.core;
     let env = &core.env;
     let user = Address::random(env);
-    clients.native_asset.mint(&user, &i128::MAX);
+    clients.native_asset_admin.mint(&user, &MAX_I128);
 
     let id = "DIV".into_val(env);
     let name = "Deep Ink Ventures".into_val(env);
     let balance_before = clients.native_asset.balance(&user);
+
     core.create_dao(&id, &name, &user);
     let balance_after = clients.native_asset.balance(&user);
     assert!(balance_after < balance_before);
@@ -86,7 +92,7 @@ fn cannot_create_a_dao_without_funds() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(1))")]
+#[should_panic(expected = "#0")]
 fn cannot_create_a_dao_twice() {
     let clients = create_clients();
     let core = &clients.core;
@@ -97,7 +103,7 @@ fn cannot_create_a_dao_twice() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(2))")]
+#[should_panic(expected = "#1")]
 fn destroy_a_dao() {
     let clients = create_clients();
     let core = &clients.core;
@@ -114,7 +120,7 @@ fn destroy_a_dao() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(4))")]
+#[should_panic(expected = "#3")]
 fn destroy_a_dao_only_as_owner() {
     let clients = create_clients();
     let core = &clients.core;
@@ -139,7 +145,7 @@ fn change_dao_owner() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(4))")]
+#[should_panic(expected = "#3")]
 fn change_dao_owner_only_as_owner() {
     let clients = create_clients();
     let core = &clients.core;
@@ -171,7 +177,7 @@ fn set_metadata() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(4))")]
+#[should_panic(expected = "#3")]
 fn set_metadata_only_owner() {
     let clients = create_clients();
     let core = &clients.core;
@@ -188,7 +194,7 @@ fn set_metadata_only_owner() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(7))")]
+#[should_panic(expected = "#6")]
 fn non_existing_meta_panics() {
     let clients = create_clients();
     let core = &clients.core;
@@ -208,7 +214,7 @@ fn issue_token_once() {
     let dao = mint_and_create_dao(&clients, &user);
 
     log!(env, "installing assets contract WASM");
-    let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
+    let assets_wasm_hash = env.deployer().upload_contract_wasm(assets_contract::WASM);
 
     log!(env, "issuing token");
     let salt = BytesN::from_array(env, &[0; 32]);
@@ -222,6 +228,9 @@ fn issue_token_once() {
     assert_eq!(dao.owner, asset_core.owner());
     assert_eq!(core.address, asset_core.core_address());
 
+    // budget exceeds here.
+    env.budget().reset_default();
+
     log!(env, "minting token");
     let supply = 1_000_000;
     asset_core.mint(&dao.owner, &supply);
@@ -229,7 +238,7 @@ fn issue_token_once() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(5))")]
+#[should_panic(expected = "#4")]
 fn cannot_issue_token_twice() {
     let clients = create_clients();
     let core = &clients.core;
@@ -238,7 +247,7 @@ fn cannot_issue_token_twice() {
     let dao = mint_and_create_dao(&clients, &user);
 
     log!(env, "installing assets contract WASM");
-    let assets_wasm_hash = env.install_contract_wasm(assets_contract::WASM);
+    let assets_wasm_hash = env.deployer().upload_contract_wasm(assets_contract::WASM);
 
     log!(env, "issuing token twice");
     let salt = BytesN::from_array(&core.env, &[0; 32]);
@@ -248,7 +257,7 @@ fn cannot_issue_token_twice() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(6))")]
+#[should_panic(expected = "#5")]
 fn cannot_get_asset_id_if_non_existing() {
     let clients = create_clients();
     let core = &clients.core;

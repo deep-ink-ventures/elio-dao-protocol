@@ -4,12 +4,12 @@ use soroban_sdk::contracterror;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum CoreError {
-    DaoAlreadyExists = 1,
-    DaoDoesNotExist = 2,
-    VotesAlreadyInitiated = 3,
-    NotDaoOwner = 4,
-    AssetAlreadyIssued = 5,
-    AssetNotIssued = 6,
-    NoMetadata = 7,
-    NoHookpoint = 8
+    DaoAlreadyExists = 0,
+    DaoDoesNotExist = 1,
+    VotesAlreadyInitiated = 2,
+    NotDaoOwner = 3,
+    AssetAlreadyIssued = 4,
+    AssetNotIssued = 5,
+    NoMetadata = 6,
+    NoHookpoint = 7
 }

@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec, token, panic_with_error};
+use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec, token, panic_with_error, symbol_short};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -48,15 +48,15 @@ pub enum PropStatus {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Voting {
-    MAJORITY,
-    CUSTOM,
+    Majority,
+    Custom,
 }
 
 pub const XLM: i128 = 10_000_000;
 pub const RESERVE_AMOUNT: i128 = 100 * XLM;
 pub const PROPOSAL_MAX_NR: u32 = 25;
 
-const PROP_ID: Symbol = Symbol::short("PROP_ID");
+const PROP_ID: Symbol = symbol_short!("PROP_ID");
 
 impl Proposal {
     pub fn create(env: &Env, dao_id: Bytes, owner: Address, core_id: Address) -> u32 {
@@ -68,13 +68,13 @@ impl Proposal {
         }
 
         // Transfer required amount to prevent spam
-        let core = CoreContractClient::new(&env, &core_id);
+        let core = CoreContractClient::new(env, &core_id);
         let native_asset_id = core.get_native_asset_id();
-        let native_token = token::Client::new(&env, &native_asset_id);
+        let native_token = token::Client::new(env, &native_asset_id);
         let contract = env.current_contract_address();
         native_token.transfer(&owner, &contract, &RESERVE_AMOUNT);
 
-        let id = env.storage().get(&PROP_ID).unwrap_or(Ok(0)).unwrap();
+        let id = env.storage().instance().get(&PROP_ID).unwrap_or(0);
         proposals.push_back(ActiveProposal {
             id,
             in_favor: 0,
@@ -86,30 +86,30 @@ impl Proposal {
                 owner,
             },
         });
-        env.storage().set(&ActiveKey(dao_id), &proposals);
-        env.storage().set(&PROP_ID, &(id + 1));
+        env.storage().instance().set(&ActiveKey(dao_id), &proposals);
+        env.storage().instance().set(&PROP_ID, &(id + 1));
         id
     }
 
     pub fn get_active(env: &Env, dao_id: Bytes) -> Vec<ActiveProposal> {
         let key = ActiveKey(dao_id.clone());
-        if !env.storage().has(&key) {
+        if !env.storage().instance().has(&key) {
             return Vec::new(env);
         }
-        let active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
+        let active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
         let mut filtered_proposals: Vec<ActiveProposal> = Vec::new(env);
 
-        let proposal_duration = Configuration::get(&env, dao_id).proposal_duration;
+        let proposal_duration = Configuration::get(env, dao_id).proposal_duration;
 
         // filter out outdated proposals
         let len = active_proposals.len();
-        for proposal in active_proposals.into_iter_unchecked() {
+        for proposal in active_proposals.into_iter() {
             if env.ledger().sequence() <= proposal.inner.ledger + proposal_duration {
                 filtered_proposals.push_back(proposal);
             }
         }
         if filtered_proposals.len() < len {
-            env.storage().set(&key, &filtered_proposals);
+            env.storage().instance().set(&key, &filtered_proposals);
         }
 
         filtered_proposals
@@ -117,7 +117,7 @@ impl Proposal {
 
     pub fn get_archived(env: &Env, proposal_id: u32) -> Proposal {
         let key = ArchiveKey(proposal_id);
-        env.storage().get_unchecked(&key).unwrap()
+        env.storage().instance().get(&key).unwrap()
     }
 
     pub fn vote(
@@ -129,9 +129,9 @@ impl Proposal {
         asset_id: Address,
     ) -> i128 {
         let key = ActiveKey(dao_id.clone());
-        let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
-        for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
-            if p.id == proposal_id.clone() {
+        let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
+        for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
+            if p.id == proposal_id {
                 let voting_power_pre_hook: i128 = env.invoke_contract(
                     &asset_id,
                     &Symbol::new(env, "get_balance_at"),
@@ -145,7 +145,7 @@ impl Proposal {
                     p.against += voting_power;
                 }
                 active_proposals.set(i as u32, p);
-                env.storage().set(&key, &active_proposals);
+                env.storage().instance().set(&key, &active_proposals);
                 return voting_power
             }
         }
@@ -154,21 +154,21 @@ impl Proposal {
 
     pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: u32, reason: Bytes) {
         let key = ActiveKey(dao_id);
-        let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
-        for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
+        let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
+        for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
             if p.id == proposal_id {
                 p.inner.status = PropStatus::Faulty(reason);
 
                 // return reserved tokens
-                let core_id = env.storage().get_unchecked(&CORE).unwrap();
-                let core = CoreContractClient::new(&env, &core_id);
+                let core_id = env.storage().instance().get(&CORE).unwrap();
+                let core = CoreContractClient::new(env, &core_id);
                 let native_asset_id = core.get_native_asset_id();
-                let native_token = token::Client::new(&env, &native_asset_id);
+                let native_token = token::Client::new(env, &native_asset_id);
                 let contract = env.current_contract_address();
                 native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
                 active_proposals.set(i as u32, p);
-                env.storage().set(&key, &active_proposals);
+                env.storage().instance().set(&key, &active_proposals);
                 return;
             }
         }
@@ -177,11 +177,11 @@ impl Proposal {
 
     pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: u32) {
         let key = ActiveKey(dao_id.clone());
-        let configuration = Configuration::get(&env, dao_id);
+        let configuration = Configuration::get(env, dao_id);
         let proposal_duration = configuration.proposal_duration;
         let min_threshold_configuration = configuration.min_threshold_configuration;
-        let mut active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
-        for (i, mut p) in active_proposals.iter_unchecked().enumerate() {
+        let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
+        for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
             if p.id == proposal_id {
                 if env.ledger().sequence() <= p.inner.ledger + proposal_duration {
                     panic_with_error!(env, VotesError::ProposalStillActive)
@@ -195,18 +195,18 @@ impl Proposal {
                     PropStatus::Rejected
                 };
 
-                env.storage().set(&ArchiveKey(proposal_id), &p.inner);
+                env.storage().instance().set(&ArchiveKey(proposal_id), &p.inner);
 
                 // return reserved tokens
-                let core_id = env.storage().get_unchecked(&CORE).unwrap();
-                let core = CoreContractClient::new(&env, &core_id);
+                let core_id = env.storage().instance().get(&CORE).unwrap();
+                let core = CoreContractClient::new(env, &core_id);
                 let native_asset_id = core.get_native_asset_id();
-                let native_token = token::Client::new(&env, &native_asset_id);
+                let native_token = token::Client::new(env, &native_asset_id);
                 let contract = env.current_contract_address();
                 native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
                 active_proposals.set(i as u32, p.clone());
-                env.storage().set(&key, &active_proposals);
+                env.storage().instance().set(&key, &active_proposals);
                 env.events().publish(
                     (PROPOSAL, STATUS_UPDATE),
                     ProposalStatusUpdateEventData {
@@ -222,7 +222,7 @@ impl Proposal {
 
     pub fn mark_implemented(env: &Env, proposal_id: u32) {
         let key = ArchiveKey(proposal_id);
-        let mut proposal: Proposal = env.storage().get_unchecked(&key).unwrap();
+        let mut proposal: Proposal = env.storage().instance().get(&key).unwrap();
 
         if proposal.status != PropStatus::Accepted {
             panic_with_error!(env, VotesError::UnacceptedProposal)
@@ -230,7 +230,7 @@ impl Proposal {
 
         proposal.status = PropStatus::Implemented;
 
-        env.storage().set(&key, &proposal);
+        env.storage().instance().set(&key, &proposal);
         env.events().publish(
             (PROPOSAL, STATUS_UPDATE),
             ProposalStatusUpdateEventData {
@@ -263,14 +263,14 @@ impl Metadata {
         owner.require_auth();
 
         let key = ActiveKey(dao_id);
-        let active_proposals: Vec<ActiveProposal> = env.storage().get_unchecked(&key).unwrap();
-        for p in active_proposals.iter_unchecked() {
+        let active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
+        for p in active_proposals.into_iter() {
             if p.id == proposal_id {
                 if p.inner.owner != owner {
                     panic_with_error!(env, VotesError::NotProposalOwner)
                 }
                 let meta = Metadata { url, hash };
-                env.storage().set(&KeyMeta(proposal_id), &meta);
+                env.storage().instance().set(&KeyMeta(proposal_id), &meta);
                 return meta;
             }
         }
@@ -279,10 +279,10 @@ impl Metadata {
 
     pub fn get(env: &Env, proposal_id: u32) -> Self {
         let key = KeyMeta(proposal_id);
-        if !env.storage().has(&key) {
+        if !env.storage().instance().has(&key) {
             panic_with_error!(env, VotesError::MetadataNotFound)
         }
-        env.storage().get_unchecked(&key).unwrap()
+        env.storage().instance().get(&key).unwrap()
     }
 }
 
@@ -310,14 +310,14 @@ impl Configuration {
             min_threshold_configuration,
             voting,
         };
-        env.storage().set(&dao_id, &configuration);
+        env.storage().instance().set(&dao_id, &configuration);
         configuration
     }
 
     pub fn get(env: &Env, dao_id: Bytes) -> Self {
-        if !env.storage().has(&dao_id) {
+        if !env.storage().instance().has(&dao_id) {
             panic_with_error!(env, VotesError::ConfigurationNotFound)
         }
-        env.storage().get_unchecked(&dao_id).unwrap()
+        env.storage().instance().get(&dao_id).unwrap()
     }
 }

@@ -4,12 +4,11 @@ use soroban_sdk::contracterror;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum AssetError {
-    NegativeAmount = 2000,
-    CheckpointIndexError = 2001,
-    InsufficientAllowance = 2002,
-    DaoAlreadyIssuedToken = 2003,
-    NotTokenOwner = 2004,
-    CanOnlyBeMintedOnce = 2005,
-    InsufficientBalance = 2006,
-    NoCheckpoint = 2007,
+    NegativeAmount = 0,
+    CheckpointIndexError = 1,
+    InsufficientAllowance = 2,
+    DaoAlreadyIssuedToken = 3,
+    NotTokenOwner = 4,
+    CanOnlyBeMintedOnce = 5,
+    InsufficientBalance = 6,
 }

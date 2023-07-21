@@ -32,7 +32,7 @@ soroban contract install \
 )"
 export ASSETS_WASM_HASH
 
-printf "\n Initialising core ...\n"
+printf "\nInitialising core ...\n"
 soroban contract invoke \
     --id "${CORE_ADDRESS}" \
     --source "${SECRET_KEY}" \
@@ -43,6 +43,13 @@ soroban contract invoke \
     --votes_id "${VOTES_ADDRESS}" \
     --native_asset_id "${STELLAR_ASSET_ID}"
 
-printf "\nCORE ADDRESS: $CORE_ADDRESS"
-printf "\nVOTES ADDRESS: $VOTES_ADDRESS"
-printf "\nASSETS WASM HASH: $ASSETS_WASM_HASH"
+printf "\nUpdate Service"
+curl -XPATCH -H "Config-Secret: ${CONFIG_SECRET}" -H "Content-type: application/json" -d "{
+  \"core_contract_address\": \"${CORE_ADDRESS}\",
+  \"votes_contract_address\": \"${VOTES_ADDRESS}\",
+  \"assets_wasm_hash\": \"${ASSETS_WASM_HASH}\"
+}" "${SERVICE_URL}/update-config/"
+
+printf "\nCORE_ADDRESS=$CORE_ADDRESS"
+printf "\nVOTES_ADDRESS=$VOTES_ADDRESS"
+printf "\nASSETS_WASM_HASH=$ASSETS_WASM_HASH\n"
