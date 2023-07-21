@@ -68,9 +68,9 @@ impl Proposal {
         }
 
         // Transfer required amount to prevent spam
-        let core = CoreContractClient::new(&env, &core_id);
+        let core = CoreContractClient::new(env, &core_id);
         let native_asset_id = core.get_native_asset_id();
-        let native_token = token::Client::new(&env, &native_asset_id);
+        let native_token = token::Client::new(env, &native_asset_id);
         let contract = env.current_contract_address();
         native_token.transfer(&owner, &contract, &RESERVE_AMOUNT);
 
@@ -99,7 +99,7 @@ impl Proposal {
         let active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
         let mut filtered_proposals: Vec<ActiveProposal> = Vec::new(env);
 
-        let proposal_duration = Configuration::get(&env, dao_id).proposal_duration;
+        let proposal_duration = Configuration::get(env, dao_id).proposal_duration;
 
         // filter out outdated proposals
         let len = active_proposals.len();
@@ -131,7 +131,7 @@ impl Proposal {
         let key = ActiveKey(dao_id.clone());
         let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
         for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
-            if p.id == proposal_id.clone() {
+            if p.id == proposal_id {
                 let voting_power_pre_hook: i128 = env.invoke_contract(
                     &asset_id,
                     &Symbol::new(env, "get_balance_at"),
@@ -161,9 +161,9 @@ impl Proposal {
 
                 // return reserved tokens
                 let core_id = env.storage().instance().get(&CORE).unwrap();
-                let core = CoreContractClient::new(&env, &core_id);
+                let core = CoreContractClient::new(env, &core_id);
                 let native_asset_id = core.get_native_asset_id();
-                let native_token = token::Client::new(&env, &native_asset_id);
+                let native_token = token::Client::new(env, &native_asset_id);
                 let contract = env.current_contract_address();
                 native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
@@ -177,7 +177,7 @@ impl Proposal {
 
     pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: u32) {
         let key = ActiveKey(dao_id.clone());
-        let configuration = Configuration::get(&env, dao_id);
+        let configuration = Configuration::get(env, dao_id);
         let proposal_duration = configuration.proposal_duration;
         let min_threshold_configuration = configuration.min_threshold_configuration;
         let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
@@ -199,9 +199,9 @@ impl Proposal {
 
                 // return reserved tokens
                 let core_id = env.storage().instance().get(&CORE).unwrap();
-                let core = CoreContractClient::new(&env, &core_id);
+                let core = CoreContractClient::new(env, &core_id);
                 let native_asset_id = core.get_native_asset_id();
-                let native_token = token::Client::new(&env, &native_asset_id);
+                let native_token = token::Client::new(env, &native_asset_id);
                 let contract = env.current_contract_address();
                 native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
