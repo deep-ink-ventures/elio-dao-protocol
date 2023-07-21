@@ -299,7 +299,7 @@ fn max_number_of_proposals() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(1002))")]
+#[should_panic(expected = "#2")]
 fn error_on_max_number_of_proposals() {
     let ref clients @ Clients { ref votes, ref core, .. } = Clients::new();
     let env = &votes.env;

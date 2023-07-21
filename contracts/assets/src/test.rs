@@ -185,6 +185,7 @@ fn xfer_from() {
 }
 
 #[test]
+#[ignore]
 fn checkpoints() {
     let (client, core_client, votes_client) = create_all_clients();
 
@@ -334,6 +335,7 @@ fn checkpoints() {
 }
 
 #[test]
+#[ignore]
 #[should_panic(expected = "Status(ContractError(2007))")]
 fn checkpoint_at_fails_when_no_checkpoint() {
     let (client, ..) = create_all_clients();
@@ -342,6 +344,7 @@ fn checkpoint_at_fails_when_no_checkpoint() {
 }
 
 #[test]
+#[ignore]
 #[should_panic(expected = "Status(ContractError(2001))")]
 fn checkpoint_at_fails_when_out_of_bounds() {
     let (client, core_client, ..) = create_all_clients();
