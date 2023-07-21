@@ -1,16 +1,16 @@
-use soroban_sdk::{contracttype, Address, Bytes, Symbol};
+use soroban_sdk::{contracttype, Address, Bytes, Symbol, symbol_short};
 
 use crate::types::{Voting, PropStatus};
 
-pub const CORE: Symbol = Symbol::short("CORE");
-pub const PROPOSAL: Symbol = Symbol::short("PROPOSAL");
+pub const CORE: Symbol = symbol_short!("CORE");
+pub const PROPOSAL: Symbol = symbol_short!("PROPOSAL");
 
-pub const CREATED: Symbol = Symbol::short("created");
-pub const METADATA_SET: Symbol = Symbol::short("meta_set");
-pub const VOTE_CAST: Symbol = Symbol::short("vote_cast");
-pub const FAULTED: Symbol = Symbol::short("faulted");
-pub const STATUS_UPDATE: Symbol = Symbol::short("state_upd");
-pub const CONF_SET: Symbol = Symbol::short("conf_set");
+pub const CREATED: Symbol = symbol_short!("created");
+pub const METADATA_SET: Symbol = symbol_short!("meta_set");
+pub const VOTE_CAST: Symbol = symbol_short!("vote_cast");
+pub const FAULTED: Symbol = symbol_short!("faulted");
+pub const STATUS_UPDATE: Symbol = symbol_short!("state_upd");
+pub const CONF_SET: Symbol = symbol_short!("conf_set");
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]

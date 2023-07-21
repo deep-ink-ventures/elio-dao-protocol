@@ -1,14 +1,8 @@
 #![cfg(test)]
 
-use soroban_sdk::{
-    testutils::{Address as _, Ledger, LedgerInfo},
-    Address, Env, IntoVal,
-};
+use soroban_sdk::{testutils::{Address as _, Ledger, LedgerInfo}, Address, Env, IntoVal};
 
 use crate::{core_contract, votes_contract, AssetContract, AssetContractClient};
-
-const FINALIZATION_DURATION: u32 = 5_000;
-const PROPOSAL_DURATION: u32 = 10_000;
 
 const SUPPLY: i128 = 1_000_000;
 
@@ -47,6 +41,14 @@ fn create_token(client: &AssetContractClient, core_client: &core_contract::Clien
     address
 }
 
+fn fund_account(env: &Env, native_asset_id: &Address, address: &Address) {
+    const XLM: i128 = 10_000_000;
+    const MINT: i128 = 10_000 * XLM;
+
+    let native_token = AssetContractClient::new(&env, &native_asset_id);
+    native_token.mint(&address, &MINT);
+}
+
 #[test]
 fn create_a_token() {
     let (client, core_client, _) = create_all_clients();
@@ -67,7 +69,7 @@ fn create_a_token() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(2003))")]
+#[should_panic(expected = "#3")]
 fn create_a_token_only_once() {
     let (client, core_client, _) = create_all_clients();
     create_token(&client, &core_client);
@@ -75,7 +77,7 @@ fn create_a_token_only_once() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(2005))")]
+#[should_panic(expected = "#5")]
 fn mint_only_once() {
     let (client, core_client, _) = create_all_clients();
     let address= create_token(&client, &core_client);
@@ -84,7 +86,7 @@ fn mint_only_once() {
 
 #[test]
 fn set_owner() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let address = Address::random(&client.env);
 
@@ -97,9 +99,9 @@ fn set_owner() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(2004))")]
+#[should_panic(expected = "#4")]
 fn set_owner_auth() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let address = Address::random(&client.env);
     client.set_owner(&address, &address);
@@ -107,7 +109,7 @@ fn set_owner_auth() {
 
 #[test]
 fn set_core_address() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let owner = client.owner();
 
@@ -118,9 +120,9 @@ fn set_core_address() {
 }
 
 #[test]
-#[should_panic(expected = "Status(ContractError(2004))")]
+#[should_panic(expected = "#4")]
 fn set_core_address_auth() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let address = Address::random(&client.env);
     client.set_core_address(&address, &client.address);
@@ -128,27 +130,30 @@ fn set_core_address_auth() {
 
 #[test]
 fn spendable_equals_balance() {
-    let (client, _, __) = create_all_clients();
+    let (client, ..) = create_all_clients();
     let address = Address::random(&client.env);
     assert_eq!(client.balance(&address), client.spendable(&address));
 }
 
 #[test]
 fn token_assets_are_always_authorized() {
-    let (client, _, __) = create_all_clients();
+    let (client, ..) = create_all_clients();
     let address = Address::random(&client.env);
     assert_eq!(client.authorized(&address), true);
 }
 
 #[test]
 fn xfer() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let from = client.owner();
     let to = Address::random(&client.env);
 
     assert_eq!(client.balance(&from), 1_000_000);
     assert_eq!(client.balance(&to), 0);
+
+    // budget reset
+    client.env.budget().reset_default();
 
     client.xfer(&from, &to, &500_000);
 
@@ -158,7 +163,7 @@ fn xfer() {
 
 #[test]
 fn xfer_from() {
-    let (client, core_client, __) = create_all_clients();
+    let (client, core_client, ..) = create_all_clients();
     create_token(&client, &core_client);
     let from = client.owner();
     let to = Address::random(&client.env);
@@ -169,6 +174,9 @@ fn xfer_from() {
     assert_eq!(client.balance(&to), 0);
     assert_eq!(client.allowance(&from, &spender), 250_000);
 
+    // budget reset
+    client.env.budget().reset_default();
+
     client.xfer_from(&spender, &from, &to, &100_000);
 
     assert_eq!(client.balance(&from), 900_000);
@@ -178,8 +186,6 @@ fn xfer_from() {
 
 #[test]
 #[ignore]
-// this test counts exact number of checkpoints which currently
-// fails due to checkpoint filtering being disabled
 fn checkpoints() {
     let (client, core_client, votes_client) = create_all_clients();
 
@@ -201,6 +207,9 @@ fn checkpoints() {
         sequence_number: 1,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
 
     client.xfer(&owner, &whoever, &100_000);
@@ -225,10 +234,34 @@ fn checkpoints() {
         sequence_number: 10,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
 
+    let dao_id = "DIV".into_val(&client.env);
+    let dao_name = "Deep Ink Ventures".into_val(&client.env);
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
+    let voting = votes_contract::Voting::Majority;
+
+    fund_account(&client.env, &core_client.get_native_asset_id(), &owner);
+    core_client.create_dao(&dao_id, &dao_name, &owner);
+    votes_client.set_configuration(
+        &dao_id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
+        &voting,
+        &owner
+    );
+
+    let proposal_owner_1 = Address::random(&client.env);
+    fund_account(&client.env, &core_client.get_native_asset_id(), &proposal_owner_1);
+
     // let's create a proposal
-    votes_client.create_proposal(&"DIV".into_val(&client.env), &Address::random(&client.env));
+    votes_client.create_proposal(&dao_id, &proposal_owner_1);
     client.xfer(&owner, &whoever, &100_000);
 
     assert_eq!(client.get_checkpoint_count(&owner), 2);
@@ -251,8 +284,13 @@ fn checkpoints() {
         sequence_number: 20,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
-    votes_client.create_proposal(&"DIV".into_val(&client.env), &Address::random(&client.env));
+    let proposal_owner_2 = Address::random(&client.env);
+    fund_account(&client.env, &core_client.get_native_asset_id(), &proposal_owner_2);
+    votes_client.create_proposal(&dao_id, &proposal_owner_2);
     client.xfer(&owner, &whoever, &100_000);
 
     assert_eq!(client.get_checkpoint_count(&owner), 3);
@@ -268,13 +306,18 @@ fn checkpoints() {
     assert_eq!(cp3.ledger, 20);
     assert_eq!(cp3.balance, 300_000);
 
+    client.env.budget().reset_default();
+
     // now let's outdate the first one
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
-        sequence_number: 10 + FINALIZATION_DURATION + PROPOSAL_DURATION + 1,
+        sequence_number: 10 + proposal_duration + 1,
         network_id: Default::default(),
         base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
     });
     client.xfer(&owner, &whoever, &100_000);
 
@@ -289,4 +332,23 @@ fn checkpoints() {
     assert_eq!(client.get_balance_at(&whoever, &19), 300_000);
     assert_eq!(client.get_balance_at(&whoever, &20), 300_000);
     assert_eq!(client.get_balance_at(&whoever, &20_000), 400_000);
+}
+
+#[test]
+#[ignore]
+#[should_panic(expected = "Status(ContractError(2007))")]
+fn checkpoint_at_fails_when_no_checkpoint() {
+    let (client, ..) = create_all_clients();
+
+    client.get_checkpoint_at(&Address::random(&client.env), &0);
+}
+
+#[test]
+#[ignore]
+#[should_panic(expected = "Status(ContractError(2001))")]
+fn checkpoint_at_fails_when_out_of_bounds() {
+    let (client, core_client, ..) = create_all_clients();
+    let owner = create_token(&client, &core_client);
+
+    client.get_checkpoint_at(&owner, &2);
 }

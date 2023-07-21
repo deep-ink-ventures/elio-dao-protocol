@@ -4,7 +4,7 @@ use events::{
     AssetMintedEventData, AssetNewOwnerEventData, AssetSetGovernanceIDEventData,
     AssetTransferredEventData, ASSET, CORE_ADDRESS_CHANGED, MINTED, OWNER_CHANGED, TRANSFERRED,
 };
-use soroban_sdk::{contractimpl, Address, Bytes, Env, Symbol, panic_with_error};
+use soroban_sdk::{contractimpl, contract, Address, Bytes, Env, Symbol, panic_with_error};
 
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
@@ -28,6 +28,7 @@ mod error;
 use types::{Checkpoint, Token};
 use crate::error::AssetError;
 
+#[contract]
 pub struct AssetContract;
 
 fn check_non_negative_amount(env: &Env, amount: i128) {
@@ -45,7 +46,7 @@ impl AssetTrait for AssetContract {
     fn mint(env: Env, owner: Address, supply: i128) {
         Token::check_auth(&env, &owner);
         Token::check_is_minted(&env, owner.clone());
-        Token::write_balance(&env, owner.clone(), supply.clone());
+        Token::write_balance(&env, owner.clone(), supply);
         env.events().publish(
             (ASSET, MINTED, Token::get_symbol(&env)),
             AssetMintedEventData {
@@ -86,9 +87,7 @@ impl AssetTrait for AssetContract {
 
         check_non_negative_amount(&env, amount);
         let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
-        let new_allowance = allowance
-            .checked_add(amount)
-            .expect("Updated allowance doesn't fit in an i128");
+        let new_allowance = allowance + amount;
 
         Token::write_allowance(&env, from.clone(), spender.clone(), new_allowance);
         env.events().publish(

@@ -1,11 +1,11 @@
-use soroban_sdk::{contracttype, Address, Bytes, Symbol};
+use soroban_sdk::{contracttype, Address, Bytes, Symbol, symbol_short};
 
-pub const ASSET: Symbol = Symbol::short("ASSET");
+pub const ASSET: Symbol = symbol_short!("ASSET");
 
-pub const MINTED: Symbol = Symbol::short("minted");
-pub const OWNER_CHANGED: Symbol = Symbol::short("new_owner");
-pub const CORE_ADDRESS_CHANGED: Symbol = Symbol::short("new_govid");
-pub const TRANSFERRED: Symbol = Symbol::short("transfer");
+pub const MINTED: Symbol = symbol_short!("minted");
+pub const OWNER_CHANGED: Symbol = symbol_short!("new_owner");
+pub const CORE_ADDRESS_CHANGED: Symbol = symbol_short!("new_govid");
+pub const TRANSFERRED: Symbol = symbol_short!("transfer");
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
