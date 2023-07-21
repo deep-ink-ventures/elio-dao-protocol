@@ -51,7 +51,7 @@ impl CoreTrait for CoreContract {
         let native_asset_id = env.storage().persistent().get(&NATIVE).unwrap();
         let native_token = token::Client::new(&env, &native_asset_id);
         let contract = &env.current_contract_address();
-        native_token.transfer(&dao_owner, &contract, &RESERVE_AMOUNT);
+        native_token.transfer(&dao_owner, contract, &RESERVE_AMOUNT);
 
         let dao = Dao::create(&env, dao_id.clone(), dao_name.clone(), dao_owner.clone());
 
@@ -76,7 +76,7 @@ impl CoreTrait for CoreContract {
        let native_asset_id = env.storage().persistent().get(&NATIVE).unwrap();
        let native_token = token::Client::new(&env, &native_asset_id);
        let contract = &env.current_contract_address();
-       native_token.transfer(&contract, &dao_owner, &RESERVE_AMOUNT);
+       native_token.transfer(contract, &dao_owner, &RESERVE_AMOUNT);
 
         env.events()
             .publish((DAO, DESTROYED), DaoDestroyedEventData { dao_id });
