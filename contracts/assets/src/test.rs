@@ -185,12 +185,13 @@ fn xfer_from() {
 }
 
 #[test]
-#[ignore]
 fn checkpoints() {
     let (client, core_client, votes_client) = create_all_clients();
 
     let owner = create_token(&client, &core_client);
     let whoever = Address::random(&client.env);
+
+    client.env.budget().reset_unlimited();
 
     // owner should have a checkpoint after issuance
     assert_eq!(client.get_checkpoint_count(&owner), 1);
@@ -335,8 +336,7 @@ fn checkpoints() {
 }
 
 #[test]
-#[ignore]
-#[should_panic(expected = "Status(ContractError(2007))")]
+#[should_panic(expected = "#7")]
 fn checkpoint_at_fails_when_no_checkpoint() {
     let (client, ..) = create_all_clients();
 
@@ -344,8 +344,7 @@ fn checkpoint_at_fails_when_no_checkpoint() {
 }
 
 #[test]
-#[ignore]
-#[should_panic(expected = "Status(ContractError(2001))")]
+#[should_panic(expected = "#1")]
 fn checkpoint_at_fails_when_out_of_bounds() {
     let (client, core_client, ..) = create_all_clients();
     let owner = create_token(&client, &core_client);
