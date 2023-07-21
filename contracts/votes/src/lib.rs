@@ -155,7 +155,7 @@ impl VotesTrait for VotesContract {
                 proposal_id,
                 voter_id: voter,
                 in_favor,
-                voting_power: voting_power
+                voting_power
             },
         );
         voting_power
