@@ -114,7 +114,7 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::MAJORITY;
+    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
@@ -208,7 +208,7 @@ fn active_proposals_are_managed() {
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::MAJORITY;
+    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
@@ -332,7 +332,7 @@ fn set_configuration() {
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::MAJORITY;
+    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
@@ -360,7 +360,7 @@ fn set_configuration_only_owner() {
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::MAJORITY;
+    let voting = Voting::Majority;
     let whoever = Address::random(env);
     votes.set_configuration(
         &dao.id,
@@ -442,7 +442,7 @@ fn vote() {
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::MAJORITY;
+    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
@@ -527,7 +527,7 @@ fn accepted_finalize() {
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::MAJORITY;
+    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,

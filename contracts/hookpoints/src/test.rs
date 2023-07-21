@@ -75,7 +75,7 @@ impl Protocol {
         let proposal_duration: u32 = 10_000;
         let proposal_token_deposit: u128 = 100_000_000;
         let min_threshold_configuration: i128 = 1_000;
-        let voting = Voting::MAJORITY;
+        let voting = Voting::Majority;
         votes.set_configuration(
             &dao_id,
             &proposal_duration,
