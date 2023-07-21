@@ -41,7 +41,7 @@ impl Token {
 
     pub fn get_checkpoint_at(env: &Env, id: Address, i: u32) -> Checkpoint {
         let checkpoints = Self::get_checkpoints(env, id);
-        if checkpoints.len() == 0 {
+        if checkpoints.is_empty() {
             panic_with_error!(env, AssetError::NoCheckpoint)
         }
         if checkpoints.len() <= i {
