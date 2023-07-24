@@ -70,7 +70,7 @@ Start by running the official soroban docker container:
 docker run --rm -it \
    -p 8000:8000 \
    --name stellar \
-   stellar/quickstart:soroban-dev@sha256:57e8ab498bfa14c65595fbb01cb94b1cdee9637ef2e6634e59d54f6958c05bdb \
+   stellar/quickstart:soroban-dev@sha256:ed57f7a7683e3568ae401f5c6e93341a9f77d8ad41191bf752944d7898981e0c \
    --standalone \
   --enable-soroban-rpc
   ```
