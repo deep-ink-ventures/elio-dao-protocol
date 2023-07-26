@@ -539,6 +539,84 @@ fn vote() {
 }
 
 #[test]
+#[ignore]
+#[should_panic(expected = "#10")]
+fn vote_already_cast() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+
+    // budget reset
+    env.budget().reset_unlimited();
+
+    let dao_owner = Address::random(env);
+    let supply = 1_000_000;
+    let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
+
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
+    let voting = Voting::Majority;
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
+        &voting,
+        &dao.owner
+    );
+
+    let owner = Address::random(env);
+    fund_account(&env, &clients.core.get_native_asset_id(),&owner);
+    let proposal_id = votes.create_proposal(&dao.id, &owner);
+
+    let voter = dao.owner;
+    votes.vote(&dao.id, &proposal_id, &true, &voter);
+    votes.vote(&dao.id, &proposal_id, &true, &voter);
+}
+
+#[test]
+fn can_change_vote() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+
+    env.budget().reset_unlimited();
+
+    let dao_owner = Address::random(env);
+    let supply = 1_000_000;
+    let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
+
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
+    let voting = Voting::Majority;
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit,
+        &min_threshold_configuration,
+        &voting,
+        &dao.owner
+    );
+
+    let owner = Address::random(env);
+    fund_account(&env, &clients.core.get_native_asset_id(),&owner);
+    let proposal_id = votes.create_proposal(&dao.id, &owner);
+
+    let voter = dao.owner;
+    votes.vote(&dao.id, &proposal_id, &true, &voter);
+    let proposal = votes
+        .get_active_proposals(&dao.id)
+        .get_unchecked(0);
+    assert_eq!(proposal.in_favor, supply);
+    votes.vote(&dao.id, &proposal_id, &false, &voter);
+    let proposal = votes
+        .get_active_proposals(&dao.id)
+        .get_unchecked(0);
+    assert_eq!(proposal.against, supply);
+    assert_eq!(proposal.in_favor, 0);
+}
+
+#[test]
 fn rejected_finalize() {
     let ref clients @ Clients { ref votes, ..} = Clients::new();
     let env = &votes.env;

@@ -51,6 +51,12 @@ pub enum Voting {
     Majority,
 }
 
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum VotingHistory {
+    Voting(Address, u32),
+}
+
 pub const XLM: i128 = 10_000_000;
 pub const RESERVE_AMOUNT: i128 = 100 * XLM;
 pub const PROPOSAL_MAX_NR: u32 = 25;
@@ -127,6 +133,12 @@ impl Proposal {
         voter: Address,
         asset_id: Address,
     ) -> i128 {
+        // Check if voter has already voted and has the same vote.
+        let vote_key = VotingHistory::Voting(voter.clone(), proposal_id);
+        let has_key = env.storage().instance().has(&vote_key);
+        if has_key && in_favor == env.storage().instance().get::<VotingHistory, bool>(&vote_key).unwrap() {
+            panic_with_error!(env, VotesError::VoteAlreadyCast)
+        }
         let key = ActiveKey(dao_id.clone());
         let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
         for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
@@ -140,11 +152,14 @@ impl Proposal {
 
                 if in_favor {
                     p.in_favor += voting_power;
+                    if has_key { p.against -= voting_power}
                 } else {
                     p.against += voting_power;
+                    if has_key { p.in_favor -= voting_power}
                 }
                 active_proposals.set(i as u32, p);
                 env.storage().instance().set(&key, &active_proposals);
+                env.storage().instance().set(&vote_key, &in_favor);
                 return voting_power
             }
         }

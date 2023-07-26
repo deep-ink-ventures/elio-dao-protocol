@@ -14,4 +14,5 @@ pub enum VotesError {
     NotProposalOwner = 7,
     MetadataNotFound = 8,
     ConfigurationNotFound = 9,
+    VoteAlreadyCast = 10,
 }
