@@ -3,7 +3,12 @@ use soroban_sdk::{contracttype, Address, Bytes, Env, IntoVal, Symbol, Vec, token
 mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
 }
+
+mod assets_contract {
+    soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
+}
 use core_contract::Client as CoreContractClient;
+use assets_contract::Client as AssetsContractClient;
 
 use crate::error::VotesError;
 
@@ -73,6 +78,9 @@ impl Proposal {
         let contract = env.current_contract_address();
         native_token.transfer(&owner, &contract, &RESERVE_AMOUNT);
 
+        let assets_id = core.get_native_asset_id();
+        let _assets = AssetsContractClient::new(env,&assets_id);
+
         let id = env.storage().instance().get(&PROP_ID).unwrap_or(0);
         proposals.push_back(ActiveProposal {
             id,
@@ -85,7 +93,7 @@ impl Proposal {
                 owner,
             },
         });
-        env.storage().instance().set(&ActiveKey(dao_id), &proposals);
+        env.storage().instance().set(&ActiveKey(dao_id.clone()), &proposals);
         env.storage().instance().set(&PROP_ID, &(id + 1));
         id
     }

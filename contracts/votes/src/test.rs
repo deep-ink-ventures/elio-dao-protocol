@@ -100,19 +100,18 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
     let Clients {
         core,
         votes,
-        native_asset_admin,
+        ..
     } = clients;
     let env = &core.env;
 
     let dao_owner = Address::random(env);
-    native_asset_admin.mint(&dao_owner, &MAX_I128);
-    let dao = create_dao(&core, &dao_owner);
+    let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, MAX_I128);
 
     let native_asset_id = core.get_native_asset_id();
     fund_account(&env, &native_asset_id,proposal_owner);
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
+    let proposal_token_deposit: u128 = 100;
     let min_threshold_configuration: i128 = 1_000;
     let voting = Voting::Majority;
     votes.set_configuration(
@@ -192,6 +191,8 @@ fn active_proposals_are_managed() {
     let (core, votes) = (&clients.core, &clients.votes);
     let env = &core.env;
 
+    env.budget().reset_unlimited();
+
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
@@ -204,7 +205,7 @@ fn active_proposals_are_managed() {
     });
 
     let dao_owner = Address::random(env);
-    let dao = mint_and_create_dao(&clients, &dao_owner);
+    let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, MAX_I128);
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
@@ -217,8 +218,6 @@ fn active_proposals_are_managed() {
         &voting,
         &dao.owner
     );
-
-    env.budget().reset_default();
 
     let owner = Address::random(env);
     fund_account(&env, &core.get_native_asset_id(),&owner);
@@ -235,9 +234,6 @@ fn active_proposals_are_managed() {
         max_entry_expiration: 10,
     });
     let proposal_2_id = votes.create_proposal(&dao.id, &owner);
-
-    // budget reset
-    env.budget().reset_default();
 
     let all_proposals = votes.get_active_proposals(&dao.id);
     assert_eq!(all_proposals.len(), 2);
@@ -272,8 +268,10 @@ fn max_number_of_proposals() {
     let ref clients @ Clients { ref votes, ref core, .. } = Clients::new();
     let env = &votes.env;
 
+    env.budget().reset_unlimited();
+
     let dao_owner = Address::random(env);
-    let dao = mint_and_create_dao(&clients, &dao_owner);
+    let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, MAX_I128);
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
@@ -291,7 +289,6 @@ fn max_number_of_proposals() {
     let native_asset_id = &core.get_native_asset_id();
 
     for _ in 0..=(PROPOSAL_MAX_NR - 1) {
-        env.budget().reset_default();
         let proposal_owner = &Address::random(&env);
         fund_account(&env, &native_asset_id, &proposal_owner);
         let _ = votes.create_proposal(&dao.id, proposal_owner);
@@ -304,8 +301,10 @@ fn error_on_max_number_of_proposals() {
     let ref clients @ Clients { ref votes, ref core, .. } = Clients::new();
     let env = &votes.env;
 
+    env.budget().reset_unlimited();
+
     let dao_owner = Address::random(env);
-    let dao = mint_and_create_dao(&clients, &dao_owner);
+    let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, MAX_I128);
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
@@ -323,7 +322,6 @@ fn error_on_max_number_of_proposals() {
     let native_asset_id = &core.get_native_asset_id();
 
     for _ in 0..=PROPOSAL_MAX_NR {
-        env.budget().reset_default();
         let proposal_owner = &Address::random(&env);
         fund_account(&env, &native_asset_id, &proposal_owner);
         let _ = votes.create_proposal(&dao.id, proposal_owner);
@@ -334,6 +332,8 @@ fn error_on_max_number_of_proposals() {
 fn set_metadata() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+
+    env.budget().reset_unlimited();
 
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
@@ -352,6 +352,8 @@ fn set_metadata() {
 fn set_metadata_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+
+    env.budget().reset_unlimited();
 
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
@@ -464,8 +466,10 @@ fn must_create_configuration_before_proposal() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
 
+    env.budget().reset_unlimited();
+
     let owner = Address::random(env);
-    let dao = mint_and_create_dao(clients, &owner);
+    let dao = mint_and_create_dao_with_minted_asset(clients, &owner, MAX_I128);
 
     votes.create_proposal(&dao.id, &owner);
 }
@@ -475,10 +479,11 @@ fn mark_faulty() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
 
+    env.budget().reset_unlimited();
+
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
 
-    env.budget().reset_default();
     let reason = "bad".into_val(env);
     votes.fault_proposal(&dao.id, &proposal_id, &reason, &dao.owner);
 
@@ -494,6 +499,8 @@ fn mark_faulty_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
 
+    env.budget().reset_unlimited();
+
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
 
@@ -506,12 +513,11 @@ fn vote() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
 
+    env.budget().reset_unlimited();
+
     let dao_owner = Address::random(env);
     let supply = 1_000_000;
     let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
-
-    // budget reset
-    env.budget().reset_default();
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
@@ -542,6 +548,9 @@ fn vote() {
 fn rejected_finalize() {
     let ref clients @ Clients { ref votes, ..} = Clients::new();
     let env = &votes.env;
+
+    env.budget().reset_unlimited();
+
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
@@ -579,6 +588,9 @@ fn rejected_finalize() {
 fn accepted_finalize() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+
+    env.budget().reset_unlimited();
+
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
@@ -593,8 +605,6 @@ fn accepted_finalize() {
     let dao_owner = Address::random(env);
     let supply = 1_000_000;
     let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
-
-    env.budget().reset_default();
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
@@ -660,6 +670,8 @@ fn reserves_token_on_proposal_creation() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
 
+    env.budget().reset_unlimited();
+
     let owner = Address::random(env);
     let native_asset_id = &clients.core.get_native_asset_id();
     let native_token = token::Client::new(&env, &native_asset_id);
@@ -676,6 +688,8 @@ fn return_tokens_when_faulty() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
 
+    env.budget().reset_unlimited();
+
     let owner = Address::random(env);
     let native_asset_id = &clients.core.get_native_asset_id();
     let native_token = token::Client::new(&env, &native_asset_id);
@@ -684,9 +698,6 @@ fn return_tokens_when_faulty() {
     // Checks if balance deducted after proposal creation
     let current_balance = native_token.balance(&owner);
     assert_eq!(current_balance, &MINT - &RESERVE_AMOUNT);
-
-    // budget reset
-    env.budget().reset_default();
 
     let reason = "bad".into_val(env);
     votes.fault_proposal(&dao.id, &proposal_id, &reason, &dao.owner);
@@ -700,6 +711,9 @@ fn return_tokens_when_faulty() {
 fn returns_tokens_on_finalize() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+
+    env.budget().reset_unlimited();
+
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
@@ -722,7 +736,6 @@ fn returns_tokens_on_finalize() {
 
     let proposal_duration: u32 = 10_000;
 
-    env.budget().reset_default();
     // make finalization possible
     votes.env.ledger().set(LedgerInfo {
         timestamp: 12345,

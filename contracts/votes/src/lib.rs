@@ -6,10 +6,6 @@ mod core_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_core.wasm");
 }
 
-mod assets_contract {
-    soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
-}
-
 #[cfg(test)]
 mod test;
 
@@ -22,7 +18,6 @@ mod events;
 mod error;
 
 use core_contract::Client as CoreContractClient;
-use assets_contract::Client as AssetsContractClient;
 use events::{
     ProposalFaultedEventData, ProposalMetadataSetEventData, CORE,
     CREATED, FAULTED, METADATA_SET, PROPOSAL, CONF_SET, ProposalConfigurationSetEventData,
@@ -55,9 +50,6 @@ impl VotesTrait for VotesContract {
     fn create_proposal(env: Env, dao_id: Bytes, proposal_owner: Address) -> u32 {
         let core_id = Self::get_core_id(env.clone());
         let core = CoreContractClient::new(&env, &core_id);
-
-        let assets_id = core.get_dao_asset_id(&dao_id);
-        let _assets = AssetsContractClient::new(&env, &assets_id);
 
         // check that DAO exists
         let _ = core.get_dao(&dao_id);
