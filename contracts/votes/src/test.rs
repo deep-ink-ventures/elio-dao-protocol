@@ -52,18 +52,15 @@ impl Clients {
     }
 }
 
-fn create_dao(core: &CoreContractClient<'static>, dao_owner: &Address) -> Dao {
-    let env = &core.env;
+fn mint_and_create_dao(clients: &Clients, dao_owner: &Address) -> Dao {
+    let env = &clients.core.env;
 
     let id = "DIV".into_val(env);
     let name = "Deep Ink Ventures".into_val(env);
 
-    core.create_dao(&id, &name, &dao_owner)
-}
-
-fn mint_and_create_dao(clients: &Clients, dao_owner: &Address) -> Dao {
     clients.native_asset_admin.mint(&dao_owner, &MAX_I128);
-    create_dao(&clients.core, &dao_owner)
+
+    env.create_dao(&id, &name, &dao_owner)
 }
 
 fn mint_and_create_dao_with_asset(clients: &Clients, dao_owner: &Address) -> Dao {
@@ -183,6 +180,32 @@ fn setup_accepted_proposal(clients: &Clients) -> (u32, Address) {
 fn fund_account(env: &Env, native_asset_id: &Address, address: &Address) {
     let native_token = token::AdminClient::new(&env, &native_asset_id);
     native_token.mint(&address, &MINT);
+}
+
+#[test]
+fn can_create_proposal() {
+    let clients = Clients::new();
+    let (core, votes) = (&clients.core, &clients.votes);
+    let env = &core.env;
+
+    env.budget().reset_unlimited();
+
+    let owner = Address::random(env);
+    let dao = mint_and_create_dao_with_minted_asset(&clients, &owner, MAX_I128);
+
+    let proposal_duration: u32 = 10_000;
+    let proposal_token_deposit: u128 = 100_000_000;
+    let min_threshold_configuration: i128 = 1_000;
+    let voting = Voting::Majority;
+    votes.set_configuration(
+        &dao.id,
+        &proposal_duration,
+        &proposal_token_deposit, &min_threshold_configuration,
+        &voting,
+        &dao.owner
+    );
+
+    votes.create_proposal(&dao.id, &owner);
 }
 
 #[test]

@@ -79,7 +79,10 @@ impl Proposal {
         native_token.transfer(&owner, &contract, &RESERVE_AMOUNT);
 
         let assets_id = core.get_native_asset_id();
-        let _assets = AssetsContractClient::new(env,&assets_id);
+        let assets = AssetsContractClient::new(env,&assets_id);
+        let configured_token_deposit = Configuration::get(env, dao_id.clone()).proposal_token_deposit as i128;
+
+        assets.xfer(&owner, &contract, &configured_token_deposit);
 
         let id = env.storage().instance().get(&PROP_ID).unwrap_or(0);
         proposals.push_back(ActiveProposal {
