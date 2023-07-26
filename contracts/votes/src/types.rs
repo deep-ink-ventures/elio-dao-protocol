@@ -12,7 +12,6 @@ use assets_contract::Client as AssetsContractClient;
 
 use crate::error::VotesError;
 
-
 use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL, CORE};
 use crate::hooks::on_vote;
 
@@ -78,7 +77,7 @@ impl Proposal {
         let contract = env.current_contract_address();
         native_token.transfer(&owner, &contract, &RESERVE_AMOUNT);
 
-        let assets_id = core.get_native_asset_id();
+        let assets_id = core.get_dao_asset_id(&dao_id);
         let assets = AssetsContractClient::new(env,&assets_id);
         let configured_token_deposit = Configuration::get(env, dao_id.clone()).proposal_token_deposit as i128;
 

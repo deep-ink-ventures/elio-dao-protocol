@@ -60,7 +60,7 @@ fn mint_and_create_dao(clients: &Clients, dao_owner: &Address) -> Dao {
 
     clients.native_asset_admin.mint(&dao_owner, &MAX_I128);
 
-    env.create_dao(&id, &name, &dao_owner)
+    clients.core.create_dao(&id, &name, &dao_owner)
 }
 
 fn mint_and_create_dao_with_asset(clients: &Clients, dao_owner: &Address) -> Dao {
@@ -107,6 +107,11 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
     let native_asset_id = core.get_native_asset_id();
     fund_account(&env, &native_asset_id,proposal_owner);
 
+    let assets_id = core.get_dao_asset_id(&dao.id);
+    let assets = assets_contract::Client::new(env, &assets_id);
+
+    assets.xfer(&dao_owner, &proposal_owner, &100_000_000_000);
+
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100;
     let min_threshold_configuration: i128 = 1_000;
@@ -149,8 +154,7 @@ fn setup_accepted_proposal(clients: &Clients) -> (u32, Address) {
     let asset_id = core.get_dao_asset_id(&dao.id);
     let asset = assets_contract::Client::new(env, &asset_id);
 
-    let supply = 1_000_000;
-    asset.mint(&dao.owner, &supply);
+    asset.mint(&dao.owner, &MAX_I128);
 
     let voter = dao.owner.clone();
     votes.vote(&dao.id, &proposal_id, &true, &voter);
@@ -626,8 +630,7 @@ fn accepted_finalize() {
     });
 
     let dao_owner = Address::random(env);
-    let supply = 1_000_000;
-    let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
+    let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, MAX_I128);
 
     let proposal_duration: u32 = 10_000;
     let proposal_token_deposit: u128 = 100_000_000;
