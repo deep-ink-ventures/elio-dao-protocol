@@ -15,4 +15,5 @@ pub enum VotesError {
     MetadataNotFound = 8,
     ConfigurationNotFound = 9,
     VoteAlreadyCast = 10,
+    MetadataAlreadySet = 11,
 }

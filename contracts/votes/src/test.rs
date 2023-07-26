@@ -371,6 +371,22 @@ fn non_existing_meta_panics() {
 }
 
 #[test]
+#[ignore]
+#[should_panic(expected = "#11")]
+fn can_set_metadata_only_once() {
+    let ref clients @ Clients { ref votes, .. } = Clients::new();
+    let env = &votes.env;
+
+    let owner = Address::random(env);
+    let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
+
+    let url = "https://deep-ink.ventures".into_val(env);
+    let hash = "e337ba02296d560d167b4c301505f1252c29bcf614893a806043d33fd3509181".into_val(env);
+    votes.set_metadata(&dao.id, &proposal_id, &url, &hash, &owner);
+    votes.set_metadata(&dao.id, &proposal_id, &url, &hash, &owner);
+}
+
+#[test]
 fn set_configuration() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;

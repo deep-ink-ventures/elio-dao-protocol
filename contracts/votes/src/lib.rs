@@ -75,7 +75,6 @@ impl VotesTrait for VotesContract {
         hash: Bytes,
         proposal_owner: Address,
     ) {
-        // todo: this should only be set once
         Metadata::set(
             &env,
             dao_id,

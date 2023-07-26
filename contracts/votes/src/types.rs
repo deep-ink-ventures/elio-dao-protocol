@@ -283,6 +283,9 @@ impl Metadata {
                 if p.inner.owner != owner {
                     panic_with_error!(env, VotesError::NotProposalOwner)
                 }
+                if env.storage().instance().has(&KeyMeta(proposal_id)) {
+                    panic_with_error!(env, VotesError::MetadataAlreadySet)
+                }
                 let meta = Metadata { url, hash };
                 env.storage().instance().set(&KeyMeta(proposal_id), &meta);
                 return meta;
