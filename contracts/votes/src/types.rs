@@ -9,7 +9,7 @@ use crate::error::VotesError;
 
 
 use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL, CORE};
-use crate::hooks::on_vote;
+use crate::hooks::{on_vote, on_before_proposal_creation};
 
 #[contracttype]
 struct ActiveKey(Bytes);
@@ -59,6 +59,8 @@ impl Proposal {
         if proposals.len() == PROPOSAL_MAX_NR {
             panic_with_error!(env, VotesError::MaxProposalsReached)
         }
+
+        on_before_proposal_creation(env, &dao_id, &owner);
 
         // Transfer required amount to prevent spam
         let core = CoreContractClient::new(env, &core_id);

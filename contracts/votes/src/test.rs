@@ -186,6 +186,7 @@ fn active_proposals_are_managed() {
     let clients = Clients::new();
     let (core, votes) = (&clients.core, &clients.votes);
     let env = &core.env;
+    env.budget().reset_unlimited();
 
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
@@ -210,8 +211,6 @@ fn active_proposals_are_managed() {
         &dao.owner
     );
 
-    env.budget().reset_default();
-
     let owner = Address::random(env);
     fund_account(&env, &core.get_native_asset_id(),&owner);
     let proposal_1_id = votes.create_proposal(&dao.id, &owner);
@@ -227,9 +226,6 @@ fn active_proposals_are_managed() {
         max_entry_expiration: 10,
     });
     let proposal_2_id = votes.create_proposal(&dao.id, &owner);
-
-    // budget reset
-    env.budget().reset_default();
 
     let all_proposals = votes.get_active_proposals(&dao.id);
     assert_eq!(all_proposals.len(), 2);
@@ -263,6 +259,7 @@ fn active_proposals_are_managed() {
 fn max_number_of_proposals() {
     let ref clients @ Clients { ref votes, ref core, .. } = Clients::new();
     let env = &votes.env;
+    env.budget().reset_unlimited();
 
     let dao_owner = Address::random(env);
     let dao = mint_and_create_dao(&clients, &dao_owner);
@@ -279,7 +276,6 @@ fn max_number_of_proposals() {
     let native_asset_id = &core.get_native_asset_id();
 
     for _ in 0..=(PROPOSAL_MAX_NR - 1) {
-        env.budget().reset_default();
         let proposal_owner = &Address::random(&env);
         fund_account(&env, &native_asset_id, &proposal_owner);
         let _ = votes.create_proposal(&dao.id, proposal_owner);
@@ -291,6 +287,7 @@ fn max_number_of_proposals() {
 fn error_on_max_number_of_proposals() {
     let ref clients @ Clients { ref votes, ref core, .. } = Clients::new();
     let env = &votes.env;
+    env.budget().reset_unlimited();
 
     let dao_owner = Address::random(env);
     let dao = mint_and_create_dao(&clients, &dao_owner);
@@ -307,7 +304,6 @@ fn error_on_max_number_of_proposals() {
     let native_asset_id = &core.get_native_asset_id();
 
     for _ in 0..=PROPOSAL_MAX_NR {
-        env.budget().reset_default();
         let proposal_owner = &Address::random(&env);
         fund_account(&env, &native_asset_id, &proposal_owner);
         let _ = votes.create_proposal(&dao.id, proposal_owner);
@@ -444,11 +440,11 @@ fn must_create_configuration_before_proposal() {
 fn mark_faulty() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+    env.budget().reset_unlimited();
 
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
 
-    env.budget().reset_default();
     let reason = "bad".into_val(env);
     votes.fault_proposal(&dao.id, &proposal_id, &reason, &dao.owner);
 
@@ -463,6 +459,7 @@ fn mark_faulty() {
 fn mark_faulty_only_owner() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+    env.budget().reset_unlimited();
 
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
@@ -475,13 +472,11 @@ fn mark_faulty_only_owner() {
 fn vote() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+    env.budget().reset_unlimited();
 
     let dao_owner = Address::random(env);
     let supply = 1_000_000;
     let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
-
-    // budget reset
-    env.budget().reset_default();
 
     let proposal_duration: u32 = 10_000;
     let min_threshold_configuration: i128 = 1_000;
@@ -508,6 +503,7 @@ fn vote() {
 fn rejected_finalize() {
     let ref clients @ Clients { ref votes, ..} = Clients::new();
     let env = &votes.env;
+    env.budget().reset_unlimited();
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
@@ -545,6 +541,7 @@ fn rejected_finalize() {
 fn accepted_finalize() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+    env.budget().reset_unlimited();
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
@@ -559,8 +556,6 @@ fn accepted_finalize() {
     let dao_owner = Address::random(env);
     let supply = 1_000_000;
     let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
-
-    env.budget().reset_default();
 
     let proposal_duration: u32 = 10_000;
     let min_threshold_configuration: i128 = 1_000;
@@ -621,6 +616,7 @@ fn mark_implemented_only_owner() {
 fn reserves_token_on_proposal_creation() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+    env.budget().reset_unlimited();
 
     let owner = Address::random(env);
     let native_asset_id = &clients.core.get_native_asset_id();
@@ -637,6 +633,7 @@ fn reserves_token_on_proposal_creation() {
 fn return_tokens_when_faulty() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+    env.budget().reset_unlimited();
 
     let owner = Address::random(env);
     let native_asset_id = &clients.core.get_native_asset_id();
@@ -646,9 +643,6 @@ fn return_tokens_when_faulty() {
     // Checks if balance deducted after proposal creation
     let current_balance = native_token.balance(&owner);
     assert_eq!(current_balance, &MINT - &RESERVE_AMOUNT);
-
-    // budget reset
-    env.budget().reset_default();
 
     let reason = "bad".into_val(env);
     votes.fault_proposal(&dao.id, &proposal_id, &reason, &dao.owner);
@@ -662,6 +656,7 @@ fn return_tokens_when_faulty() {
 fn returns_tokens_on_finalize() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+    env.budget().reset_unlimited();
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
         protocol_version: 1,
@@ -684,7 +679,6 @@ fn returns_tokens_on_finalize() {
 
     let proposal_duration: u32 = 10_000;
 
-    env.budget().reset_default();
     // make finalization possible
     votes.env.ledger().set(LedgerInfo {
         timestamp: 12345,

@@ -32,4 +32,8 @@ impl HookpointsTrait for HookpointsContract {
     fn on_vote(_env: Env, _dao_id: Bytes, _proposal_id: u32, _account_id: Address, amount: i128) -> i128 {
         amount
     }
+
+    fn on_before_proposal_creation(_env: Env, _dao_id: Bytes, _proposal_owner: Address) {
+        // add functionality here
+    }
 }

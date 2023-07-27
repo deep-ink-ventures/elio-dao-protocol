@@ -31,3 +31,11 @@ pub fn on_vote(env: &Env, dao_id: &Bytes, proposal_id: &u32, account_id: &Addres
         }
     }
 }
+
+pub fn on_before_proposal_creation(env: &Env, dao_id: &Bytes, proposal_owner: &Address) {
+    if let Some(addr) = get_hookpoint(env, dao_id) {
+        let hookpoints_client = HookpointsContractClient::new(env, &addr);
+        hookpoints_client.on_before_proposal_creation(dao_id, proposal_owner);
+    }
+}
+
