@@ -4,7 +4,7 @@ use soroban_sdk::{testutils::{Address as _}, contractimpl, contract, token, Addr
 
 use crate::{
     core_contract::{WASM as CoreWASM, Client as CoreClient},
-    votes_contract::{WASM as VotesWASM, Client as VotesClient, Voting},
+    votes_contract::{WASM as VotesWASM, Client as VotesClient},
     assets_contract::{WASM as AssetsWASM, Client as AssetsClient},
 };
 use crate::interface::HookpointsTrait;
@@ -73,15 +73,11 @@ impl Protocol {
 
         env.budget().reset_default();
         let proposal_duration: u32 = 10_000;
-        let proposal_token_deposit: u128 = 100_000_000;
         let min_threshold_configuration: i128 = 1_000;
-        let voting = Voting::Majority;
         votes.set_configuration(
             &dao_id,
             &proposal_duration,
-            &proposal_token_deposit,
             &min_threshold_configuration,
-            &voting,
             &dao_owner
         );
 

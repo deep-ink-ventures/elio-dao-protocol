@@ -1,6 +1,6 @@
 use soroban_sdk::{Address, Bytes, Env, Vec};
 
-use crate::types::{ActiveProposal, Configuration, Metadata, Proposal, Voting};
+use crate::types::{ActiveProposal, Configuration, Metadata, Proposal};
 
 pub trait VotesTrait {
     fn init(env: Env, core_id: Address);
@@ -28,14 +28,14 @@ pub trait VotesTrait {
         env: Env,
         dao_id: Bytes,
         proposal_duration: u32,
-        proposal_token_deposit: u128,
         min_threshold_configuration: i128,
-        voting: Voting,
         dao_owner: Address,
     );
 
     fn get_configuration(env: Env, dao_id: Bytes) -> Configuration;
+
     fn has_configuration(env: Env, dao_id: Bytes) -> bool;
+
     fn remove_configuration(env: Env, dao_id: Bytes, dao_owner: Address);
 
     fn vote(env: Env, dao_id: Bytes, proposal_id: u32, in_favor: bool, voter: Address) -> i128 ;

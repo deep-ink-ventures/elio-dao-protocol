@@ -25,7 +25,7 @@ use events::{
 use interface::VotesTrait;
 use types::{ActiveProposal, Metadata, Proposal};
 use crate::error::VotesError;
-use crate::types::{Configuration, Voting};
+use crate::types::{Configuration};
 
 use crate::events::{ProposalCreatedEventData, VoteCastEventData, VOTE_CAST};
 
@@ -110,9 +110,7 @@ impl VotesTrait for VotesContract {
         env: Env,
         dao_id: Bytes,
         proposal_duration: u32,
-        proposal_token_deposit: u128,
         min_threshold_configuration: i128,
-        voting: Voting,
         dao_owner: Address,
     ) {
         verify_dao_owner(&env, &dao_id, dao_owner, Self::get_core_id(env.clone()));
@@ -120,9 +118,7 @@ impl VotesTrait for VotesContract {
             &env,
             dao_id.clone(),
             proposal_duration,
-            proposal_token_deposit,
             min_threshold_configuration,
-            voting.clone(),
         );
         env.events()
             .publish(
@@ -130,8 +126,6 @@ impl VotesTrait for VotesContract {
                 ProposalConfigurationSetEventData {
                     dao_id,
                     proposal_duration,
-                    proposal_token_deposit,
-                    proposal_voting_type: voting,
                 }
             );
     }
