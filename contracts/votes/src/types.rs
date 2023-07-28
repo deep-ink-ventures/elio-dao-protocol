@@ -45,12 +45,6 @@ pub enum PropStatus {
     Implemented,
 }
 
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Voting {
-    Majority,
-}
-
 pub const XLM: i128 = 10_000_000;
 pub const RESERVE_AMOUNT: i128 = 100 * XLM;
 pub const PROPOSAL_MAX_NR: u32 = 25;
@@ -289,9 +283,7 @@ impl Metadata {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Configuration {
     pub proposal_duration: u32,
-    pub proposal_token_deposit: u128,
     pub min_threshold_configuration: i128,
-    pub voting: Voting,
 }
 
 impl Configuration {
@@ -299,15 +291,11 @@ impl Configuration {
         env: &Env,
         dao_id: Bytes,
         proposal_duration: u32,
-        proposal_token_deposit: u128,
         min_threshold_configuration: i128,
-        voting: Voting,
     ) -> Self {
         let configuration = Configuration {
             proposal_duration,
-            proposal_token_deposit,
             min_threshold_configuration,
-            voting,
         };
         env.storage().instance().set(&dao_id, &configuration);
         configuration
