@@ -519,15 +519,11 @@ fn vote_already_cast() {
     let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit,
         &min_threshold_configuration,
-        &voting,
         &dao.owner
     );
 
@@ -552,15 +548,11 @@ fn can_change_vote() {
     let dao = mint_and_create_dao_with_minted_asset(&clients, &dao_owner, supply);
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit,
         &min_threshold_configuration,
-        &voting,
         &dao.owner
     );
 
