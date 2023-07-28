@@ -123,19 +123,19 @@ impl Token {
     }
 
     pub fn get_symbol(env: &Env) -> Bytes {
-        env.storage().persistent().get(&Token::Symbol).unwrap()
+        env.storage().instance().get(&Token::Symbol).unwrap()
     }
 
     pub fn get_name(env: &Env) -> Bytes {
-        env.storage().persistent().get(&Token::Name).unwrap()
+        env.storage().instance().get(&Token::Name).unwrap()
     }
 
     pub fn get_owner(env: &Env) -> Address {
-        env.storage().persistent().get(&Token::Owner).unwrap()
+        env.storage().instance().get(&Token::Owner).unwrap()
     }
 
     pub fn get_core_address(env: &Env) -> Address {
-        env.storage().persistent().get(&Token::CoreAddress).unwrap()
+        env.storage().instance().get(&Token::CoreAddress).unwrap()
     }
 
     /// Create a new token
@@ -146,23 +146,23 @@ impl Token {
         owner: &Address,
         core_address: &Address,
     ) {
-        if env.storage().persistent().has(&Token::Symbol) {
+        if env.storage().instance().has(&Token::Symbol) {
             panic_with_error!(env, AssetError::DaoAlreadyIssuedToken)
         }
-        env.storage().persistent().set(&Token::Symbol, symbol);
-        env.storage().persistent().set(&Token::Name, name);
-        env.storage().persistent().set(&Token::Owner, owner);
-        env.storage().persistent().set(&Token::CoreAddress, core_address);
+        env.storage().instance().set(&Token::Symbol, symbol);
+        env.storage().instance().set(&Token::Name, name);
+        env.storage().instance().set(&Token::Owner, owner);
+        env.storage().instance().set(&Token::CoreAddress, core_address);
     }
 
     pub fn set_owner(env: &Env, owner: &Address, new_owner: &Address) {
         Token::check_auth(env, owner);
-        env.storage().persistent().set(&Token::Owner, &new_owner);
+        env.storage().instance().set(&Token::Owner, &new_owner);
     }
 
     pub fn set_core_address(env: &Env, owner: &Address, core_address: &Address) {
         Token::check_auth(env, owner);
-        env.storage().persistent().set(&Token::CoreAddress, core_address);
+        env.storage().instance().set(&Token::CoreAddress, core_address);
     }
 
     pub fn write_balance(env: &Env, addr: Address, amount: i128) {
