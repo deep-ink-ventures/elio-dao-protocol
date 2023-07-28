@@ -82,14 +82,14 @@ soroban contract bump \
  --durability persistent \
  --ledgers-to-expire 6312000
 
-#printf "\nUpdate Service"
-#curl -XPATCH -H "Config-Secret: ${CONFIG_SECRET}" -H "Content-type: application/json" -d "{
-#  \"core_contract_address\": \"${CORE_ADDRESS}\",
-#  \"votes_contract_address\": \"${VOTES_ADDRESS}\",
-#  \"assets_wasm_hash\": \"${ASSETS_WASM_HASH}\",
-#  \"blockchain_url\": \"${RPC_URL}\",
-#  \"network_passphrase\": \"${NETWORK_PASSPHRASE}\"
-#}" "${SERVICE_URL}/update-config/"
+printf "\nUpdate Service"
+curl -XPATCH -H "Config-Secret: ${CONFIG_SECRET}" -H "Content-type: application/json" -d "{
+  \"core_contract_address\": \"${CORE_ADDRESS}\",
+  \"votes_contract_address\": \"${VOTES_ADDRESS}\",
+  \"assets_wasm_hash\": \"${ASSETS_WASM_HASH}\",
+  \"blockchain_url\": \"${RPC_URL}\",
+  \"network_passphrase\": \"${NETWORK_PASSPHRASE}\"
+}" "${SERVICE_URL}/update-config/"
 
 printf "\nRPC_URL=$RPC_URL"
 printf "\nCORE_ADDRESS=$CORE_ADDRESS"
