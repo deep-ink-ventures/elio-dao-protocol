@@ -1,6 +1,6 @@
 use soroban_sdk::{contracttype, Address, Bytes, Symbol, symbol_short};
 
-use crate::types::{Voting, PropStatus};
+use crate::types::{PropStatus};
 
 pub const CORE: Symbol = symbol_short!("CORE");
 pub const PROPOSAL: Symbol = symbol_short!("PROPOSAL");
@@ -33,8 +33,6 @@ pub struct ProposalMetadataSetEventData {
 pub struct ProposalConfigurationSetEventData {
     pub dao_id: Bytes,
     pub proposal_duration: u32,
-    pub proposal_token_deposit: u128,
-    pub proposal_voting_type: Voting,
 }
 
 #[contracttype]
