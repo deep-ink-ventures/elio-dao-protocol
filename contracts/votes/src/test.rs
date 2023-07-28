@@ -10,7 +10,6 @@ use crate::{
     types::{PropStatus, PROPOSAL_MAX_NR, RESERVE_AMOUNT, XLM},
     VotesContract, VotesContractClient,
 };
-use crate::types::Voting;
 
 mod assets_contract {
     soroban_sdk::contractimport!(file = "../../wasm/elio_assets.wasm");
@@ -112,15 +111,11 @@ fn create_dao_with_proposal(clients: &Clients, proposal_owner: &Address) -> (Dao
     fund_account(&env, &native_asset_id,proposal_owner);
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit,
         &min_threshold_configuration,
-        &voting,
         &dao.owner
     );
 
@@ -207,14 +202,11 @@ fn active_proposals_are_managed() {
     let dao = mint_and_create_dao(&clients, &dao_owner);
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit, &min_threshold_configuration,
-        &voting,
+        &min_threshold_configuration,
         &dao.owner
     );
 
@@ -276,15 +268,11 @@ fn max_number_of_proposals() {
     let dao = mint_and_create_dao(&clients, &dao_owner);
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit,
         &min_threshold_configuration,
-        &voting,
         &dao.owner
     );
 
@@ -308,15 +296,11 @@ fn error_on_max_number_of_proposals() {
     let dao = mint_and_create_dao(&clients, &dao_owner);
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit,
         &min_threshold_configuration,
-        &voting,
         &dao.owner
     );
 
@@ -379,22 +363,16 @@ fn set_configuration() {
     let dao = mint_and_create_dao(&clients, &owner);
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit,
         &min_threshold_configuration,
-        &voting,
         &dao.owner
     );
 
     let configuration = votes.get_configuration(&dao.id);
     assert_eq!(configuration.proposal_duration, proposal_duration);
-    assert_eq!(configuration.proposal_token_deposit, proposal_token_deposit);
-    assert_eq!(configuration.voting, voting);
 }
 
 #[test]
@@ -407,16 +385,12 @@ fn set_configuration_only_owner() {
     let dao = mint_and_create_dao(&clients, &owner);
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::Majority;
     let whoever = Address::random(env);
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit,
         &min_threshold_configuration,
-        &voting,
         &whoever
     );
 }
@@ -431,16 +405,12 @@ fn remove_configuration_only_owner() {
     let dao = mint_and_create_dao(&clients, &owner);
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::Majority;
     let whoever = Address::random(env);
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit,
         &min_threshold_configuration,
-        &voting,
         &owner
     );
     votes.remove_configuration(&dao.id, &whoever);
@@ -514,15 +484,11 @@ fn vote() {
     env.budget().reset_default();
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit,
         &min_threshold_configuration,
-        &voting,
         &dao.owner
     );
 
@@ -675,15 +641,11 @@ fn accepted_finalize() {
     env.budget().reset_default();
 
     let proposal_duration: u32 = 10_000;
-    let proposal_token_deposit: u128 = 100_000_000;
     let min_threshold_configuration: i128 = 1_000;
-    let voting = Voting::Majority;
     votes.set_configuration(
         &dao.id,
         &proposal_duration,
-        &proposal_token_deposit,
         &min_threshold_configuration,
-        &voting,
         &dao.owner
     );
 

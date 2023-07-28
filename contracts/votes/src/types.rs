@@ -133,12 +133,6 @@ impl Proposal {
         voter: Address,
         asset_id: Address,
     ) -> i128 {
-        // Check if voter has already voted and has the same vote.
-        let vote_key = VotingHistory::Voting(voter.clone(), proposal_id);
-        let has_key = env.storage().instance().has(&vote_key);
-        if has_key && in_favor == env.storage().instance().get::<VotingHistory, bool>(&vote_key).unwrap() {
-            panic_with_error!(env, VotesError::VoteAlreadyCast)
-        }
         let key = ActiveKey(dao_id.clone());
         let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
         for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
@@ -152,14 +146,11 @@ impl Proposal {
 
                 if in_favor {
                     p.in_favor += voting_power;
-                    if has_key { p.against -= voting_power}
                 } else {
                     p.against += voting_power;
-                    if has_key { p.in_favor -= voting_power}
                 }
                 active_proposals.set(i as u32, p);
                 env.storage().instance().set(&key, &active_proposals);
-                env.storage().instance().set(&vote_key, &in_favor);
                 return voting_power
             }
         }
@@ -304,9 +295,7 @@ impl Metadata {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Configuration {
     pub proposal_duration: u32,
-    pub proposal_token_deposit: u128,
     pub min_threshold_configuration: i128,
-    pub voting: Voting,
 }
 
 impl Configuration {
@@ -314,15 +303,11 @@ impl Configuration {
         env: &Env,
         dao_id: Bytes,
         proposal_duration: u32,
-        proposal_token_deposit: u128,
         min_threshold_configuration: i128,
-        voting: Voting,
     ) -> Self {
         let configuration = Configuration {
             proposal_duration,
-            proposal_token_deposit,
             min_threshold_configuration,
-            voting,
         };
         env.storage().instance().set(&dao_id, &configuration);
         configuration
