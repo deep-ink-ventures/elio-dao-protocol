@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use soroban_sdk::{testutils::{Address as _}, contractimpl, contract, token, Address, BytesN, Env, IntoVal, Bytes};
+use soroban_sdk::{testutils::{Address as _}, contractimpl, contract, token, Address, BytesN, Env, IntoVal, Bytes, contracterror, panic_with_error};
 
 use crate::{
     core_contract::{WASM as CoreWASM, Client as CoreClient},
@@ -13,18 +13,74 @@ use crate::interface::HookpointsTrait;
 #[contract]
 pub struct TestHookpointsContract;
 
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum HookTestError {
+    OnBeforeDao = 0,
+    OnBeforeChangeOwner = 1,
+    OnBeforeProposalCreation = 2,
+    OnBeforeSetMetadata = 3,
+    OnBeforeSetConfiguration = 4,
+    OnBeforeFaultProposal = 5,
+    OnBeforeFinalizeProposal = 6,
+    OnBeforeMarkImplemented = 7,
+}
+
 #[contractimpl]
 impl HookpointsTrait for TestHookpointsContract {
+    fn on_before_dao(env: Env, _dao_id: Bytes) {
+        panic_with_error!(env, HookTestError::OnBeforeDao)
+    }
 
+    fn on_before_change_owner(env: Env, _dao_id: Bytes) {
+        panic_with_error!(env, HookTestError::OnBeforeChangeOwner)
+    }
+    
     fn on_vote(_env: Env, _dao_id: Bytes, _proposal_id: u32, _account_id: Address, amount: i128) -> i128 {
         amount * 10
     }
 
-    fn on_before_proposal_creation(_env: Env, _dao_id: Bytes, _proposal_owner: Address) {
-        todo!()
+    fn on_before_proposal_creation(env: Env, _dao_id: Bytes, _proposal_owner: Address) {
+        panic_with_error!(env, HookTestError::OnBeforeProposalCreation)
+    }
+
+    fn on_before_set_metadata(env: Env, _dao_id: Bytes, _proposal_id: u32, _meta: Bytes, _hash: Bytes, _proposal_owner: Address) {
+        panic_with_error!(env, HookTestError::OnBeforeSetMetadata)
+    }
+
+    fn on_set_configuration(env: Env, _dao_id: Bytes, _proposal_duration: u32, _proposal_token_deposit: u128) -> (u32, u128) {
+        panic_with_error!(env, HookTestError::OnBeforeSetConfiguration)
+    }
+
+    fn on_before_fault_proposal(env: Env, _dao_id: Bytes, _proposal_id: u32, _reason: Bytes) {
+        panic_with_error!(env, HookTestError::OnBeforeFaultProposal)
+    }
+
+    fn on_before_finalize_proposal(env: Env, _dao_id: Bytes, _proposal_id: u32) {
+        panic_with_error!(env, HookTestError::OnBeforeFinalizeProposal)
+    }
+
+    fn on_before_mark_implemented(env: Env, _dao_id: Bytes, _proposal_id: u32) {
+        panic_with_error!(env, HookTestError::OnBeforeMarkImplemented)
+    }
+
+    fn on_incr_allowance(_env: Env, _from: Address, _spender: Address, amount: i128) -> i128 {
+        amount + 20
+    }
+
+    fn on_decr_allowance(_env: Env, _from: Address, _spender: Address, amount: i128) -> i128 {
+        amount + 30
+    }
+
+    fn on_xfer(_env: Env, _from: Address, _to: Address, amount: i128) -> i128 {
+        amount + 40
+    }
+
+    fn on_xfer_from(_env: Env, _spender: Address, _from: Address, _to: Address, amount: i128) -> i128 {
+        amount + 50
     }
 }
-
 
 const MINT: i128 = 1_000 * 10_000_000;
 pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
@@ -104,6 +160,30 @@ fn should_respect_contract_on_vote() {
     let voting_power = protocol.votes.vote(&protocol.dao_id, &protocol.proposal_id, &true, &protocol.dao_owner);
     assert_eq!(voting_power, MINT * 10);
 }
+
+#[test]
+#[should_panic(expected="#2")]
+fn should_respect_contract_on_before_proposal_creation() {
+    let protocol = Protocol::new();
+    let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
+
+    protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
+    protocol.votes.create_proposal(&protocol.dao_id, &protocol.dao_owner);
+}
+
+#[test]
+#[should_panic(expected="#3")]
+fn should_respect_contract_on_before_set_metadata() {
+    let protocol = Protocol::new();
+    let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
+
+    let meta = ("meta").into_val(&protocol.env);
+    let hash = ("hash").into_val(&protocol.env);
+    protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
+    protocol.votes.set_metadata(&protocol.dao_id, &protocol.proposal_id, &meta, &hash, &protocol.dao_owner);
+}
+
+
 
 #[test]
 fn should_remove_hookpoint() {

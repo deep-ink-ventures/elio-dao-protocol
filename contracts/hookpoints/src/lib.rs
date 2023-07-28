@@ -50,8 +50,8 @@ impl HookpointsTrait for HookpointsContract {
         // add functionality here
     }
 
-    fn on_set_configuration(_env: Env, _dao_id: Bytes, proposal_duration: u32, proposal_token_deposit: u128) -> (u32, u128) {
-        (proposal_duration, proposal_token_deposit)
+    fn on_set_configuration(_env: Env, _dao_id: Bytes, proposal_duration: u32) -> u32 {
+        proposal_duration
     }
 
     fn on_before_fault_proposal(_env: Env, _dao_id: Bytes, _proposal_id: u32, _reason: Bytes) {
@@ -62,7 +62,7 @@ impl HookpointsTrait for HookpointsContract {
         // add functionality here
     }
 
-    fn on_before_mark_implemented(_env: Env, _proposal_id: u32) {
+    fn on_before_mark_implemented(_env: Env, _dao_id: Bytes, _proposal_id: u32) {
         // add functionality here
     }
 

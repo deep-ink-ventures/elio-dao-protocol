@@ -8,7 +8,7 @@ use core_contract::Client as CoreContractClient;
 use crate::error::VotesError;
 
 use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL, CORE};
-use crate::hooks::{on_vote, on_before_proposal_creation};
+use crate::hooks::{on_vote, on_before_proposal_creation, on_before_set_metadata, on_set_configuration};
 
 #[contracttype]
 struct ActiveKey(Bytes);
@@ -277,7 +277,7 @@ impl Metadata {
     ) -> Self {
         owner.require_auth();
 
-        let key = ActiveKey(dao_id);
+        let key = ActiveKey(dao_id.clone());
         let active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
         for p in active_proposals.into_iter() {
             if p.id == proposal_id {
@@ -287,6 +287,7 @@ impl Metadata {
                 if env.storage().instance().has(&KeyMeta(proposal_id)) {
                     panic_with_error!(env, VotesError::MetadataAlreadySet)
                 }
+                on_before_set_metadata(env, &dao_id, proposal_id, &url, &hash, &p.inner.owner);
                 let meta = Metadata { url, hash };
                 env.storage().instance().set(&KeyMeta(proposal_id), &meta);
                 return meta;
@@ -323,6 +324,7 @@ impl Configuration {
             min_threshold_configuration,
         };
         env.storage().instance().set(&dao_id, &configuration);
+        on_set_configuration(env, &dao_id, proposal_duration);
         configuration
     }
 

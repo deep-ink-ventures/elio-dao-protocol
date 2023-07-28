@@ -39,3 +39,34 @@ pub fn on_before_proposal_creation(env: &Env, dao_id: &Bytes, proposal_owner: &A
     }
 }
 
+pub fn on_before_set_metadata(env: &Env, dao_id: &Bytes, proposal_id: u32, meta: &Bytes, hash: &Bytes, proposal_owner: &Address) {
+    if let Some(addr) = get_hookpoint(env, dao_id) {
+        let hookpoints_client = HookpointsContractClient::new(env, &addr);
+        hookpoints_client.on_before_set_metadata(dao_id, &proposal_id, meta, hash, proposal_owner);
+    }
+}
+
+pub fn on_set_configuration(env:&Env, dao_id: &Bytes, proposal_duration: u32) -> u32 {
+    proposal_duration
+}
+
+pub fn on_before_fault_proposal(env: &Env, dao_id: &Bytes, proposal_id: u32, reason: &Bytes) {
+    if let Some(addr) = get_hookpoint(env, dao_id) {
+        let hookpoints_client = HookpointsContractClient::new(env, &addr);
+        hookpoints_client.on_before_fault_proposal(dao_id, &proposal_id, reason);
+    }
+}
+
+pub fn on_before_finalize_proposal(env: &Env, dao_id: &Bytes, proposal_id: u32) {
+    if let Some(addr) = get_hookpoint(env, dao_id) {
+        let hookpoints_client = HookpointsContractClient::new(env, &addr);
+        hookpoints_client.on_before_finalize_proposal(dao_id, &proposal_id);
+    }
+}
+
+pub fn on_before_mark_implemented(env: &Env, dao_id: &Bytes, proposal_id: u32) {
+    if let Some(addr) = get_hookpoint(env, dao_id) {
+        let hookpoints_client = HookpointsContractClient::new(env, &addr);
+        hookpoints_client.on_before_finalize_proposal(dao_id, &proposal_id);
+    }
+}
