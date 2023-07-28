@@ -7,7 +7,6 @@ use core_contract::Client as CoreContractClient;
 
 use crate::error::VotesError;
 
-
 use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL, CORE};
 use crate::hooks::{on_vote, on_before_proposal_creation};
 
@@ -43,6 +42,18 @@ pub enum PropStatus {
     Rejected,
     Faulty(Bytes),
     Implemented,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Voting {
+    Majority,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum VotingHistory {
+    Voting(Address, u32),
 }
 
 pub const XLM: i128 = 10_000_000;
@@ -123,6 +134,12 @@ impl Proposal {
         voter: Address,
         asset_id: Address,
     ) -> i128 {
+        // Check if voter has already voted and has the same vote.
+        let vote_key = VotingHistory::Voting(voter.clone(), proposal_id);
+        let has_key = env.storage().instance().has(&vote_key);
+        if has_key && in_favor == env.storage().instance().get::<VotingHistory, bool>(&vote_key).unwrap() {
+            panic_with_error!(env, VotesError::VoteAlreadyCast)
+        }
         let key = ActiveKey(dao_id.clone());
         let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
         for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
@@ -136,11 +153,14 @@ impl Proposal {
 
                 if in_favor {
                     p.in_favor += voting_power;
+                    if has_key { p.against -= voting_power}
                 } else {
                     p.against += voting_power;
+                    if has_key { p.in_favor -= voting_power}
                 }
                 active_proposals.set(i as u32, p);
                 env.storage().instance().set(&key, &active_proposals);
+                env.storage().instance().set(&vote_key, &in_favor);
                 return voting_power
             }
         }
@@ -263,6 +283,9 @@ impl Metadata {
             if p.id == proposal_id {
                 if p.inner.owner != owner {
                     panic_with_error!(env, VotesError::NotProposalOwner)
+                }
+                if env.storage().instance().has(&KeyMeta(proposal_id)) {
+                    panic_with_error!(env, VotesError::MetadataAlreadySet)
                 }
                 let meta = Metadata { url, hash };
                 env.storage().instance().set(&KeyMeta(proposal_id), &meta);
