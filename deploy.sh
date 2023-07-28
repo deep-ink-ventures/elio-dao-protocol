@@ -51,40 +51,45 @@ soroban contract invoke \
     --votes_id "${VOTES_ADDRESS}" \
     --native_asset_id "${STELLAR_ASSET_ID}"
 
-printf "\nBumping contracts ...\n"
-
-soroban contract bump \
+for CONTRACT in core votes assets; do
+	printf "\nBumping contract ${CONTRACT} ...\n"
+	soroban contract bump \
    --source "${SECRET_KEY}" \
    --rpc-url "${RPC_URL}" \
    --network-passphrase "${NETWORK_PASSPHRASE}" \
-   --wasm wasm/elio_core.wasm \
+   --wasm wasm/elio_${CONTRACT}.wasm \
    --durability persistent \
    --ledgers-to-expire 6312000
+done
 
+printf "\n Settings instance storage for core ...\n"
 soroban contract bump \
-   --source "${SECRET_KEY}" \
-   --rpc-url "${RPC_URL}" \
-   --network-passphrase "${NETWORK_PASSPHRASE}" \
-   --wasm wasm/elio_votes.wasm \
-   --durability persistent \
-   --ledgers-to-expire 6312000
+ --source "${SECRET_KEY}" \
+ --rpc-url "${RPC_URL}" \
+ --network-passphrase "${NETWORK_PASSPHRASE}" \
+ --id $CORE_ADDRESS \
+ --key-xdr AAAAFA== \
+ --durability persistent \
+ --ledgers-to-expire 6312000
 
+printf "\n Settings instance storage for votes ...\n"
 soroban contract bump \
-   --source "${SECRET_KEY}" \
-   --rpc-url "${RPC_URL}" \
-   --network-passphrase "${NETWORK_PASSPHRASE}" \
-   --wasm wasm/elio_assets.wasm \
-   --durability persistent \
-   --ledgers-to-expire 6312000
+ --source "${SECRET_KEY}" \
+ --rpc-url "${RPC_URL}" \
+ --network-passphrase "${NETWORK_PASSPHRASE}" \
+ --id $VOTES_ADDRESS \
+ --key-xdr AAAAFA== \
+ --durability persistent \
+ --ledgers-to-expire 6312000
 
-printf "\nUpdate Service"
-curl -XPATCH -H "Config-Secret: ${CONFIG_SECRET}" -H "Content-type: application/json" -d "{
-  \"core_contract_address\": \"${CORE_ADDRESS}\",
-  \"votes_contract_address\": \"${VOTES_ADDRESS}\",
-  \"assets_wasm_hash\": \"${ASSETS_WASM_HASH}\",
-  \"blockchain_url\": \"${RPC_URL}\",
-  \"network_passphrase\": \"${NETWORK_PASSPHRASE}\"
-}" "${SERVICE_URL}/update-config/"
+#printf "\nUpdate Service"
+#curl -XPATCH -H "Config-Secret: ${CONFIG_SECRET}" -H "Content-type: application/json" -d "{
+#  \"core_contract_address\": \"${CORE_ADDRESS}\",
+#  \"votes_contract_address\": \"${VOTES_ADDRESS}\",
+#  \"assets_wasm_hash\": \"${ASSETS_WASM_HASH}\",
+#  \"blockchain_url\": \"${RPC_URL}\",
+#  \"network_passphrase\": \"${NETWORK_PASSPHRASE}\"
+#}" "${SERVICE_URL}/update-config/"
 
 printf "\nRPC_URL=$RPC_URL"
 printf "\nCORE_ADDRESS=$CORE_ADDRESS"
