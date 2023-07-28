@@ -1,7 +1,7 @@
-FROM rust:latest 
+FROM rust:latest
 
 RUN rustup target add wasm32-unknown-unknown
-RUN cargo install --locked --version 0.9.1 soroban-cli
+RUN cargo install --locked --version 0.9.4 soroban-cli
 
 COPY . .
 RUN ./init.sh

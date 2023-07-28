@@ -7,7 +7,6 @@ use core_contract::Client as CoreContractClient;
 
 use crate::error::VotesError;
 
-
 use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL, CORE};
 use crate::hooks::on_vote;
 

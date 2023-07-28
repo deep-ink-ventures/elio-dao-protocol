@@ -2,6 +2,14 @@
 
 source .env
 
+STELLAR_ASSET_ID="$(
+  soroban lab token id \
+   --source "${SECRET_KEY}" \
+   --rpc-url "${RPC_URL}" \
+   --network-passphrase "${NETWORK_PASSPHRASE}" \
+   --asset native
+)"
+
 printf "\nDeploying core ...\n"
 CORE_ADDRESS="$(
 soroban contract deploy \
@@ -42,6 +50,32 @@ soroban contract invoke \
     init \
     --votes_id "${VOTES_ADDRESS}" \
     --native_asset_id "${STELLAR_ASSET_ID}"
+
+printf "\nBumping contracts ...\n"
+
+soroban contract bump \
+   --source "${SECRET_KEY}" \
+   --rpc-url "${RPC_URL}" \
+   --network-passphrase "${NETWORK_PASSPHRASE}" \
+   --wasm wasm/elio_core.wasm \
+   --durability persistent \
+   --ledgers-to-expire 6312000
+
+soroban contract bump \
+   --source "${SECRET_KEY}" \
+   --rpc-url "${RPC_URL}" \
+   --network-passphrase "${NETWORK_PASSPHRASE}" \
+   --wasm wasm/elio_votes.wasm \
+   --durability persistent \
+   --ledgers-to-expire 6312000
+
+soroban contract bump \
+   --source "${SECRET_KEY}" \
+   --rpc-url "${RPC_URL}" \
+   --network-passphrase "${NETWORK_PASSPHRASE}" \
+   --wasm wasm/elio_assets.wasm \
+   --durability persistent \
+   --ledgers-to-expire 6312000
 
 printf "\nUpdate Service"
 curl -XPATCH -H "Config-Secret: ${CONFIG_SECRET}" -H "Content-type: application/json" -d "{
