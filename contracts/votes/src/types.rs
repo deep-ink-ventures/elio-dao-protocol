@@ -7,7 +7,6 @@ use core_contract::Client as CoreContractClient;
 
 use crate::error::VotesError;
 
-
 use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL, CORE};
 use crate::hooks::on_vote;
 
@@ -73,11 +72,11 @@ impl Proposal {
         }
 
         // Transfer required amount to prevent spam
-        // let core = CoreContractClient::new(env, &core_id);
-        // let native_asset_id = core.get_native_asset_id();
-        // let native_token = token::Client::new(env, &native_asset_id);
-        // let contract = env.current_contract_address();
-        // native_token.transfer(&owner, &contract, &RESERVE_AMOUNT);
+        let core = CoreContractClient::new(env, &core_id);
+        let native_asset_id = core.get_native_asset_id();
+        let native_token = token::Client::new(env, &native_asset_id);
+        let contract = env.current_contract_address();
+        native_token.transfer(&owner, &contract, &RESERVE_AMOUNT);
 
         let id = env.storage().instance().get(&PROP_ID).unwrap_or(0);
         proposals.push_back(ActiveProposal {
@@ -174,12 +173,12 @@ impl Proposal {
                 p.inner.status = PropStatus::Faulty(reason);
 
                 // return reserved tokens
-                // let core_id = env.storage().instance().get(&CORE).unwrap();
-                // let core = CoreContractClient::new(env, &core_id);
-                // let native_asset_id = core.get_native_asset_id();
-                // let native_token = token::Client::new(env, &native_asset_id);
-                // let contract = env.current_contract_address();
-                // native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
+                let core_id = env.storage().instance().get(&CORE).unwrap();
+                let core = CoreContractClient::new(env, &core_id);
+                let native_asset_id = core.get_native_asset_id();
+                let native_token = token::Client::new(env, &native_asset_id);
+                let contract = env.current_contract_address();
+                native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
                 active_proposals.set(i as u32, p);
                 env.storage().instance().set(&key, &active_proposals);
@@ -212,12 +211,12 @@ impl Proposal {
                 env.storage().instance().set(&ArchiveKey(proposal_id), &p.inner);
 
                 // return reserved tokens
-                // let core_id = env.storage().instance().get(&CORE).unwrap();
-                // let core = CoreContractClient::new(env, &core_id);
-                // let native_asset_id = core.get_native_asset_id();
-                // let native_token = token::Client::new(env, &native_asset_id);
-                // let contract = env.current_contract_address();
-                // native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
+                let core_id = env.storage().instance().get(&CORE).unwrap();
+                let core = CoreContractClient::new(env, &core_id);
+                let native_asset_id = core.get_native_asset_id();
+                let native_token = token::Client::new(env, &native_asset_id);
+                let contract = env.current_contract_address();
+                native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
                 active_proposals.set(i as u32, p.clone());
                 env.storage().instance().set(&key, &active_proposals);

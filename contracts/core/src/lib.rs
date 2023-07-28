@@ -51,10 +51,10 @@ impl CoreTrait for CoreContract {
 
     fn create_dao(env: Env, dao_id: Bytes, dao_name: Bytes, dao_owner: Address) -> Dao {
         // Reserve DAO Tokens
-        // let native_asset_id = env.storage().instance().get(&NATIVE).unwrap();
-        // let native_token = token::Client::new(&env, &native_asset_id);
-        // let contract = &env.current_contract_address();
-        // native_token.transfer(&dao_owner, contract, &RESERVE_AMOUNT);
+        let native_asset_id = env.storage().instance().get(&NATIVE).unwrap();
+        let native_token = token::Client::new(&env, &native_asset_id);
+        let contract = &env.current_contract_address();
+        native_token.transfer(&dao_owner, contract, &RESERVE_AMOUNT);
 
         let dao = Dao::create(&env, dao_id.clone(), dao_name.clone(), dao_owner.clone());
 
@@ -82,10 +82,10 @@ impl CoreTrait for CoreContract {
         }
         Dao::load_for_owner(&env, &dao_id, &dao_owner).destroy(&env);
 
-        // let native_asset_id = env.storage().instance().get(&NATIVE).unwrap();
-        // let native_token = token::Client::new(&env, &native_asset_id);
-        // let contract = &env.current_contract_address();
-        // native_token.transfer(contract, &dao_owner, &RESERVE_AMOUNT);
+        let native_asset_id = env.storage().instance().get(&NATIVE).unwrap();
+        let native_token = token::Client::new(&env, &native_asset_id);
+        let contract = &env.current_contract_address();
+        native_token.transfer(contract, &dao_owner, &RESERVE_AMOUNT);
 
         env.events()
             .publish((DAO, DESTROYED), DaoDestroyedEventData { dao_id });
