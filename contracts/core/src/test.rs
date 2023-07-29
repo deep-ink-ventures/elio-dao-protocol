@@ -138,8 +138,6 @@ fn destroy_a_dao_destroys_configuration() {
         &dao.id,
         &10_000,
         &100_000_000,
-        &1_000,
-        &votes_contract::Voting::Majority,
         &dao.owner,
     );
 
