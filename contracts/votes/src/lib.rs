@@ -111,9 +111,9 @@ impl VotesTrait for VotesContract {
         proposal_duration: u32,
         min_threshold_configuration: i128,
         dao_owner: Address,
-    ) {
+    ) -> Configuration {
         verify_dao_owner(&env, &dao_id, dao_owner, Self::get_core_id(env.clone()));
-        Configuration::set(
+        let configuration = Configuration::set(
             &env,
             dao_id.clone(),
             proposal_duration,
@@ -127,6 +127,7 @@ impl VotesTrait for VotesContract {
                     proposal_duration,
                 }
             );
+        configuration
     }
 
     fn get_configuration(env: Env, dao_id: Bytes) -> Configuration {

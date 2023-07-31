@@ -30,7 +30,7 @@ pub trait VotesTrait {
         proposal_duration: u32,
         min_threshold_configuration: i128,
         dao_owner: Address,
-    );
+    ) -> Configuration;
 
     fn get_configuration(env: Env, dao_id: Bytes) -> Configuration;
 

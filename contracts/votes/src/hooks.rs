@@ -46,7 +46,7 @@ pub fn on_before_set_metadata(env: &Env, dao_id: &Bytes, proposal_id: u32, meta:
     }
 }
 
-pub fn on_set_configuration(env:&Env, dao_id: &Bytes, proposal_duration: u32) -> u32 {
+pub fn on_set_configuration(_env:&Env, _dao_id: &Bytes, proposal_duration: u32) -> u32 {
     proposal_duration
 }
 

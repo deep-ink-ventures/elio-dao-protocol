@@ -21,10 +21,9 @@ pub enum HookTestError {
     OnBeforeChangeOwner = 1,
     OnBeforeProposalCreation = 2,
     OnBeforeSetMetadata = 3,
-    OnBeforeSetConfiguration = 4,
-    OnBeforeFaultProposal = 5,
-    OnBeforeFinalizeProposal = 6,
-    OnBeforeMarkImplemented = 7,
+    OnBeforeFaultProposal = 4,
+    OnBeforeFinalizeProposal = 5,
+    OnBeforeMarkImplemented = 6,
 }
 
 #[contractimpl]
@@ -49,8 +48,8 @@ impl HookpointsTrait for TestHookpointsContract {
         panic_with_error!(env, HookTestError::OnBeforeSetMetadata)
     }
 
-    fn on_set_configuration(env: Env, _dao_id: Bytes, _proposal_duration: u32, _proposal_token_deposit: u128) -> (u32, u128) {
-        panic_with_error!(env, HookTestError::OnBeforeSetConfiguration)
+    fn on_set_configuration(_env: Env, _dao_id: Bytes, proposal_duration: u32) -> u32 {
+        proposal_duration + 10
     }
 
     fn on_before_fault_proposal(env: Env, _dao_id: Bytes, _proposal_id: u32, _reason: Bytes) {
@@ -183,7 +182,22 @@ fn should_respect_contract_on_before_set_metadata() {
     protocol.votes.set_metadata(&protocol.dao_id, &protocol.proposal_id, &meta, &hash, &protocol.dao_owner);
 }
 
+#[test]
+fn should_respect_contract_on_set_configuration() {
+    let protocol = Protocol::new();
+    let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
 
+    let proposal_duration: u32 = 10_000;
+    let min_threshold_configuration: i128 = 1_000;
+    protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
+    let configuration = protocol.votes.set_configuration(
+        &protocol.dao_id,
+        &proposal_duration,
+        &min_threshold_configuration,
+        &protocol.dao_owner
+    );
+    assert_eq!(configuration.proposal_duration + 10, proposal_duration + 10)
+}
 
 #[test]
 fn should_remove_hookpoint() {
