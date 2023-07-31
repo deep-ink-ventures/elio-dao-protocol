@@ -137,7 +137,7 @@ fn destroy_a_dao_destroys_configuration() {
     clients.votes.set_configuration(
         &dao.id,
         &10_000,
-        &1_000,
+        &100_000_000,
         &dao.owner,
     );
 
