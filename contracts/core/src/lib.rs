@@ -18,9 +18,11 @@ use interface::CoreTrait;
 mod types;
 use types::{Dao, Metadata};
 use crate::error::CoreError;
+use crate::hooks::{on_before_change_owner, on_before_destroy_dao};
 use crate::types::DaoArtifact;
 
 mod error;
+mod hooks;
 
 pub const NATIVE: Symbol = symbol_short!("NATIVE");
 
@@ -74,6 +76,7 @@ impl CoreTrait for CoreContract {
     }
 
     fn destroy_dao(env: Env, dao_id: Bytes, dao_owner: Address) {
+        on_before_destroy_dao(&env, &dao_id);
         let votes_id = Self::get_votes_id(env.clone());
         let votes_contract = votes_contract::Client::new(&env, &votes_id);
         let has_configuration = votes_contract.has_configuration(&dao_id);
@@ -154,6 +157,7 @@ impl CoreTrait for CoreContract {
     }
 
     fn change_owner(env: Env, dao_id: Bytes, new_owner: Address, dao_owner: Address) -> Dao {
+        on_before_change_owner(&env, &dao_id);
         let mut dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
         dao.owner = new_owner.clone();
         dao.save(&env);

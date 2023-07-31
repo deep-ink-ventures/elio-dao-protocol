@@ -20,7 +20,7 @@ pub trait HookpointsTrait {
     fn on_before_fault_proposal(env: Env, dao_id: Bytes, proposal_id: u32, reason: Bytes);
     fn on_before_finalize_proposal(env: Env, dao_id: Bytes, proposal_id: u32);
     fn on_before_mark_implemented(env: Env, dao_id: Bytes, proposal_id: u32);
-    fn on_before_dao(env: Env, dao_id: Bytes);
+    fn on_before_destroy_dao(env: Env, dao_id: Bytes);
     fn on_before_change_owner(env: Env, dao_id: Bytes);
     fn on_incr_allowance(env: Env, from: Address, spender: Address, amount: i128) -> i128;
     fn on_decr_allowance(env: Env, from: Address, spender: Address, amount: i128) -> i128;

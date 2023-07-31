@@ -17,7 +17,7 @@ pub struct TestHookpointsContract;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum HookTestError {
-    OnBeforeDao = 0,
+    OnBeforeDestroyDao = 0,
     OnBeforeChangeOwner = 1,
     OnBeforeProposalCreation = 2,
     OnBeforeSetMetadata = 3,
@@ -28,8 +28,8 @@ pub enum HookTestError {
 
 #[contractimpl]
 impl HookpointsTrait for TestHookpointsContract {
-    fn on_before_dao(env: Env, _dao_id: Bytes) {
-        panic_with_error!(env, HookTestError::OnBeforeDao)
+    fn on_before_destroy_dao(env: Env, _dao_id: Bytes) {
+        panic_with_error!(env, HookTestError::OnBeforeDestroyDao)
     }
 
     fn on_before_change_owner(env: Env, _dao_id: Bytes) {
@@ -148,6 +148,27 @@ impl Protocol {
             dao_owner
         }
     }
+}
+
+#[test]
+#[should_panic(expected="#0")]
+fn should_respect_contract_on_before_destroy_dao_dao() {
+    let protocol = Protocol::new();
+    let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
+
+    protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
+    protocol.core.destroy_dao(&protocol.dao_id, &protocol.dao_owner);
+}
+
+#[test]
+#[should_panic(expected="#1")]
+fn should_respect_contract_on_before_change_owner() {
+    let protocol = Protocol::new();
+    let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
+
+    let whoever = Address::random(&protocol.env);
+    protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
+    protocol.core.change_owner(&protocol.dao_id, &whoever, &protocol.dao_owner);
 }
 
 #[test]

@@ -29,7 +29,7 @@ pub struct HookpointsContract;
 #[contractimpl]
 impl HookpointsTrait for HookpointsContract {
     /* Core HookPoints */
-    fn on_before_dao(_env: Env, _dao_id: Bytes) {
+    fn on_before_destroy_dao(_env: Env, _dao_id: Bytes) {
         // add functionality here
     }
 
