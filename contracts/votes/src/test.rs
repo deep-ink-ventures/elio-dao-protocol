@@ -30,6 +30,7 @@ impl Clients {
     fn new() -> Self {
         let env = Env::default();
         env.mock_all_auths();
+        env.budget().reset_unlimited();
 
         let core_id = env.register_contract_wasm(None, CoreWASM);
         let votes_id = env.register_contract(None, VotesContract);
@@ -680,6 +681,7 @@ fn mark_implemented() {
     let (proposal_id, dao_owner) = setup_accepted_proposal(&clients);
 
     let votes = clients.votes;
+
     votes.mark_implemented(&proposal_id, &dao_owner);
 
     let proposal = votes.get_archived_proposal(&proposal_id);
