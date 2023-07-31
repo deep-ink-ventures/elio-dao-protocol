@@ -28,6 +28,7 @@ use crate::error::VotesError;
 use crate::types::{Configuration};
 
 use crate::events::{ProposalCreatedEventData, VoteCastEventData, VOTE_CAST};
+use crate::hooks::on_before_mark_implemented;
 
 #[contract]
 pub struct VotesContract;
@@ -195,6 +196,7 @@ impl VotesTrait for VotesContract {
 
         let core_id = Self::get_core_id(env.clone());
         verify_dao_owner(&env, &proposal.dao_id, dao_owner, core_id);
+        on_before_mark_implemented(&env, &proposal.dao_id, proposal_id);
 
         Proposal::mark_implemented(&env, proposal_id);
     }

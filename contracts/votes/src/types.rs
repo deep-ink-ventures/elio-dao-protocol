@@ -8,7 +8,7 @@ use core_contract::Client as CoreContractClient;
 use crate::error::VotesError;
 
 use crate::events::{ProposalStatusUpdateEventData, STATUS_UPDATE, PROPOSAL, CORE};
-use crate::hooks::{on_vote, on_before_proposal_creation, on_before_set_metadata, on_set_configuration};
+use crate::hooks::{on_vote, on_before_proposal_creation, on_before_set_metadata, on_set_configuration, on_before_fault_proposal, on_before_finalize_proposal};
 
 #[contracttype]
 struct ActiveKey(Bytes);
@@ -168,6 +168,7 @@ impl Proposal {
     }
 
     pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: u32, reason: Bytes) {
+        on_before_fault_proposal(env, &dao_id, proposal_id, &reason);
         let key = ActiveKey(dao_id);
         let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
         for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
@@ -191,6 +192,7 @@ impl Proposal {
     }
 
     pub fn finalize(env: &Env, dao_id: Bytes, proposal_id: u32) {
+        on_before_finalize_proposal(env, &dao_id, proposal_id);
         let key = ActiveKey(dao_id.clone());
         let configuration = Configuration::get(env, dao_id);
         let proposal_duration = configuration.proposal_duration;

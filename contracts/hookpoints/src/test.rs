@@ -200,6 +200,38 @@ fn should_respect_contract_on_set_configuration() {
 }
 
 #[test]
+#[should_panic(expected="#4")]
+fn should_respect_contract_on_before_fault_proposal() {
+    let protocol = Protocol::new();
+    let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
+
+    let reason = ("reason").into_val(&protocol.env);
+    protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
+    protocol.votes.fault_proposal(&protocol.dao_id, &protocol.proposal_id, &reason, &protocol.dao_owner);
+}
+
+#[test]
+#[should_panic(expected="#5")]
+fn should_respect_contract_on_before_finalize_proposal() {
+    let protocol = Protocol::new();
+    let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
+
+    protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
+    protocol.votes.finalize_proposal(&protocol.dao_id, &protocol.proposal_id);
+}
+
+#[test]
+#[ignore]
+#[should_panic(expected="#5")]
+fn should_respect_contract_on_before_mark_implemented() {
+    let protocol = Protocol::new();
+    let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
+
+    protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
+    protocol.votes.mark_implemented(&protocol.proposal_id, &protocol.dao_owner);
+}
+
+#[test]
 fn should_remove_hookpoint() {
     let protocol = Protocol::new();
     let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);

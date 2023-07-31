@@ -315,6 +315,7 @@ fn error_on_max_number_of_proposals() {
 fn set_metadata() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
     let env = &votes.env;
+    env.budget().reset_unlimited();
 
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
