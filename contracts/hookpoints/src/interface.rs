@@ -30,7 +30,7 @@ pub trait HookpointsTrait {
 
     /// Called before setting metadata
     ///
-    /// - `dao_id`: The dao id that has been voted for
+    /// - `dao_id`: The dao id where metadata has been set
     /// - `proposal_id`: The id of the proposal
     /// - `meta`: The meta combined with hash to produce metadata
     /// - `hash`: The hash combined with meta to produce metadata
