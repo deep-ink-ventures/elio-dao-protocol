@@ -102,8 +102,8 @@ impl Token {
                  proposal.inner.ledger,
              );
 
-             if let Some(..) = checkpoint {
-                filtered_checkpoints.push_back(checkpoint.unwrap());
+             if let Some(cp) = checkpoint {
+                filtered_checkpoints.push_back(cp);
              }
          }
 
