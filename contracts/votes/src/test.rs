@@ -357,6 +357,7 @@ fn non_existing_meta_panics() {
     votes.get_metadata(&0);
 }
 
+/// This test is ignored until the max error up to 9 is fixed
 #[test]
 #[ignore]
 #[should_panic(expected = "#11")]
@@ -523,6 +524,7 @@ fn vote() {
     assert_eq!(proposal.in_favor, supply);
 }
 
+/// This test is ignored until the max error up to 9 is fixed
 #[test]
 #[ignore]
 #[should_panic(expected = "#10")]
