@@ -51,6 +51,16 @@ soroban contract invoke \
     --votes_id "${VOTES_ADDRESS}" \
     --native_asset_id "${STELLAR_ASSET_ID}"
 
+printf "\nInitialising votes ...\n"
+soroban contract invoke \
+    --id "${VOTES_ADDRESS}" \
+    --source "${SECRET_KEY}" \
+    --rpc-url "${RPC_URL}" \
+    --network-passphrase "${NETWORK_PASSPHRASE}" \
+    -- \
+    init \
+    --core_id "${CORE_ADDRESS}"
+
 for CONTRACT in core votes assets; do
 	printf "\nBumping contract ${CONTRACT} ...\n"
 	soroban contract bump \

@@ -6,9 +6,16 @@ This module contains functionality to create, manage and destroy a DAO alongside
 It acts as a central actor of the protocol and provides configuration features and smart contract hook points to fine-tune and customize a DAO with great freedom.
 
 ### Interface
-- `create_dao`: Create a DAO, initially the owner will be the creator. This can be released to a multisig account during setup.
-- `get_dao`: Retrieve a DAO
-- `destroy_dao`: Remove a DAO from the pallet, requires to destroy the asset first if a token has been issued.
-- `issue_token`: Issue a token for the DAO.
-- `set_metadata`: Configure a link to IPFS or a CDN alongside with a hash for a structured JSON file.
-- `change_owner`: Transfer ownership of a DAO to a new owner.
+- `init`: Initialize the contract, this is done on protocol deployment
+- `create_dao`: Create a DAO.
+- `get_dao`: Retrieve a DAO.
+- `destroy_dao`: Destroy a DAO.
+- `issue_token: Issue a token for a DAO.
+- `get_dao_asset_id`: Retrieve the DAO asset ID.
+- `set_metadata`: Set metadata for a DAO, this is a web/ipfs link with a hash of the content. See our service for an example.
+- `get_metadata`: Load metadata for a DAO.
+- `has_hookpoint`: Check if a DAO has a registered hookpoint.
+- `get_hookpoint`: Retrieve the hookpoint for a DAO.
+- `set_hookpoint`: Set the hookpoint for a DAO, see the hookpoint contract for details.
+- `remove_hookpoint`: Remove the hookpoint for a DAO.
+- `change_owner`: Transfer ownership of a DAO.

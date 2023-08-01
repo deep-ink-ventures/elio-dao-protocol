@@ -25,6 +25,7 @@ pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
 fn create_clients() -> Clients {
     let env = Env::default();
     env.mock_all_auths();
+    env.budget().reset_unlimited();
 
     let core_id = env.register_contract(None, CoreContract);
     let votes_id = env.register_contract_wasm(None, votes_contract::WASM);
@@ -38,6 +39,7 @@ fn create_clients() -> Clients {
     let native_asset_admin = token::AdminClient::new(&env, &native_asset_id);
 
     core.init(&votes_id, &native_asset_id);
+    votes.init(&core_id);
     Clients { core, votes, native_asset, native_asset_admin }
 }
 
@@ -123,14 +125,12 @@ fn destroy_a_dao() {
 }
 
 #[test]
-#[ignore] // WasmVM, InternalError
-#[should_panic(expected = "#9")]
-fn destroy_a_dao_destroys_configuration() {
+#[should_panic(expected = "#8")]
+fn destroy_a_dao_requires_destroy_configuration() {
     let clients = create_clients();
     let core = &clients.core;
     let env = &core.env;
     let user = Address::random(env);
-
     let dao = mint_and_create_dao(&clients, &user);
 
     clients.votes.set_configuration(
@@ -140,7 +140,7 @@ fn destroy_a_dao_destroys_configuration() {
         &dao.owner,
     );
 
-    core.destroy_dao(&dao.id, &user);
+    core.destroy_dao(&dao.id, &dao.owner);
     clients.votes.get_configuration(&dao.id);
 }
 
