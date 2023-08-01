@@ -59,9 +59,7 @@ impl Token {
         let checkpoints = Token::get_checkpoints(env, id);
         let cp_candidate = checkpoints.first();
 
-        if cp_candidate.is_none() {
-            return None
-        }
+        cp_candidate.as_ref()?;
 
         let mut cp = cp_candidate.unwrap();
         for checkpoint in checkpoints.into_iter() {
@@ -104,7 +102,7 @@ impl Token {
                  proposal.inner.ledger,
              );
 
-             if checkpoint.is_some() {
+             if let Some(..) = checkpoint {
                 filtered_checkpoints.push_back(checkpoint.unwrap());
              }
          }
