@@ -5,16 +5,13 @@ mod hookpoints_contract {
 }
 
 use hookpoints_contract::Client as HookpointsContractClient;
-use crate::{CoreContractClient};
+use crate::types::DaoArtifact;
 
 fn get_hookpoint(env: &Env, dao_id: &Bytes) -> Option<Address> {
-    let core = CoreContractClient::new(env, &env.current_contract_address());
-
-    if core.has_hookpoint(dao_id) {
-        Some(core.get_hookpoint(dao_id))
-    } else {
-        None
-    }
+     env.storage()
+            .persistent()
+            .get(&DaoArtifact::Hookpoint(dao_id.clone()))
+         .unwrap_or(None)
 }
 
 pub fn on_before_destroy_dao(env: &Env, dao_id: &Bytes) {
