@@ -28,6 +28,7 @@ mod hooks;
 
 use types::{Checkpoint, Token};
 use crate::error::AssetError;
+use crate::hooks::{on_decr_allowance, on_incr_allowance, on_xfer, on_xfer_from};
 
 #[contract]
 pub struct AssetContract;
@@ -86,6 +87,8 @@ impl AssetTrait for AssetContract {
     fn incr_allow(env: Env, from: Address, spender: Address, amount: i128) {
         from.require_auth();
 
+        on_incr_allowance(&env, &from, &spender, amount);
+
         check_non_negative_amount(&env, amount);
         let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
         let new_allowance = allowance + amount;
@@ -99,6 +102,8 @@ impl AssetTrait for AssetContract {
 
     fn decr_allow(env: Env, from: Address, spender: Address, amount: i128) {
         from.require_auth();
+
+        on_decr_allowance(&env, &from, &spender, amount);
 
         check_non_negative_amount(&env, amount);
 
@@ -117,6 +122,8 @@ impl AssetTrait for AssetContract {
     fn xfer(env: Env, from: Address, to: Address, amount: i128) {
         from.require_auth();
 
+        on_xfer(&env, &from, &to, amount);
+
         check_non_negative_amount(&env, amount);
         Token::spend_balance(&env, from.clone(), amount);
         Token::receive_balance(&env, to.clone(), amount);
@@ -132,6 +139,8 @@ impl AssetTrait for AssetContract {
 
     fn xfer_from(env: Env, spender: Address, from: Address, to: Address, amount: i128) {
         spender.require_auth();
+
+        on_xfer_from(&env, &spender, &from, &to, amount);
 
         check_non_negative_amount(&env, amount);
         Token::spend_allowance(&env, from.clone(), spender, amount);

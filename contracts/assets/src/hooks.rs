@@ -20,18 +20,18 @@ fn get_hookpoint(env: &Env, dao_id: &Bytes) -> Option<Address> {
 }
 
 // todo: hookpoint implementation
-fn on_incr_allowance(_env: Env, _from: Address, _spender: Address, amount: i128) -> i128 {
+pub fn on_incr_allowance(_env: &Env, _from: &Address, _spender: &Address, amount: i128) -> i128 {
     amount
 }
 
-fn on_decr_allowance(_env: Env, _from: Address, _spender: Address, amount: i128) -> i128 {
+pub fn on_decr_allowance(_env: &Env, _from: &Address, _spender: &Address, amount: i128) -> i128 {
     amount
 }
 
-fn on_xfer(_env: Env, _from: Address, _to: Address, amount: i128) -> i128 {
+pub fn on_xfer(_env: &Env, _from: &Address, _to: &Address, amount: i128) -> i128 {
     amount
 }
 
-fn on_xfer_from(_env: Env, _spender: Address, _from: Address, _to: Address, amount: i128) -> i128 {
+pub fn on_xfer_from(_env: &Env, _spender: &Address, _from: &Address, _to: &Address, amount: i128) -> i128 {
     amount
 }
