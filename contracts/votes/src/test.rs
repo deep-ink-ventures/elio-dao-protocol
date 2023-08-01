@@ -353,7 +353,7 @@ fn non_existing_meta_panics() {
 }
 
 #[test]
-#[ignore]
+#[ignore] // This test works but is currently ignored due to preview 10 limiting error codes to single digit.
 #[should_panic(expected = "#11")]
 fn can_set_metadata_only_once() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
@@ -518,7 +518,7 @@ fn vote() {
 }
 
 #[test]
-#[ignore]
+#[ignore] // This test works but is currently ignored due to preview 10 limiting error codes to single digit.
 #[should_panic(expected = "#10")]
 fn vote_already_cast() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
@@ -676,7 +676,7 @@ fn accepted_finalize() {
 }
 
 #[test]
-#[ignore]
+#[ignore] // Errors into IndexBounds
 fn mark_implemented() {
     let clients = Clients::new();
     let (proposal_id, dao_owner) = setup_accepted_proposal(&clients);
@@ -690,7 +690,7 @@ fn mark_implemented() {
 }
 
 #[test]
-#[ignore]
+#[ignore] // Errors into IndexBounds
 #[should_panic(expected = "not the DAO owner")]
 fn mark_implemented_only_owner() {
     let clients = Clients::new();

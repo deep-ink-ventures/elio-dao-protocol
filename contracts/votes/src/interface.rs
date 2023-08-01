@@ -3,12 +3,24 @@ use soroban_sdk::{Address, Bytes, Env, Vec};
 use crate::types::{ActiveProposal, Configuration, Metadata, Proposal};
 
 pub trait VotesTrait {
+    /// Initialize the contract
+    ///
+    /// - `core_id`: The address of the core-contract.
     fn init(env: Env, core_id: Address);
 
+    /// Gets the core_id
     fn get_core_id(env: Env) -> Address;
 
+    /// Create a proposal
+    ///
+    /// - `dao_id`: The id of the DAO where proposal is created.
+    /// - `proposal_owner`: The address of owner of the proposal.
     fn create_proposal(env: Env, dao_id: Bytes, proposal_owner: Address) -> u32;
 
+    /// Create a proposal
+    ///
+    /// - `dao_id`: The id of the DAO where proposal is created.
+    /// - `proposal_owner`: The address of owner of the proposal.
     fn set_metadata(
         env: Env,
         dao_id: Bytes,

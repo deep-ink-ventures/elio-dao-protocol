@@ -24,6 +24,7 @@ use interface::AssetTrait;
 
 mod types;
 mod error;
+mod hooks;
 
 use types::{Checkpoint, Token};
 use crate::error::AssetError;

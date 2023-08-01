@@ -253,7 +253,7 @@ fn should_respect_contract_on_before_finalize_proposal() {
 }
 
 #[test]
-#[ignore]
+#[ignore] // WasmVM, InternalError
 #[should_panic(expected="#5")]
 fn should_respect_contract_on_before_mark_implemented() {
     let protocol = Protocol::new();

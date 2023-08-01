@@ -87,8 +87,7 @@ fn create_a_dao() {
 }
 
 #[test]
-#[ignore]
-#[should_panic(expected = "balance is not sufficient to spend")]
+#[should_panic(expected = "#9")]
 fn cannot_create_a_dao_without_funds() {
     let core = create_clients().core;
     create_dao(&core, &Address::random(&core.env));
@@ -124,7 +123,7 @@ fn destroy_a_dao() {
 }
 
 #[test]
-#[ignore]
+#[ignore] // WasmVM, InternalError
 #[should_panic(expected = "#9")]
 fn destroy_a_dao_destroys_configuration() {
     let clients = create_clients();
@@ -142,7 +141,6 @@ fn destroy_a_dao_destroys_configuration() {
     );
 
     core.destroy_dao(&dao.id, &user);
-
     clients.votes.get_configuration(&dao.id);
 }
 
