@@ -32,7 +32,7 @@ impl HookpointsTrait for TestHookpointsContract {
         panic_with_error!(env, HookTestError::OnBeforeDestroyDao)
     }
 
-    fn on_before_change_owner(env: Env, _dao_id: Bytes) {
+    fn on_before_change_owner(env: Env, _dao_id: Bytes, _new_owner: Address, _dao_owner: Address) {
         panic_with_error!(env, HookTestError::OnBeforeChangeOwner)
     }
     
@@ -151,6 +151,17 @@ impl Protocol {
 }
 
 #[test]
+fn should_remove_hookpoint() {
+    let protocol = Protocol::new();
+    let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
+
+    protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
+    protocol.core.remove_hookpoint(&protocol.dao_id, &protocol.dao_owner);
+    let voting_power = protocol.votes.vote(&protocol.dao_id, &protocol.proposal_id, &true, &protocol.dao_owner);
+    assert_eq!(voting_power, MINT);
+}
+
+#[test]
 #[should_panic(expected="#0")]
 fn should_respect_contract_on_before_destroy_dao_dao() {
     let protocol = Protocol::new();
@@ -250,15 +261,4 @@ fn should_respect_contract_on_before_mark_implemented() {
 
     protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
     protocol.votes.mark_implemented(&protocol.proposal_id, &protocol.dao_owner);
-}
-
-#[test]
-fn should_remove_hookpoint() {
-    let protocol = Protocol::new();
-    let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
-
-    protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
-    protocol.core.remove_hookpoint(&protocol.dao_id, &protocol.dao_owner);
-    let voting_power = protocol.votes.vote(&protocol.dao_id, &protocol.proposal_id, &true, &protocol.dao_owner);
-    assert_eq!(voting_power, MINT);
 }

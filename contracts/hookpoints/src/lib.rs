@@ -33,7 +33,7 @@ impl HookpointsTrait for HookpointsContract {
         // add functionality here
     }
 
-    fn on_before_change_owner(_env: Env, _dao_id: Bytes) {
+    fn on_before_change_owner(_env: Env, _dao_id: Bytes, _new_owner: Address, _dao_owner: Address) {
         // add functionality here
     }
 

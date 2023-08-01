@@ -21,9 +21,9 @@ pub fn on_before_destroy_dao(env: &Env, dao_id: &Bytes) {
     }
 }
 
-pub fn on_before_change_owner(env: &Env, dao_id: &Bytes) {
+pub fn on_before_change_owner(env: &Env, dao_id: &Bytes, new_owner: &Address, dao_owner: &Address) {
     if let Some(addr) = get_hookpoint(env, dao_id) {
         let hookpoints_client = HookpointsContractClient::new(env, &addr);
-        hookpoints_client.on_before_change_owner(dao_id)
+        hookpoints_client.on_before_change_owner(dao_id, new_owner, dao_owner)
     }
 }

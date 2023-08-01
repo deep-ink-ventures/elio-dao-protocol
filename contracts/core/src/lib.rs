@@ -157,7 +157,7 @@ impl CoreTrait for CoreContract {
     }
 
     fn change_owner(env: Env, dao_id: Bytes, new_owner: Address, dao_owner: Address) -> Dao {
-        on_before_change_owner(&env, &dao_id);
+        on_before_change_owner(&env, &dao_id, &new_owner, &dao_owner);
         let mut dao = Dao::load_for_owner(&env, &dao_id, &dao_owner);
         dao.owner = new_owner.clone();
         dao.save(&env);

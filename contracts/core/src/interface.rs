@@ -10,7 +10,10 @@ pub trait CoreTrait {
     ///
     fn init(env: Env, votes_id: Address, native_asset_id: Address);
 
+    /// Gets the Votes ID
     fn get_votes_id(env: Env) -> Address;
+
+    /// Gets the Native Asset ID
     fn get_native_asset_id(env: Env) -> Address;
 
     /// Create a fresh DAO.
