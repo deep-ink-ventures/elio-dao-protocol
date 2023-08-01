@@ -4,15 +4,11 @@
 
 Welcome to the Elio DAO Protocol.
 
-> This protocol is under heavy development. Don't try this at home.
-
 Decentralized Autonomous Organizations (DAOs) represent a paradigm shift in the way organizations are managed, leveraging blockchain technology to enable decentralized decision-making, community governance, and shared ownership. DAOs operate through smart contracts, automating transactions and organizational processes, thus minimizing the need for centralized authorities.
 
 The standalone protocol can be used to manage funds, communities and other decentralized organizations without a single line of code to be written.
 
 The twist for Elio DAO, though, is its extendable hook point functionality, where all protocol contracts allow developers to provide extensions in the form of soroban smart contracts that are called from within the lifecycle of the protocol.
-
-> The current state of the protocol is the core development. We'll add hook point functionality shortly.
 
 This enables a plugin-like system that people already know from web2 apps like wordpress and shopify. Elio DAO is not only a protocol, but an ecosystem that can be extended easily and has composition as a first class citizen of its protocol. Developers (and ourselves) can customize DAOs to legal needs or community requirements without any limits.
 
