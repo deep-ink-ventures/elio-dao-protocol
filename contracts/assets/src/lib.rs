@@ -87,52 +87,52 @@ impl AssetTrait for AssetContract {
     fn incr_allow(env: Env, from: Address, spender: Address, amount: i128) {
         from.require_auth();
 
-        on_incr_allowance(&env, &from, &spender, amount);
+        let amount_post_hook = on_incr_allowance(&env, &from, &spender, amount);
 
-        check_non_negative_amount(&env, amount);
+        check_non_negative_amount(&env, amount_post_hook);
         let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
-        let new_allowance = allowance + amount;
+        let new_allowance = allowance + amount_post_hook;
 
         Token::write_allowance(&env, from.clone(), spender.clone(), new_allowance);
         env.events().publish(
             (Symbol::new(&env, "increase_allowance"), from, spender),
-            amount,
+            amount_post_hook
         );
     }
 
     fn decr_allow(env: Env, from: Address, spender: Address, amount: i128) {
         from.require_auth();
 
-        on_decr_allowance(&env, &from, &spender, amount);
+        let amount_posthook = on_decr_allowance(&env, &from, &spender, amount);
 
-        check_non_negative_amount(&env, amount);
+        check_non_negative_amount(&env, amount_posthook);
 
         let allowance = Token::read_allowance(&env, from.clone(), spender.clone());
-        if amount >= allowance {
+        if amount_posthook >= allowance {
             Token::write_allowance(&env, from.clone(), spender.clone(), 0);
         } else {
-            Token::write_allowance(&env, from.clone(), spender.clone(), allowance - amount);
+            Token::write_allowance(&env, from.clone(), spender.clone(), allowance - amount_posthook);
         }
         env.events().publish(
             (Symbol::new(&env, "decrease_allowance"), from, spender),
-            amount,
+            amount_posthook,
         );
     }
 
     fn xfer(env: Env, from: Address, to: Address, amount: i128) {
         from.require_auth();
 
-        on_xfer(&env, &from, &to, amount);
+        let amount_posthook = on_xfer(&env, &from, &to, amount);
 
-        check_non_negative_amount(&env, amount);
-        Token::spend_balance(&env, from.clone(), amount);
-        Token::receive_balance(&env, to.clone(), amount);
+        check_non_negative_amount(&env, amount_posthook);
+        Token::spend_balance(&env, from.clone(), amount_posthook);
+        Token::receive_balance(&env, to.clone(), amount_posthook);
         env.events().publish(
             (ASSET, TRANSFERRED, Token::get_symbol(&env)),
             AssetTransferredEventData {
                 owner_id: from,
                 new_owner_id: to,
-                amount,
+                amount: amount_posthook
             },
         );
     }
@@ -140,18 +140,18 @@ impl AssetTrait for AssetContract {
     fn xfer_from(env: Env, spender: Address, from: Address, to: Address, amount: i128) {
         spender.require_auth();
 
-        on_xfer_from(&env, &spender, &from, &to, amount);
+        let amount_posthook = on_xfer_from(&env, &spender, &from, &to, amount);
 
-        check_non_negative_amount(&env, amount);
-        Token::spend_allowance(&env, from.clone(), spender, amount);
-        Token::spend_balance(&env, from.clone(), amount);
-        Token::receive_balance(&env, to.clone(), amount);
+        check_non_negative_amount(&env, amount_posthook);
+        Token::spend_allowance(&env, from.clone(), spender, amount_posthook);
+        Token::spend_balance(&env, from.clone(), amount_posthook);
+        Token::receive_balance(&env, to.clone(), amount_posthook);
         env.events().publish(
             (ASSET, TRANSFERRED, Token::get_symbol(&env)),
             AssetTransferredEventData {
                 owner_id: from,
                 new_owner_id: to,
-                amount,
+                amount: amount_posthook,
             },
         );
     }

@@ -35,7 +35,7 @@ impl HookpointsTrait for TestHookpointsContract {
     fn on_before_change_owner(env: Env, _dao_id: Bytes, _new_owner: Address, _dao_owner: Address) {
         panic_with_error!(env, HookTestError::OnBeforeChangeOwner)
     }
-    
+
     fn on_vote(_env: Env, _dao_id: Bytes, _proposal_id: u32, _account_id: Address, amount: i128) -> i128 {
         amount * 10
     }
@@ -69,7 +69,7 @@ impl HookpointsTrait for TestHookpointsContract {
     }
 
     fn on_decr_allowance(_env: Env, _from: Address, _spender: Address, amount: i128) -> i128 {
-        amount + 30
+        amount + 20
     }
 
     fn on_xfer(_env: Env, _from: Address, _to: Address, amount: i128) -> i128 {
@@ -77,7 +77,7 @@ impl HookpointsTrait for TestHookpointsContract {
     }
 
     fn on_xfer_from(_env: Env, _spender: Address, _from: Address, _to: Address, amount: i128) -> i128 {
-        amount + 50
+        amount + 20
     }
 }
 
@@ -89,6 +89,7 @@ struct Protocol {
     env: Env,
     core: CoreClient<'static>,
     votes: VotesClient<'static>,
+    asset: AssetsClient<'static>,
     proposal_id: u32,
     dao_id: Bytes,
     dao_owner: Address
@@ -145,7 +146,8 @@ impl Protocol {
             votes,
             dao_id,
             proposal_id,
-            dao_owner
+            dao_owner,
+            asset
         }
     }
 }
@@ -250,6 +252,23 @@ fn should_respect_contract_on_before_finalize_proposal() {
 
     protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
     protocol.votes.finalize_proposal(&protocol.dao_id, &protocol.proposal_id);
+}
+
+#[test]
+fn should_manipulate_asset_funcs() {
+    let protocol = Protocol::new();
+    let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
+    let whoever = Address::random(&protocol.env);
+    let someone = Address::random(&protocol.env);
+    protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
+
+    protocol.asset.xfer(&protocol.dao_owner, &whoever, &10);
+    assert_eq!(protocol.asset.balance(&whoever), 50);
+
+    protocol.asset.incr_allow(&protocol.dao_owner, &someone, &10);
+    assert_eq!(protocol.asset.allowance(&someone, &protocol.dao_owner), 30);
+    // protocol.asset.xfer_from(&protocol.dao_owner, &someone, &whoever, &10);
+    // assert_eq!(protocol.asset.balance(&whoever), 80);
 }
 
 #[test]
