@@ -67,19 +67,19 @@ impl HookpointsTrait for HookpointsContract {
     }
 
     /* Assets HookPoints */
-    fn on_incr_allowance(_env: Env, _from: Address, _spender: Address, amount: i128) -> i128 {
+    fn on_incr_allowance(_env: Env, _dao_id: Bytes, _from: Address, _spender: Address, amount: i128) -> i128 {
         amount
     }
 
-    fn on_decr_allowance(_env: Env, _from: Address, _spender: Address, amount: i128) -> i128 {
+    fn on_decr_allowance(_env: Env, _dao_id: Bytes, _from: Address, _spender: Address, amount: i128) -> i128 {
         amount
     }
 
-    fn on_xfer(_env: Env, _from: Address, _to: Address, amount: i128) -> i128 {
+    fn on_xfer(_env: Env, _dao_id: Bytes, _from: Address, _to: Address, amount: i128) -> i128 {
         amount
     }
 
-    fn on_xfer_from(_env: Env, _spender: Address, _from: Address, _to: Address, amount: i128) -> i128 {
+    fn on_xfer_from(_env: Env, _dao_id: Bytes, _spender: Address, _from: Address, _to: Address, amount: i128) -> i128 {
         amount
     }
 }

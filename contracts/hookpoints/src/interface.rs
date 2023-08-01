@@ -64,24 +64,27 @@ pub trait HookpointsTrait {
 
     /// Called when assets contract increases allowance.
     ///
+    /// - `dao_id`: The dao id that will be implemented for.
     /// - `from`: The address requesting the allowance increase. Needs authentication.
     /// - `spender`: The address of the spender.
     /// - `amount`: The amount to increase the allowance.
-    fn on_incr_allowance(env: Env, from: Address, spender: Address, amount: i128) -> i128;
+    fn on_incr_allowance(env: Env, dao_id: Bytes, from: Address, spender: Address, amount: i128) -> i128;
 
     /// Called when assets contract decrease allowance.
     ///
+    /// - `dao_id`: The dao id that will be implemented for.
     /// - `from`: The address requesting the allowance decrease. Needs authentication.
     /// - `spender`: The address of the spender.
     /// - `amount`: The amount to decrease the allowance.
-    fn on_decr_allowance(env: Env, from: Address, spender: Address, amount: i128) -> i128;
+    fn on_decr_allowance(env: Env, dao_id: Bytes, from: Address, spender: Address, amount: i128) -> i128;
 
     /// Called when assets contract is being transferred.
     ///
+    /// - `dao_id`: The dao id that will be implemented for.
     /// - `from`: The address sending the asset.
     /// - `to`: The address receiving the asset.
     /// - `amount`: The amount to be sent.
-    fn on_xfer(env: Env, from: Address, to: Address, amount: i128) -> i128;
+    fn on_xfer(env: Env, dao_id: Bytes, from: Address, to: Address, amount: i128) -> i128;
 
     /// Called when assets contract is being transferred for an address.
     ///
@@ -89,5 +92,5 @@ pub trait HookpointsTrait {
     /// - `from`: The address sending the asset.
     /// - `to`: The address receiving the asset.
     /// - `amount`: The amount to be sent.
-    fn on_xfer_from(env: Env, spender: Address, from: Address, to: Address, amount: i128) -> i128;
+    fn on_xfer_from(env: Env, dao_id: Bytes, spender: Address, from: Address, to: Address, amount: i128) -> i128;
 }

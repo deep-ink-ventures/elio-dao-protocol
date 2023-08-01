@@ -25,7 +25,7 @@ fn get_hookpoint(env: &Env) -> Option<Address> {
 pub fn on_incr_allowance(env: &Env, from: &Address, spender: &Address, amount: i128) -> i128 {
     if let Some(addr) = get_hookpoint(env) {
         let hookpoints_client = HookpointsContractClient::new(env, &addr);
-        return hookpoints_client.on_incr_allowance(from, spender, &amount);
+        return hookpoints_client.on_incr_allowance(&Token::get_symbol(env), from, spender, &amount);
     }
     amount
 }
@@ -33,7 +33,7 @@ pub fn on_incr_allowance(env: &Env, from: &Address, spender: &Address, amount: i
 pub fn on_decr_allowance(env: &Env, from: &Address, spender: &Address, amount: i128) -> i128 {
     if let Some(addr) = get_hookpoint(env) {
         let hookpoints_client = HookpointsContractClient::new(env, &addr);
-        return hookpoints_client.on_decr_allowance(from, spender, &amount);
+        return hookpoints_client.on_decr_allowance(&Token::get_symbol(env), from, spender, &amount);
     }
     amount
 }
@@ -41,7 +41,7 @@ pub fn on_decr_allowance(env: &Env, from: &Address, spender: &Address, amount: i
 pub fn on_xfer(env: &Env, from: &Address, to: &Address, amount: i128) -> i128 {
     if let Some(addr) = get_hookpoint(env) {
         let hookpoints_client = HookpointsContractClient::new(env, &addr);
-        return hookpoints_client.on_xfer(from, to, &amount);
+        return hookpoints_client.on_xfer(&Token::get_symbol(env), from, to, &amount);
     }
     amount
 }
@@ -49,7 +49,7 @@ pub fn on_xfer(env: &Env, from: &Address, to: &Address, amount: i128) -> i128 {
 pub fn on_xfer_from(env: &Env, spender: &Address, from: &Address, to: &Address, amount: i128) -> i128 {
     if let Some(addr) = get_hookpoint(env) {
         let hookpoints_client = HookpointsContractClient::new(env, &addr);
-        return hookpoints_client.on_xfer_from(spender, from, to, &amount);
+        return hookpoints_client.on_xfer_from(&Token::get_symbol(env), spender, from, to, &amount);
     }
     amount
 }
