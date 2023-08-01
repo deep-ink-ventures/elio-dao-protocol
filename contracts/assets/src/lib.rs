@@ -185,6 +185,10 @@ impl AssetTrait for AssetContract {
     }
 
     fn get_balance_at(env: Env, addr: Address, sequence: u32) -> i128 {
-        Token::get_checkpoint_for_sequence(&env, addr, sequence).balance
+        let checkpoint = Token::get_checkpoint_for_sequence(&env, addr, sequence);
+        match checkpoint {
+            Some(cp) => cp.balance,
+            None => 0
+        }
     }
 }

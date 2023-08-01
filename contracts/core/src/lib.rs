@@ -54,6 +54,10 @@ impl CoreTrait for CoreContract {
         let native_asset_id = env.storage().instance().get(&NATIVE).unwrap();
         let native_token = token::Client::new(&env, &native_asset_id);
         let contract = &env.current_contract_address();
+
+        if native_token.balance(&dao_owner) < RESERVE_AMOUNT {
+            panic_with_error!(env, CoreError::NotEnoughFunds);
+        }
         native_token.transfer(&dao_owner, contract, &RESERVE_AMOUNT);
 
         let dao = Dao::create(&env, dao_id.clone(), dao_name.clone(), dao_owner.clone());

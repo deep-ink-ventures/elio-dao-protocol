@@ -89,8 +89,7 @@ fn create_a_dao() {
 }
 
 #[test]
-#[ignore]
-#[should_panic(expected = "balance is not sufficient to spend")]
+#[should_panic(expected = "#9")]
 fn cannot_create_a_dao_without_funds() {
     let core = create_clients().core;
     create_dao(&core, &Address::random(&core.env));
