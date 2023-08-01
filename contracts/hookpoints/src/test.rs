@@ -266,9 +266,14 @@ fn should_manipulate_asset_funcs() {
     assert_eq!(protocol.asset.balance(&whoever), 50);
 
     protocol.asset.incr_allow(&protocol.dao_owner, &someone, &10);
-    assert_eq!(protocol.asset.allowance(&someone, &protocol.dao_owner), 30);
-    // protocol.asset.xfer_from(&protocol.dao_owner, &someone, &whoever, &10);
-    // assert_eq!(protocol.asset.balance(&whoever), 80);
+    assert_eq!(protocol.asset.allowance(&protocol.dao_owner, &someone), 30);
+    protocol.asset.xfer_from(&someone, &protocol.dao_owner, &whoever, &10);
+    assert_eq!(protocol.asset.balance(&whoever), 80);
+
+    protocol.asset.incr_allow(&protocol.dao_owner, &someone, &10);
+    assert_eq!(protocol.asset.allowance(&protocol.dao_owner, &someone), 30);
+    protocol.asset.decr_allow(&protocol.dao_owner, &someone, &10);
+    assert_eq!(protocol.asset.allowance(&protocol.dao_owner, &someone), 0);
 }
 
 #[test]
