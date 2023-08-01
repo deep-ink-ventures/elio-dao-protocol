@@ -57,9 +57,8 @@ impl CoreTrait for CoreContract {
         let native_token = token::Client::new(&env, &native_asset_id);
         let contract = &env.current_contract_address();
 
-        // Check if dao creator has enough balance to transfer.
         if native_token.balance(&dao_owner) < RESERVE_AMOUNT {
-            panic_with_error!(env, CoreError::InsufficientTokenBalance)
+            panic_with_error!(env, CoreError::NotEnoughFunds);
         }
         native_token.transfer(&dao_owner, contract, &RESERVE_AMOUNT);
 

@@ -51,19 +51,24 @@ impl Token {
     }
 
     /// Returns the closest checkpoint at or BEFORE a given sequence
-    pub fn get_checkpoint_for_sequence(env: &Env, id: Address, sequence: u32) -> Checkpoint {
+    pub fn get_checkpoint_for_sequence(env: &Env, id: Address, sequence: u32) -> Option<Checkpoint> {
         let checkpoints = Token::get_checkpoints(env, id);
-        let mut cp_candidate = checkpoints.first_unchecked();
+        let cp_candidate = checkpoints.first();
 
+        if cp_candidate.is_none() {
+            return None
+        }
+
+        let mut cp = cp_candidate.unwrap();
         for checkpoint in checkpoints.into_iter() {
             if checkpoint.ledger > sequence {
                 break;
             }
-            if checkpoint.ledger > cp_candidate.ledger {
-                cp_candidate = checkpoint;
+            if checkpoint.ledger > cp.ledger {
+                cp = checkpoint
             }
         }
-        cp_candidate
+        Some(cp)
     }
 
     /// Writes a checkpoint for a given balance at the current sequence number
@@ -88,13 +93,16 @@ impl Token {
         let active_proposals = votes_contract.get_active_proposals(&Self::get_symbol(env));
 
         let mut filtered_checkpoints: Vec<Checkpoint> = Vec::new(env);
-
          for proposal in active_proposals.into_iter() {
-             filtered_checkpoints.push_back(Self::get_checkpoint_for_sequence(
+             let checkpoint = Self::get_checkpoint_for_sequence(
                  env,
                  id.clone(),
                  proposal.inner.ledger,
-             ));
+             );
+
+             if checkpoint.is_some() {
+                filtered_checkpoints.push_back(checkpoint.unwrap());
+             }
          }
 
         filtered_checkpoints.push_back(Checkpoint {

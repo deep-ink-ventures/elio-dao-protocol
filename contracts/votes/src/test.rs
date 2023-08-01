@@ -155,6 +155,12 @@ fn setup_accepted_proposal(clients: &Clients) -> (u32, Address) {
     let voter = dao.owner.clone();
     votes.vote(&dao.id, &proposal_id, &true, &voter);
 
+    let proposal = votes
+        .get_active_proposals(&dao.id)
+        .get_unchecked(0);
+
+    assert_eq!(proposal.inner.status, PropStatus::Running);
+
     // make finalization possible
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
@@ -169,11 +175,7 @@ fn setup_accepted_proposal(clients: &Clients) -> (u32, Address) {
 
     votes.finalize_proposal(&dao.id, &proposal_id);
 
-    let proposal = votes
-        .get_active_proposals(&dao.id)
-        .get_unchecked(0);
-    assert_eq!(proposal.inner.status, PropStatus::Accepted);
-    assert_eq!(proposal.inner, votes.get_archived_proposal(&proposal_id));
+    assert_eq!(votes.get_archived_proposal(&proposal_id).status, PropStatus::Accepted);
     (proposal_id, dao.owner)
 }
 
@@ -352,6 +354,7 @@ fn non_existing_meta_panics() {
     votes.get_metadata(&0);
 }
 
+/// This test is ignored until the max error up to 9 is fixed
 #[test]
 #[ignore] // This test works but is currently ignored due to preview 10 limiting error codes to single digit.
 #[should_panic(expected = "#11")]
@@ -676,7 +679,6 @@ fn accepted_finalize() {
 }
 
 #[test]
-#[ignore] // Errors into IndexBounds
 fn mark_implemented() {
     let clients = Clients::new();
     let (proposal_id, dao_owner) = setup_accepted_proposal(&clients);
@@ -690,8 +692,7 @@ fn mark_implemented() {
 }
 
 #[test]
-#[ignore] // Errors into IndexBounds
-#[should_panic(expected = "not the DAO owner")]
+#[should_panic(expected = "#1")]
 fn mark_implemented_only_owner() {
     let clients = Clients::new();
     let (proposal_id, _dao_owner) = setup_accepted_proposal(&clients);

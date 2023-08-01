@@ -13,5 +13,5 @@ pub enum CoreError {
     NoMetadata = 6,
     NoHookpoint = 7,
     MustRemoveConfigFirst = 8,
-    InsufficientTokenBalance = 9
+    NotEnoughFunds = 9
 }
