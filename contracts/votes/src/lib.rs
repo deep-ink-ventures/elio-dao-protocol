@@ -134,7 +134,7 @@ impl VotesTrait for VotesContract {
     }
 
     fn has_configuration(env: Env, dao_id: Bytes) -> bool {
-        env.storage().instance().has(&dao_id)
+        env.storage().persistent().has(&dao_id)
     }
 
     fn remove_configuration(env: Env, dao_id: Bytes, dao_owner: Address) {

@@ -124,14 +124,12 @@ fn destroy_a_dao() {
 }
 
 #[test]
-#[ignore]
 #[should_panic(expected = "#9")]
 fn destroy_a_dao_destroys_configuration() {
     let clients = create_clients();
     let core = &clients.core;
     let env = &core.env;
     let user = Address::random(env);
-
     let dao = mint_and_create_dao(&clients, &user);
 
     clients.votes.set_configuration(

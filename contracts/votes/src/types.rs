@@ -90,17 +90,17 @@ impl Proposal {
                 owner,
             },
         });
-        env.storage().instance().set(&ActiveKey(dao_id), &proposals);
-        env.storage().instance().set(&PROP_ID, &(id + 1));
+        env.storage().persistent().set(&ActiveKey(dao_id), &proposals);
+        env.storage().persistent().set(&PROP_ID, &(id + 1));
         id
     }
 
     pub fn get_active(env: &Env, dao_id: Bytes) -> Vec<ActiveProposal> {
         let key = ActiveKey(dao_id.clone());
-        if !env.storage().instance().has(&key) {
+        if !env.storage().persistent().has(&key) {
             return Vec::new(env);
         }
-        let active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
+        let active_proposals: Vec<ActiveProposal> = env.storage().persistent().get(&key).unwrap();
         let mut filtered_proposals: Vec<ActiveProposal> = Vec::new(env);
 
         let proposal_duration = Configuration::get(env, dao_id).proposal_duration;
@@ -113,7 +113,7 @@ impl Proposal {
             }
         }
         if filtered_proposals.len() < len {
-            env.storage().instance().set(&key, &filtered_proposals);
+            env.storage().persistent().set(&key, &filtered_proposals);
         }
 
         filtered_proposals
@@ -121,7 +121,7 @@ impl Proposal {
 
     pub fn get_archived(env: &Env, proposal_id: u32) -> Proposal {
         let key = ArchiveKey(proposal_id);
-        env.storage().instance().get(&key).unwrap()
+        env.storage().persistent().get(&key).unwrap()
     }
 
     pub fn vote(
@@ -134,12 +134,12 @@ impl Proposal {
     ) -> i128 {
         // Check if voter has already voted and has the same vote.
         let vote_key = VotingHistory::Voting(voter.clone(), proposal_id);
-        let has_key = env.storage().instance().has(&vote_key);
-        if has_key && in_favor == env.storage().instance().get::<VotingHistory, bool>(&vote_key).unwrap() {
+        let has_key = env.storage().persistent().has(&vote_key);
+        if has_key && in_favor == env.storage().persistent().get::<VotingHistory, bool>(&vote_key).unwrap() {
             panic_with_error!(env, VotesError::VoteAlreadyCast)
         }
         let key = ActiveKey(dao_id.clone());
-        let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
+        let mut active_proposals: Vec<ActiveProposal> = env.storage().persistent().get(&key).unwrap();
         for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
             if p.id == proposal_id {
                 let voting_power_pre_hook: i128 = env.invoke_contract(
@@ -157,8 +157,8 @@ impl Proposal {
                     if has_key { p.in_favor -= voting_power}
                 }
                 active_proposals.set(i as u32, p);
-                env.storage().instance().set(&key, &active_proposals);
-                env.storage().instance().set(&vote_key, &in_favor);
+                env.storage().persistent().set(&key, &active_proposals);
+                env.storage().persistent().set(&vote_key, &in_favor);
                 return voting_power
             }
         }
@@ -167,7 +167,7 @@ impl Proposal {
 
     pub fn set_faulty(env: &Env, dao_id: Bytes, proposal_id: u32, reason: Bytes) {
         let key = ActiveKey(dao_id);
-        let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
+        let mut active_proposals: Vec<ActiveProposal> = env.storage().persistent().get(&key).unwrap();
         for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
             if p.id == proposal_id {
                 p.inner.status = PropStatus::Faulty(reason);
@@ -181,7 +181,7 @@ impl Proposal {
                 native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
                 active_proposals.set(i as u32, p);
-                env.storage().instance().set(&key, &active_proposals);
+                env.storage().persistent().set(&key, &active_proposals);
                 return;
             }
         }
@@ -193,7 +193,7 @@ impl Proposal {
         let configuration = Configuration::get(env, dao_id);
         let proposal_duration = configuration.proposal_duration;
         let min_threshold_configuration = configuration.min_threshold_configuration;
-        let mut active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
+        let mut active_proposals: Vec<ActiveProposal> = env.storage().persistent().get(&key).unwrap();
         for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
             if p.id == proposal_id {
                 if env.ledger().sequence() <= p.inner.ledger + proposal_duration {
@@ -208,7 +208,7 @@ impl Proposal {
                     PropStatus::Rejected
                 };
 
-                env.storage().instance().set(&ArchiveKey(proposal_id), &p.inner);
+                env.storage().persistent().set(&ArchiveKey(proposal_id), &p.inner);
 
                 // return reserved tokens
                 let core_id = env.storage().instance().get(&CORE).unwrap();
@@ -219,7 +219,7 @@ impl Proposal {
                 native_token.transfer(&contract, &p.inner.owner, &RESERVE_AMOUNT);
 
                 active_proposals.set(i as u32, p.clone());
-                env.storage().instance().set(&key, &active_proposals);
+                env.storage().persistent().set(&key, &active_proposals);
                 env.events().publish(
                     (PROPOSAL, STATUS_UPDATE),
                     ProposalStatusUpdateEventData {
@@ -235,7 +235,7 @@ impl Proposal {
 
     pub fn mark_implemented(env: &Env, proposal_id: u32) {
         let key = ArchiveKey(proposal_id);
-        let mut proposal: Proposal = env.storage().instance().get(&key).unwrap();
+        let mut proposal: Proposal = env.storage().persistent().get(&key).unwrap();
 
         if proposal.status != PropStatus::Accepted {
             panic_with_error!(env, VotesError::UnacceptedProposal)
@@ -243,7 +243,7 @@ impl Proposal {
 
         proposal.status = PropStatus::Implemented;
 
-        env.storage().instance().set(&key, &proposal);
+        env.storage().persistent().set(&key, &proposal);
         env.events().publish(
             (PROPOSAL, STATUS_UPDATE),
             ProposalStatusUpdateEventData {
@@ -275,18 +275,18 @@ impl Metadata {
     ) -> Self {
         owner.require_auth();
 
-        let key = ActiveKey(dao_id);
-        let active_proposals: Vec<ActiveProposal> = env.storage().instance().get(&key).unwrap();
+        let key = ActiveKey(dao_id.clone());
+        let active_proposals: Vec<ActiveProposal> = env.storage().persistent().get(&key).unwrap();
         for p in active_proposals.into_iter() {
             if p.id == proposal_id {
                 if p.inner.owner != owner {
                     panic_with_error!(env, VotesError::NotProposalOwner)
                 }
-                if env.storage().instance().has(&KeyMeta(proposal_id)) {
+                if env.storage().persistent().has(&KeyMeta(proposal_id)) {
                     panic_with_error!(env, VotesError::MetadataAlreadySet)
                 }
                 let meta = Metadata { url, hash };
-                env.storage().instance().set(&KeyMeta(proposal_id), &meta);
+                env.storage().persistent().set(&KeyMeta(proposal_id), &meta);
                 return meta;
             }
         }
@@ -295,10 +295,10 @@ impl Metadata {
 
     pub fn get(env: &Env, proposal_id: u32) -> Self {
         let key = KeyMeta(proposal_id);
-        if !env.storage().instance().has(&key) {
+        if !env.storage().persistent().has(&key) {
             panic_with_error!(env, VotesError::MetadataNotFound)
         }
-        env.storage().instance().get(&key).unwrap()
+        env.storage().persistent().get(&key).unwrap()
     }
 }
 
@@ -320,18 +320,18 @@ impl Configuration {
             proposal_duration,
             min_threshold_configuration,
         };
-        env.storage().instance().set(&dao_id, &configuration);
+        env.storage().persistent().set(&dao_id, &configuration);
         configuration
     }
 
     pub fn get(env: &Env, dao_id: Bytes) -> Self {
-        if !env.storage().instance().has(&dao_id) {
+        if !env.storage().persistent().has(&dao_id) {
             panic_with_error!(env, VotesError::ConfigurationNotFound)
         }
-        env.storage().instance().get(&dao_id).unwrap()
+        env.storage().persistent().get(&dao_id).unwrap()
     }
 
     pub fn remove(env: &Env, dao_id: Bytes) {
-        env.storage().instance().remove(&dao_id)
+        env.storage().persistent().remove(&dao_id)
     }
 }
