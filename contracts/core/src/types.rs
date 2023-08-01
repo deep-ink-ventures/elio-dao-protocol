@@ -26,14 +26,28 @@ pub enum DaoArtifact {
     Hookpoint(Bytes)
 }
 
+pub const BUMP_A_MONTH: u32 = 518400;
+pub const BUMP_A_YEAR: u32 = 6312000;
+
 impl Dao {
+    /// Bumps all keys associated with a dao
+    pub fn bump(env: &Env, id: Bytes, ledgers: u32) {
+        env.storage().instance().bump(BUMP_A_MONTH);
+        env.storage().persistent().bump(&id, ledgers);
+        env.storage().persistent().bump(&DaoArtifact::Asset(id.clone()), ledgers);
+        env.storage().persistent().bump(&DaoArtifact::Hookpoint(id.clone()), ledgers);
+        env.storage().persistent().bump(&DaoArtifact::Metadata(id.clone()), ledgers);
+    }
+
+
     /// Create a new dao for the owner
     pub fn create(env: &Env, id: Bytes, name: Bytes, owner: Address) -> Self {
         if Self::exists(env, &id) {
             panic_with_error!(env, CoreError::DaoAlreadyExists)
         }
-        let dao = Dao { id, name, owner };
+        let dao = Dao { id: id.clone(), name, owner };
         env.storage().persistent().set(&dao.id, &dao);
+        Dao::bump(env, id, BUMP_A_YEAR);
         dao
     }
 
@@ -42,6 +56,7 @@ impl Dao {
         if !Self::exists(env, id) {
             panic_with_error!(env, CoreError::DaoDoesNotExist)
         }
+        Dao::bump(env, id.clone(), BUMP_A_MONTH);
         env.storage().persistent().get(id).unwrap()
     }
 
@@ -53,6 +68,7 @@ impl Dao {
         if owner != &dao.owner {
             panic_with_error!(env, CoreError::NotDaoOwner)
         }
+        Dao::bump(env, id.clone(), BUMP_A_MONTH);
         dao
     }
 
@@ -92,11 +108,12 @@ impl Dao {
         env.events().publish(
             (ASSET, CREATED, self.id.clone()),
             AssetCreatedEventData {
-                dao_id: self.id,
+                dao_id: self.id.clone(),
                 asset_id: asset_id.clone(),
                 owner_id: self.owner,
             },
         );
+        Dao::bump(env, self.id, BUMP_A_YEAR);
         asset_id
     }
 
@@ -105,6 +122,7 @@ impl Dao {
         if !env.storage().persistent().has(&key) {
             panic_with_error!(env, CoreError::AssetNotIssued)
         }
+        Dao::bump(env, self.id.clone(), BUMP_A_MONTH);
         env.storage().persistent().get(&key).unwrap()
     }
 
@@ -116,6 +134,7 @@ impl Dao {
     /// Saves a dao
     pub fn save(&self, env: &Env) {
         env.storage().persistent().set(&self.id, self);
+        Dao::bump(env, self.id.clone(), BUMP_A_YEAR);
     }
 }
 
@@ -123,7 +142,8 @@ impl Metadata {
     /// Create metadata for the dao
     pub fn create(env: &Env, dao_id: Bytes, url: Bytes, hash: Bytes) -> Self {
         let meta = Metadata { url, hash };
-        env.storage().persistent().set(&DaoArtifact::Metadata(dao_id), &meta);
+        env.storage().persistent().set(&DaoArtifact::Metadata(dao_id.clone()), &meta);
+        Dao::bump(env, dao_id, BUMP_A_YEAR);
         meta
     }
 
@@ -132,11 +152,13 @@ impl Metadata {
         if !Self::exists(env, dao_id) {
             panic_with_error!(env, CoreError::NoMetadata)
         }
+        Dao::bump(env, dao_id.clone(), BUMP_A_MONTH);
         env.storage().persistent().get(&DaoArtifact::Metadata(dao_id.clone())).unwrap()
     }
 
     /// Checks if metadata for the dao_id exists
     pub fn exists(env: &Env, dao_id: &Bytes) -> bool {
+        Dao::bump(env, dao_id.clone(), BUMP_A_MONTH);
         env.storage().persistent().has(&DaoArtifact::Metadata(dao_id.clone()))
     }
 }

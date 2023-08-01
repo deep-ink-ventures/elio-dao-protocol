@@ -30,6 +30,7 @@ use types::{Checkpoint, Token};
 use crate::error::AssetError;
 use crate::hooks::{on_decr_allowance, on_incr_allowance, on_xfer, on_xfer_from};
 
+
 #[contract]
 pub struct AssetContract;
 
