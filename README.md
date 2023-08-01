@@ -107,7 +107,7 @@ Run:
 
 ```sh
 soroban contract invoke \
-   --id 3cf31720404f0504e32dd137d404b58ac3e403c1b337223c42bc69a6b6929d58 \
+   --id ${CORE_ADDRESS} \
    --source ${SECRET_KEY} \
    --rpc-url ${RPC_URL} \
    --network-passphrase "${NETWORK_PASSPHRASE}" \
