@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 source .env
 
@@ -92,6 +92,9 @@ soroban contract bump \
  --durability persistent \
  --ledgers-to-expire 6312000
 
+
+if [[ -n "${SERVICE_URL}" ]];
+then
 printf "\nUpdate Service"
 curl -XPATCH -H "Config-Secret: ${CONFIG_SECRET}" -H "Content-type: application/json" -d "{
   \"core_contract_address\": \"${CORE_ADDRESS}\",
@@ -100,6 +103,20 @@ curl -XPATCH -H "Config-Secret: ${CONFIG_SECRET}" -H "Content-type: application/
   \"blockchain_url\": \"${RPC_URL}\",
   \"network_passphrase\": \"${NETWORK_PASSPHRASE}\"
 }" "${SERVICE_URL}/update-config/"
+if [[ -n "${SLACK_WEBHOOK_URL}" ]];
+printf "\nPosting Slack update"
+then
+curl -X POST -H "Content-type: application/json" -d "{
+\"text\": \"New deployment :happy_sheep::\n\",
+\"attachments\": [{\"fields\": [
+{\"title\": \"core_contract_address\", \"value\": \"${CORE_ADDRESS}\"},
+{\"title\": \"votes_contract_address\", \"value\": \"${VOTES_ADDRESS}\"},
+{\"title\": \"assets_wasm_hash\", \"value\": \"${ASSETS_WASM_HASH}\"},
+{\"title\": \"blockchain_url\", \"value\": \"${RPC_URL}\"},
+{\"title\": \"network_passphrase\", \"value\": \"${NETWORK_PASSPHRASE}\"},
+]}]}" "${SLACK_WEBHOOK_URL}"
+fi
+fi
 
 printf "\nRPC_URL=$RPC_URL"
 printf "\nCORE_ADDRESS=$CORE_ADDRESS"
