@@ -33,6 +33,7 @@ pub struct ProposalMetadataSetEventData {
 pub struct ProposalConfigurationSetEventData {
     pub dao_id: Bytes,
     pub proposal_duration: u32,
+    pub min_threshold_configuration: i128,
 }
 
 #[contracttype]

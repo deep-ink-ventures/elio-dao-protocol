@@ -126,6 +126,7 @@ impl VotesTrait for VotesContract {
                 ProposalConfigurationSetEventData {
                     dao_id,
                     proposal_duration,
+                    min_threshold_configuration,
                 }
             );
         configuration
