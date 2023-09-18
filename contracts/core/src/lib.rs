@@ -55,6 +55,7 @@ impl CoreTrait for CoreContract {
         // Reserve DAO Tokens
         let native_asset_id = env.storage().instance().get(&NATIVE).unwrap();
         let native_token = token::Client::new(&env, &native_asset_id);
+
         let contract = &env.current_contract_address();
 
         if native_token.balance(&dao_owner) < RESERVE_AMOUNT {

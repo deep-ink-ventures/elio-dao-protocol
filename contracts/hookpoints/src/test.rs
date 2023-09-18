@@ -99,6 +99,7 @@ impl Protocol {
     fn new() -> Self {
         let env = Env::default();
         env.mock_all_auths();
+        env.mock_all_auths_allowing_non_root_auth();
 
         env.budget().reset_unlimited();
 
@@ -111,7 +112,7 @@ impl Protocol {
         let votes = VotesClient::new(&env, &votes_id);
 
         let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
-        let native_asset_admin = token::AdminClient::new(&env, &native_asset_id);
+        let native_asset_admin = token::StellarAssetClient::new(&env, &native_asset_id);
 
         core.init(&votes_id, &native_asset_id);
         votes.init(&core_id);

@@ -23,13 +23,14 @@ pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
 struct Clients {
     core: CoreContractClient<'static>,
     votes: VotesContractClient<'static>,
-    native_asset_admin: token::AdminClient<'static>,
+    native_asset_admin: token::StellarAssetClient<'static>,
 }
 
 impl Clients {
     fn new() -> Self {
         let env = Env::default();
-        env.mock_all_auths();
+        env.mock_all_auths_allowing_non_root_auth();
+
         env.budget().reset_unlimited();
 
         let core_id = env.register_contract_wasm(None, CoreWASM);
@@ -39,7 +40,7 @@ impl Clients {
         let votes = VotesContractClient::new(&env, &votes_id);
 
         let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
-        let native_asset_admin = token::AdminClient::new(&env, &native_asset_id);
+        let native_asset_admin = token::StellarAssetClient::new(&env, &native_asset_id);
 
         core.init(&votes_id, &native_asset_id);
         votes.init(&core_id);
@@ -180,7 +181,7 @@ fn setup_accepted_proposal(clients: &Clients) -> (u32, Address) {
 }
 
 fn fund_account(env: &Env, native_asset_id: &Address, address: &Address) {
-    let native_token = token::AdminClient::new(&env, &native_asset_id);
+    let native_token = token::StellarAssetClient::new(&env, &native_asset_id);
     native_token.mint(&address, &MINT);
 }
 
@@ -696,7 +697,6 @@ fn mark_implemented() {
 fn mark_implemented_only_owner() {
     let clients = Clients::new();
     let (proposal_id, _dao_owner) = setup_accepted_proposal(&clients);
-
     let votes = clients.votes;
 
     votes.mark_implemented(&proposal_id, &Address::random(&votes.env));

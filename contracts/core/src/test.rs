@@ -17,7 +17,7 @@ struct Clients {
     core: CoreContractClient<'static>,
     votes: VotesContractClient<'static>,
     native_asset: token::Client<'static>,
-    native_asset_admin: token::AdminClient<'static>,
+    native_asset_admin: token::StellarAssetClient<'static>,
 }
 
 pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
@@ -25,6 +25,7 @@ pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
 fn create_clients() -> Clients {
     let env = Env::default();
     env.mock_all_auths();
+    env.mock_all_auths_allowing_non_root_auth();
     env.budget().reset_unlimited();
 
     let core_id = env.register_contract(None, CoreContract);
@@ -36,7 +37,7 @@ fn create_clients() -> Clients {
     let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
     let native_asset = token::Client::new(&env, &native_asset_id);
 
-    let native_asset_admin = token::AdminClient::new(&env, &native_asset_id);
+    let native_asset_admin = token::StellarAssetClient::new(&env, &native_asset_id);
 
     core.init(&votes_id, &native_asset_id);
     votes.init(&core_id);

@@ -26,17 +26,25 @@ pub enum DaoArtifact {
     Hookpoint(Bytes)
 }
 
-pub const BUMP_A_MONTH: u32 = 518400;
-pub const BUMP_A_YEAR: u32 = 6312000;
+pub const BUMP_A_MONTH: u32 = 432000;
+pub const BUMP_A_YEAR: u32 = 5184000;
+pub const BUMP_A_YEAR_THRESHOLD: u32 = 5184000 - BUMP_A_MONTH;
 
 impl Dao {
     /// Bumps all keys associated with a dao
-    pub fn bump(env: &Env, id: Bytes, ledgers: u32) {
-        env.storage().instance().bump(BUMP_A_MONTH);
-        env.storage().persistent().bump(&id, ledgers);
-        env.storage().persistent().bump(&DaoArtifact::Asset(id.clone()), ledgers);
-        env.storage().persistent().bump(&DaoArtifact::Hookpoint(id.clone()), ledgers);
-        env.storage().persistent().bump(&DaoArtifact::Metadata(id.clone()), ledgers);
+    pub fn bump(env: &Env, id: Bytes) {
+        env.storage().instance().bump(BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
+        env.storage().persistent().bump(&id, BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
+
+        if env.storage().persistent().has(&DaoArtifact::Metadata(id.clone())) {
+            env.storage().persistent().bump(&DaoArtifact::Metadata(id.clone()), BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
+        }
+        if env.storage().persistent().has(&DaoArtifact::Hookpoint(id.clone())) {
+            env.storage().persistent().bump(&DaoArtifact::Hookpoint(id.clone()), BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
+        }
+        if env.storage().persistent().has(&DaoArtifact::Asset(id.clone())) {
+            env.storage().persistent().bump(&DaoArtifact::Asset(id.clone()), BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
+        }
     }
 
 
@@ -47,7 +55,7 @@ impl Dao {
         }
         let dao = Dao { id: id.clone(), name, owner };
         env.storage().persistent().set(&dao.id, &dao);
-        Dao::bump(env, id, BUMP_A_YEAR);
+        Dao::bump(env, id);
         dao
     }
 
@@ -56,7 +64,7 @@ impl Dao {
         if !Self::exists(env, id) {
             panic_with_error!(env, CoreError::DaoDoesNotExist)
         }
-        Dao::bump(env, id.clone(), BUMP_A_MONTH);
+        Dao::bump(env, id.clone());
         env.storage().persistent().get(id).unwrap()
     }
 
@@ -68,7 +76,7 @@ impl Dao {
         if owner != &dao.owner {
             panic_with_error!(env, CoreError::NotDaoOwner)
         }
-        Dao::bump(env, id.clone(), BUMP_A_MONTH);
+        Dao::bump(env, id.clone());
         dao
     }
 
@@ -113,7 +121,7 @@ impl Dao {
                 owner_id: self.owner,
             },
         );
-        Dao::bump(env, self.id, BUMP_A_YEAR);
+        Dao::bump(env, self.id);
         asset_id
     }
 
@@ -122,7 +130,7 @@ impl Dao {
         if !env.storage().persistent().has(&key) {
             panic_with_error!(env, CoreError::AssetNotIssued)
         }
-        Dao::bump(env, self.id.clone(), BUMP_A_MONTH);
+        Dao::bump(env, self.id.clone());
         env.storage().persistent().get(&key).unwrap()
     }
 
@@ -134,7 +142,7 @@ impl Dao {
     /// Saves a dao
     pub fn save(&self, env: &Env) {
         env.storage().persistent().set(&self.id, self);
-        Dao::bump(env, self.id.clone(), BUMP_A_YEAR);
+        Dao::bump(env, self.id.clone());
     }
 }
 
@@ -143,7 +151,7 @@ impl Metadata {
     pub fn create(env: &Env, dao_id: Bytes, url: Bytes, hash: Bytes) -> Self {
         let meta = Metadata { url, hash };
         env.storage().persistent().set(&DaoArtifact::Metadata(dao_id.clone()), &meta);
-        Dao::bump(env, dao_id, BUMP_A_YEAR);
+        Dao::bump(env, dao_id);
         meta
     }
 
@@ -152,13 +160,13 @@ impl Metadata {
         if !Self::exists(env, dao_id) {
             panic_with_error!(env, CoreError::NoMetadata)
         }
-        Dao::bump(env, dao_id.clone(), BUMP_A_MONTH);
+        Dao::bump(env, dao_id.clone());
         env.storage().persistent().get(&DaoArtifact::Metadata(dao_id.clone())).unwrap()
     }
 
     /// Checks if metadata for the dao_id exists
     pub fn exists(env: &Env, dao_id: &Bytes) -> bool {
-        Dao::bump(env, dao_id.clone(), BUMP_A_MONTH);
+        Dao::bump(env, dao_id.clone());
         env.storage().persistent().has(&DaoArtifact::Metadata(dao_id.clone()))
     }
 }

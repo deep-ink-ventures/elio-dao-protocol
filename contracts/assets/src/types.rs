@@ -29,8 +29,11 @@ pub struct Checkpoint {
     pub balance: i128,
 }
 
-pub const BUMP_A_MONTH: u32 = 518400;
-pub const BUMP_A_YEAR: u32 = 6312000;
+pub const A_WEEK_IN_LEDGERS: u32 = 100800;
+pub const BUMP_A_MONTH: u32 = 432000;
+pub const BUMP_A_MONTH_THRESHOLD: u32 = 432000 - A_WEEK_IN_LEDGERS;
+pub const BUMP_A_YEAR: u32 = 5184000;
+pub const BUMP_A_YEAR_THRESHOLD: u32 = 5184000 - BUMP_A_MONTH;
 
 impl Token {
 
@@ -39,7 +42,7 @@ impl Token {
         if !env.storage().persistent().has(&key) {
             return Vec::new(env);
         }
-        env.storage().persistent().bump(&key, BUMP_A_MONTH);
+        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
         env.storage().persistent().get(&key).unwrap()
     }
 
@@ -112,19 +115,23 @@ impl Token {
             ledger: env.ledger().sequence(),
         });
         env.storage().persistent().set(&key, &filtered_checkpoints);
-        env.storage().persistent().bump(&key, BUMP_A_MONTH);
+        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
     }
 
     pub fn read_allowance(env: &Env, from: Address, spender: Address) -> i128 {
         let key = Self::Allowance(Allowances { from, spender });
-        env.storage().persistent().bump(&key, BUMP_A_MONTH);
-        env.storage().persistent().get(&key).unwrap_or(0)
+
+        let allowance = env.storage().persistent().get(&key).unwrap_or(0);
+        if allowance > 0 {
+            env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+        }
+        allowance
     }
 
     pub fn write_allowance(env: &Env, from: Address, spender: Address, amount: i128) {
         let key = Self::Allowance(Allowances { from, spender });
         env.storage().persistent().set(&key, &amount);
-        env.storage().persistent().bump(&key, BUMP_A_MONTH);
+        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
     }
 
     pub fn spend_allowance(env: &Env, from: Address, spender: Address, amount: i128) {
@@ -167,7 +174,7 @@ impl Token {
         env.storage().instance().set(&Token::Owner, owner);
         env.storage().instance().set(&Token::CoreAddress, core_address);
 
-        env.storage().instance().bump(BUMP_A_YEAR);
+        env.storage().instance().bump(BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
     }
 
     pub fn set_owner(env: &Env, owner: &Address, new_owner: &Address) {
@@ -183,14 +190,17 @@ impl Token {
     pub fn write_balance(env: &Env, addr: Address, amount: i128) {
         let key = Token::Balance(addr.clone());
         env.storage().persistent().set(&key, &amount);
-        env.storage().persistent().bump(&key, BUMP_A_MONTH);
+        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
         Token::write_checkpoint(env, addr);
     }
 
     pub fn read_balance(env: &Env, addr: Address) -> i128 {
         let key = Token::Balance(addr);
-        env.storage().persistent().bump(&key, BUMP_A_MONTH);
-        env.storage().persistent().get(&key).unwrap_or(0)
+        let balance = env.storage().persistent().get(&key).unwrap_or(0);
+        if balance > 0 {
+            env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+        }
+        balance
     }
 
     pub fn check_auth(env: &Env, owner: &Address) {
