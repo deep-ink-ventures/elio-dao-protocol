@@ -134,9 +134,11 @@ impl Proposal {
 
     pub fn get_archived(env: &Env, proposal_id: u32) -> Proposal {
         let key = ArchiveKey(proposal_id);
-        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
-        env.storage().persistent().get(&key).unwrap()
-
+        if env.storage().persistent().has(&key) {
+            env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+            return env.storage().persistent().get(&key).unwrap();
+        }
+        panic_with_error!(env, VotesError::ProposalNotFound)
     }
 
     pub fn vote(
@@ -204,7 +206,6 @@ impl Proposal {
                 return;
             }
         }
-        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
         panic_with_error!(env, VotesError::ProposalNotFound)
     }
 

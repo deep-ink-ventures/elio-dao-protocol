@@ -1,6 +1,7 @@
 #![cfg(test)]
 
 use soroban_sdk::{testutils::{Address as _}, contractimpl, contract, token, Address, BytesN, Env, IntoVal, Bytes, contracterror, panic_with_error};
+use soroban_sdk::testutils::{Ledger, LedgerInfo};
 
 use crate::{
     core_contract::{WASM as CoreWASM, Client as CoreClient},
@@ -8,6 +9,7 @@ use crate::{
     assets_contract::{WASM as AssetsWASM, Client as AssetsClient},
 };
 use crate::interface::HookpointsTrait;
+use crate::votes_contract::PropStatus;
 
 /// *** This is a simple contract that is just altering things a bit for us to get going with tests
 #[contract]
@@ -278,12 +280,27 @@ fn should_manipulate_asset_funcs() {
 }
 
 #[test]
-#[ignore] // WasmVM, InternalError
 #[should_panic(expected="#5")]
 fn should_respect_contract_on_before_mark_implemented() {
     let protocol = Protocol::new();
     let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
-
     protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
+
+    let proposal = protocol.votes
+        .get_active_proposals(&protocol.dao_id)
+        .get_unchecked(0);
+
+    protocol.env.ledger().set(LedgerInfo {
+        timestamp: 12345,
+        protocol_version: 1,
+        sequence_number: 10_000 + 1,
+        network_id: Default::default(),
+        base_reserve: 10,
+        min_temp_entry_expiration: 10,
+        min_persistent_entry_expiration: 10,
+        max_entry_expiration: 10,
+    });
+
+    protocol.votes.finalize_proposal(&protocol.dao_id, &protocol.proposal_id);
     protocol.votes.mark_implemented(&protocol.proposal_id, &protocol.dao_owner);
 }
