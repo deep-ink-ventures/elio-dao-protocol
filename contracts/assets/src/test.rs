@@ -204,13 +204,13 @@ fn checkpoints() {
 
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 1,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
 
     client.xfer(&owner, &whoever, &100_000);
@@ -231,13 +231,13 @@ fn checkpoints() {
 
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 10,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
 
     let dao_id = "DIV".into_val(&client.env);
@@ -277,13 +277,13 @@ fn checkpoints() {
     // a second one
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 20,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
     let proposal_owner_2 = Address::random(&client.env);
     fund_account(&client.env, &core_client.get_native_asset_id(), &proposal_owner_2);
@@ -308,13 +308,13 @@ fn checkpoints() {
     // now let's outdate the first one
     client.env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 10 + proposal_duration + 1,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
     client.xfer(&owner, &whoever, &100_000);
 
