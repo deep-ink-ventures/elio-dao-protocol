@@ -25,7 +25,6 @@ pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
 fn create_clients() -> Clients {
     let env = Env::default();
     env.mock_all_auths();
-    env.mock_all_auths_allowing_non_root_auth();
     env.budget().reset_unlimited();
 
     let core_id = env.register_contract(None, CoreContract);

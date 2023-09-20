@@ -13,7 +13,6 @@ fn create_all_clients() -> (
 ) {
     let env = Env::default();
     env.mock_all_auths();
-    env.mock_all_auths_allowing_non_root_auth();
 
     let core_id = env.register_contract_wasm(None, core_contract::WASM);
     let votes_id = env.register_contract_wasm(None, votes_contract::WASM);
@@ -185,9 +184,7 @@ fn xfer_from() {
     assert_eq!(client.allowance(&from, &spender), 150_000);
 }
 
-// Error in 20.0.0-rc1 after set ledger
 #[test]
-#[ignore]
 fn checkpoints() {
     let (client, core_client, votes_client) = create_all_clients();
 
