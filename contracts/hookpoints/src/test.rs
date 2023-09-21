@@ -9,7 +9,6 @@ use crate::{
     assets_contract::{WASM as AssetsWASM, Client as AssetsClient},
 };
 use crate::interface::HookpointsTrait;
-use crate::votes_contract::PropStatus;
 
 /// *** This is a simple contract that is just altering things a bit for us to get going with tests
 #[contract]
@@ -286,19 +285,15 @@ fn should_respect_contract_on_before_mark_implemented() {
     let hookpoints_address = protocol.env.register_contract(None, TestHookpointsContract);
     protocol.core.set_hookpoint(&protocol.dao_id, &hookpoints_address, &protocol.dao_owner);
 
-    let proposal = protocol.votes
-        .get_active_proposals(&protocol.dao_id)
-        .get_unchecked(0);
-
     protocol.env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 10_000 + 1,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
 
     protocol.votes.finalize_proposal(&protocol.dao_id, &protocol.proposal_id);
