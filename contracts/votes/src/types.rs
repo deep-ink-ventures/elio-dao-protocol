@@ -60,7 +60,9 @@ pub const XLM: i128 = 10_000_000;
 pub const RESERVE_AMOUNT: i128 = 100 * XLM;
 pub const PROPOSAL_MAX_NR: u32 = 25;
 
-pub const BUMP_A_MONTH: u32 = 518400;
+pub const A_WEEK_IN_LEDGERS: u32 = 100800;
+pub const BUMP_A_MONTH: u32 = 432000;
+pub const BUMP_A_MONTH_THRESHOLD: u32 = 432000 - A_WEEK_IN_LEDGERS;
 
 const PROP_ID: Symbol = symbol_short!("PROP_ID");
 
@@ -100,8 +102,8 @@ impl Proposal {
         env.storage().persistent().set(&key, &proposals);
         env.storage().instance().set(&PROP_ID, &(id + 1));
 
-        env.storage().instance().bump(BUMP_A_MONTH);
-        env.storage().persistent().bump(&key, BUMP_A_MONTH + Configuration::get(env, dao_id).proposal_duration);
+        env.storage().instance().bump(BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH + Configuration::get(env, dao_id).proposal_duration);
         id
     }
 
@@ -111,7 +113,7 @@ impl Proposal {
             return Vec::new(env);
         }
         let active_proposals: Vec<ActiveProposal> = env.storage().persistent().get(&key).unwrap();
-        env.storage().persistent().bump(&key, BUMP_A_MONTH + Configuration::get(env, dao_id.clone()).proposal_duration);
+        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH + Configuration::get(env, dao_id.clone()).proposal_duration);
         let mut filtered_proposals: Vec<ActiveProposal> = Vec::new(env);
 
         let proposal_duration = Configuration::get(env, dao_id).proposal_duration;
@@ -132,9 +134,11 @@ impl Proposal {
 
     pub fn get_archived(env: &Env, proposal_id: u32) -> Proposal {
         let key = ArchiveKey(proposal_id);
-        env.storage().persistent().bump(&key, BUMP_A_MONTH);
-        env.storage().persistent().get(&key).unwrap()
-
+        if env.storage().persistent().has(&key) {
+            env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+            return env.storage().persistent().get(&key).unwrap();
+        }
+        panic_with_error!(env, VotesError::ProposalNotFound)
     }
 
     pub fn vote(
@@ -153,7 +157,7 @@ impl Proposal {
         }
         let key = ActiveKey(dao_id.clone());
         let mut active_proposals: Vec<ActiveProposal> = env.storage().persistent().get(&key).unwrap();
-        env.storage().persistent().bump(&key, BUMP_A_MONTH + Configuration::get(env, dao_id.clone()).proposal_duration);
+        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH + Configuration::get(env, dao_id.clone()).proposal_duration);
 
         for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
             if p.id == proposal_id {
@@ -174,7 +178,7 @@ impl Proposal {
                 active_proposals.set(i as u32, p);
                 env.storage().persistent().set(&key, &active_proposals);
                 env.storage().temporary().set(&vote_key, &in_favor);
-                env.storage().temporary().bump(&vote_key, Configuration::get(env, dao_id.clone()).proposal_duration);
+                env.storage().temporary().bump(&vote_key, 0, Configuration::get(env, dao_id.clone()).proposal_duration);
                 return voting_power
             }
         }
@@ -202,7 +206,6 @@ impl Proposal {
                 return;
             }
         }
-        env.storage().persistent().bump(&key, BUMP_A_MONTH);
         panic_with_error!(env, VotesError::ProposalNotFound)
     }
 
@@ -213,7 +216,7 @@ impl Proposal {
         let proposal_duration = configuration.proposal_duration;
         let min_threshold_configuration = configuration.min_threshold_configuration;
         let mut active_proposals: Vec<ActiveProposal> = env.storage().persistent().get(&key).unwrap();
-        env.storage().persistent().bump(&key, BUMP_A_MONTH);
+        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
 
         for (i, mut p) in active_proposals.clone().into_iter().enumerate() {
             if p.id == proposal_id {
@@ -257,7 +260,7 @@ impl Proposal {
     pub fn mark_implemented(env: &Env, proposal_id: u32) {
         let key = ArchiveKey(proposal_id);
         let mut proposal: Proposal = env.storage().persistent().get(&key).unwrap();
-        env.storage().persistent().bump(&key, BUMP_A_MONTH);
+        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
 
         if proposal.status != PropStatus::Accepted {
             panic_with_error!(env, VotesError::UnacceptedProposal)

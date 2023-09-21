@@ -67,6 +67,6 @@ pub fn on_before_finalize_proposal(env: &Env, dao_id: &Bytes, proposal_id: u32) 
 pub fn on_before_mark_implemented(env: &Env, dao_id: &Bytes, proposal_id: u32) {
     if let Some(addr) = get_hookpoint(env, dao_id) {
         let hookpoints_client = HookpointsContractClient::new(env, &addr);
-        hookpoints_client.on_before_finalize_proposal(dao_id, &proposal_id);
+        hookpoints_client.on_before_mark_implemented(dao_id, &proposal_id);
     }
 }

@@ -52,9 +52,12 @@ impl CoreTrait for CoreContract {
     }
 
     fn create_dao(env: Env, dao_id: Bytes, dao_name: Bytes, dao_owner: Address) -> Dao {
+        dao_owner.require_auth();
+
         // Reserve DAO Tokens
         let native_asset_id = env.storage().instance().get(&NATIVE).unwrap();
         let native_token = token::Client::new(&env, &native_asset_id);
+
         let contract = &env.current_contract_address();
 
         if native_token.balance(&dao_owner) < RESERVE_AMOUNT {

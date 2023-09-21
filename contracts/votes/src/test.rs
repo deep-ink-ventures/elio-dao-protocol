@@ -23,13 +23,14 @@ pub const MAX_I128: i128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
 struct Clients {
     core: CoreContractClient<'static>,
     votes: VotesContractClient<'static>,
-    native_asset_admin: token::AdminClient<'static>,
+    native_asset_admin: token::StellarAssetClient<'static>,
 }
 
 impl Clients {
     fn new() -> Self {
         let env = Env::default();
-        env.mock_all_auths();
+        env.mock_all_auths_allowing_non_root_auth();
+
         env.budget().reset_unlimited();
 
         let core_id = env.register_contract_wasm(None, CoreWASM);
@@ -39,7 +40,7 @@ impl Clients {
         let votes = VotesContractClient::new(&env, &votes_id);
 
         let native_asset_id = env.register_stellar_asset_contract(Address::random(&env));
-        let native_asset_admin = token::AdminClient::new(&env, &native_asset_id);
+        let native_asset_admin = token::StellarAssetClient::new(&env, &native_asset_id);
 
         core.init(&votes_id, &native_asset_id);
         votes.init(&core_id);
@@ -131,13 +132,13 @@ fn setup_accepted_proposal(clients: &Clients) -> (u32, Address) {
     let env = &core.env;
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 100,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
@@ -164,13 +165,13 @@ fn setup_accepted_proposal(clients: &Clients) -> (u32, Address) {
     // make finalization possible
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 100 + PROPOSAL_DURATION + 1,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
 
     votes.finalize_proposal(&dao.id, &proposal_id);
@@ -180,7 +181,7 @@ fn setup_accepted_proposal(clients: &Clients) -> (u32, Address) {
 }
 
 fn fund_account(env: &Env, native_asset_id: &Address, address: &Address) {
-    let native_token = token::AdminClient::new(&env, &native_asset_id);
+    let native_token = token::StellarAssetClient::new(&env, &native_asset_id);
     native_token.mint(&address, &MINT);
 }
 
@@ -193,13 +194,13 @@ fn active_proposals_are_managed() {
 
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 100,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
 
     let dao_owner = Address::random(env);
@@ -220,13 +221,13 @@ fn active_proposals_are_managed() {
 
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 200,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
     let proposal_2_id = votes.create_proposal(&dao.id, &owner);
 
@@ -243,13 +244,13 @@ fn active_proposals_are_managed() {
     // outdate the first
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 100 + PROPOSAL_DURATION + 1,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
 
     let all_proposals = votes.get_active_proposals(&dao.id);
@@ -356,7 +357,6 @@ fn non_existing_meta_panics() {
 
 /// This test is ignored until the max error up to 9 is fixed
 #[test]
-#[ignore] // This test works but is currently ignored due to preview 10 limiting error codes to single digit.
 #[should_panic(expected = "#11")]
 fn can_set_metadata_only_once() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
@@ -521,7 +521,6 @@ fn vote() {
 }
 
 #[test]
-#[ignore] // This test works but is currently ignored due to preview 10 limiting error codes to single digit.
 #[should_panic(expected = "#10")]
 fn vote_already_cast() {
     let ref clients @ Clients { ref votes, .. } = Clients::new();
@@ -597,13 +596,13 @@ fn rejected_finalize() {
     env.budget().reset_unlimited();
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 100,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
     let owner = Address::random(env);
     let (dao, proposal_id) = create_dao_with_proposal(&clients, &owner);
@@ -613,13 +612,13 @@ fn rejected_finalize() {
     // make finalization possible
     votes.env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 100 + proposal_duration + 1,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
 
     votes.finalize_proposal(&dao.id, &proposal_id);
@@ -635,13 +634,13 @@ fn accepted_finalize() {
     env.budget().reset_unlimited();
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 100,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
 
     let dao_owner = Address::random(env);
@@ -663,13 +662,13 @@ fn accepted_finalize() {
 
     votes.env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 100 + proposal_duration + 1,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
 
     votes.finalize_proposal(&dao.id, &proposal_id);
@@ -696,7 +695,6 @@ fn mark_implemented() {
 fn mark_implemented_only_owner() {
     let clients = Clients::new();
     let (proposal_id, _dao_owner) = setup_accepted_proposal(&clients);
-
     let votes = clients.votes;
 
     votes.mark_implemented(&proposal_id, &Address::random(&votes.env));
@@ -749,13 +747,13 @@ fn returns_tokens_on_finalize() {
     env.budget().reset_unlimited();
     env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 100,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
     let owner = Address::random(env);
     let native_asset_id = &clients.core.get_native_asset_id();
@@ -772,13 +770,13 @@ fn returns_tokens_on_finalize() {
     // make finalization possible
     votes.env.ledger().set(LedgerInfo {
         timestamp: 12345,
-        protocol_version: 1,
+        protocol_version: 20,
         sequence_number: 100 + proposal_duration + 1,
         network_id: Default::default(),
         base_reserve: 10,
         min_temp_entry_expiration: 10,
         min_persistent_entry_expiration: 10,
-        max_entry_expiration: 10,
+        max_entry_expiration: 5_200_000,
     });
 
     votes.finalize_proposal(&dao.id, &proposal_id);

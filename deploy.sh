@@ -69,28 +69,26 @@ for CONTRACT in core votes assets; do
    --network-passphrase "${NETWORK_PASSPHRASE}" \
    --wasm wasm/elio_${CONTRACT}.wasm \
    --durability persistent \
-   --ledgers-to-expire 6312000
+   --ledgers-to-expire 200000
 done
 
-printf "\n Settings instance storage for core ...\n"
+printf "\nSettings instance storage for core ...\n"
 soroban contract bump \
  --source "${SECRET_KEY}" \
  --rpc-url "${RPC_URL}" \
  --network-passphrase "${NETWORK_PASSPHRASE}" \
  --id $CORE_ADDRESS \
- --key-xdr AAAAFA== \
  --durability persistent \
- --ledgers-to-expire 6312000
+ --ledgers-to-expire 200000
 
-printf "\n Settings instance storage for votes ...\n"
+printf "\nSettings instance storage for votes ...\n"
 soroban contract bump \
  --source "${SECRET_KEY}" \
  --rpc-url "${RPC_URL}" \
  --network-passphrase "${NETWORK_PASSPHRASE}" \
  --id $VOTES_ADDRESS \
- --key-xdr AAAAFA== \
  --durability persistent \
- --ledgers-to-expire 6312000
+ --ledgers-to-expire 200000
 
 
 if [[ -n "${SERVICE_URL}" ]];
