@@ -10,7 +10,7 @@ It acts as a central actor of the protocol and provides configuration features a
 - `create_dao`: Create a DAO.
 - `get_dao`: Retrieve a DAO.
 - `destroy_dao`: Destroy a DAO.
-- `issue_token: Issue a token for a DAO.
+- `issue_token`: Issue a token for a DAO.
 - `get_dao_asset_id`: Retrieve the DAO asset ID.
 - `set_metadata`: Set metadata for a DAO, this is a web/ipfs link with a hash of the content. See our service for an example.
 - `get_metadata`: Load metadata for a DAO.

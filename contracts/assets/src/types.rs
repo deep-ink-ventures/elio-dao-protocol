@@ -1,7 +1,7 @@
-use soroban_sdk::{contracttype, Address, Bytes, Env, Vec, panic_with_error};
+use soroban_sdk::{contracttype, panic_with_error, Address, Bytes, Env, Vec};
 
-use crate::{core_contract, votes_contract};
 use crate::error::AssetError;
+use crate::{core_contract, votes_contract};
 
 #[derive(Clone)]
 #[contracttype]
@@ -32,17 +32,16 @@ pub struct Checkpoint {
 pub const A_WEEK_IN_LEDGERS: u32 = 100800;
 pub const BUMP_A_MONTH: u32 = 432000;
 pub const BUMP_A_MONTH_THRESHOLD: u32 = 432000 - A_WEEK_IN_LEDGERS;
-pub const BUMP_A_YEAR: u32 = 5184000;
-pub const BUMP_A_YEAR_THRESHOLD: u32 = 5184000 - BUMP_A_MONTH;
 
 impl Token {
-
     pub fn get_checkpoints(env: &Env, id: Address) -> Vec<Checkpoint> {
         let key = Token::Checkpoints(id);
         if !env.storage().persistent().has(&key) {
             return Vec::new(env);
         }
-        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+        env.storage()
+            .persistent()
+            .bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
         env.storage().persistent().get(&key).unwrap()
     }
 
@@ -58,7 +57,11 @@ impl Token {
     }
 
     /// Returns the closest checkpoint at or BEFORE a given sequence
-    pub fn get_checkpoint_for_sequence(env: &Env, id: Address, sequence: u32) -> Option<Checkpoint> {
+    pub fn get_checkpoint_for_sequence(
+        env: &Env,
+        id: Address,
+        sequence: u32,
+    ) -> Option<Checkpoint> {
         let checkpoints = Token::get_checkpoints(env, id);
         let cp_candidate = checkpoints.first();
 
@@ -98,24 +101,23 @@ impl Token {
         let active_proposals = votes_contract.get_active_proposals(&Self::get_symbol(env));
 
         let mut filtered_checkpoints: Vec<Checkpoint> = Vec::new(env);
-         for proposal in active_proposals.into_iter() {
-             let checkpoint = Self::get_checkpoint_for_sequence(
-                 env,
-                 id.clone(),
-                 proposal.inner.ledger,
-             );
+        for proposal in active_proposals.into_iter() {
+            let checkpoint =
+                Self::get_checkpoint_for_sequence(env, id.clone(), proposal.inner.ledger);
 
-             if let Some(cp) = checkpoint {
+            if let Some(cp) = checkpoint {
                 filtered_checkpoints.push_back(cp);
-             }
-         }
+            }
+        }
 
         filtered_checkpoints.push_back(Checkpoint {
             balance: Token::read_balance(env, id),
             ledger: env.ledger().sequence(),
         });
         env.storage().persistent().set(&key, &filtered_checkpoints);
-        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+        env.storage()
+            .persistent()
+            .bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
     }
 
     pub fn read_allowance(env: &Env, from: Address, spender: Address) -> i128 {
@@ -123,7 +125,9 @@ impl Token {
 
         let allowance = env.storage().persistent().get(&key).unwrap_or(0);
         if allowance > 0 {
-            env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+            env.storage()
+                .persistent()
+                .bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
         }
         allowance
     }
@@ -131,7 +135,9 @@ impl Token {
     pub fn write_allowance(env: &Env, from: Address, spender: Address, amount: i128) {
         let key = Self::Allowance(Allowances { from, spender });
         env.storage().persistent().set(&key, &amount);
-        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+        env.storage()
+            .persistent()
+            .bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
     }
 
     pub fn spend_allowance(env: &Env, from: Address, spender: Address, amount: i128) {
@@ -172,9 +178,13 @@ impl Token {
         env.storage().instance().set(&Token::Symbol, symbol);
         env.storage().instance().set(&Token::Name, name);
         env.storage().instance().set(&Token::Owner, owner);
-        env.storage().instance().set(&Token::CoreAddress, core_address);
+        env.storage()
+            .instance()
+            .set(&Token::CoreAddress, core_address);
 
-        env.storage().instance().bump(BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
+        env.storage()
+            .instance()
+            .bump(BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
     }
 
     pub fn set_owner(env: &Env, owner: &Address, new_owner: &Address) {
@@ -184,13 +194,17 @@ impl Token {
 
     pub fn set_core_address(env: &Env, owner: &Address, core_address: &Address) {
         Token::check_auth(env, owner);
-        env.storage().instance().set(&Token::CoreAddress, core_address);
+        env.storage()
+            .instance()
+            .set(&Token::CoreAddress, core_address);
     }
 
     pub fn write_balance(env: &Env, addr: Address, amount: i128) {
         let key = Token::Balance(addr.clone());
         env.storage().persistent().set(&key, &amount);
-        env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+        env.storage()
+            .persistent()
+            .bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
         Token::write_checkpoint(env, addr);
     }
 
@@ -198,7 +212,9 @@ impl Token {
         let key = Token::Balance(addr);
         let balance = env.storage().persistent().get(&key).unwrap_or(0);
         if balance > 0 {
-            env.storage().persistent().bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+            env.storage()
+                .persistent()
+                .bump(&key, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
         }
         balance
     }

@@ -1,7 +1,9 @@
-use soroban_sdk::{contracttype, Address, Bytes, BytesN, Env, IntoVal, panic_with_error, symbol_short};
+use soroban_sdk::{
+    contracttype, panic_with_error, symbol_short, Address, Bytes, BytesN, Env, IntoVal,
+};
 
-use crate::events::{AssetCreatedEventData, ASSET, CREATED};
 use crate::error::CoreError;
+use crate::events::{AssetCreatedEventData, ASSET, CREATED};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -23,37 +25,68 @@ pub struct Metadata {
 pub enum DaoArtifact {
     Metadata(Bytes),
     Asset(Bytes),
-    Hookpoint(Bytes)
+    Hookpoint(Bytes),
 }
 
+pub const A_WEEK_IN_LEDGERS: u32 = 100800;
 pub const BUMP_A_MONTH: u32 = 432000;
-pub const BUMP_A_YEAR: u32 = 5184000;
-pub const BUMP_A_YEAR_THRESHOLD: u32 = 5184000 - BUMP_A_MONTH;
+pub const BUMP_A_MONTH_THRESHOLD: u32 = 432000 - A_WEEK_IN_LEDGERS;
 
 impl Dao {
     /// Bumps all keys associated with a dao
     pub fn bump(env: &Env, id: Bytes) {
-        env.storage().instance().bump(BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
-        env.storage().persistent().bump(&id, BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
+        env.storage()
+            .instance()
+            .bump(BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
+        env.storage()
+            .persistent()
+            .bump(&id, BUMP_A_MONTH_THRESHOLD, BUMP_A_MONTH);
 
-        if env.storage().persistent().has(&DaoArtifact::Metadata(id.clone())) {
-            env.storage().persistent().bump(&DaoArtifact::Metadata(id.clone()), BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
+        if env
+            .storage()
+            .persistent()
+            .has(&DaoArtifact::Metadata(id.clone()))
+        {
+            env.storage().persistent().bump(
+                &DaoArtifact::Metadata(id.clone()),
+                BUMP_A_MONTH_THRESHOLD,
+                BUMP_A_MONTH,
+            );
         }
-        if env.storage().persistent().has(&DaoArtifact::Hookpoint(id.clone())) {
-            env.storage().persistent().bump(&DaoArtifact::Hookpoint(id.clone()), BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
+        if env
+            .storage()
+            .persistent()
+            .has(&DaoArtifact::Hookpoint(id.clone()))
+        {
+            env.storage().persistent().bump(
+                &DaoArtifact::Hookpoint(id.clone()),
+                BUMP_A_MONTH_THRESHOLD,
+                BUMP_A_MONTH,
+            );
         }
-        if env.storage().persistent().has(&DaoArtifact::Asset(id.clone())) {
-            env.storage().persistent().bump(&DaoArtifact::Asset(id.clone()), BUMP_A_YEAR_THRESHOLD, BUMP_A_YEAR);
+        if env
+            .storage()
+            .persistent()
+            .has(&DaoArtifact::Asset(id.clone()))
+        {
+            env.storage().persistent().bump(
+                &DaoArtifact::Asset(id.clone()),
+                BUMP_A_MONTH_THRESHOLD,
+                BUMP_A_MONTH,
+            );
         }
     }
-
 
     /// Create a new dao for the owner
     pub fn create(env: &Env, id: Bytes, name: Bytes, owner: Address) -> Self {
         if Self::exists(env, &id) {
             panic_with_error!(env, CoreError::DaoAlreadyExists)
         }
-        let dao = Dao { id: id.clone(), name, owner };
+        let dao = Dao {
+            id: id.clone(),
+            name,
+            owner,
+        };
         env.storage().persistent().set(&dao.id, &dao);
         Dao::bump(env, id);
         dao
@@ -87,7 +120,12 @@ impl Dao {
 
     /// +++ Member functions +
 
-    pub fn issue_token(self, env: &Env, assets_wasm_hash: BytesN<32>, asset_salt: BytesN<32>) -> Address {
+    pub fn issue_token(
+        self,
+        env: &Env,
+        assets_wasm_hash: BytesN<32>,
+        asset_salt: BytesN<32>,
+    ) -> Address {
         let key = DaoArtifact::Asset(self.id.clone());
 
         if env.storage().persistent().has(&key) {
@@ -104,13 +142,8 @@ impl Dao {
         let init_fn = symbol_short!("init");
 
         let core_address = env.current_contract_address();
-        let init_args = (
-            self.id.clone(),
-            self.name,
-            self.owner.clone(),
-            core_address,
-        )
-            .into_val(env);
+        let init_args =
+            (self.id.clone(), self.name, self.owner.clone(), core_address).into_val(env);
         env.invoke_contract::<()>(&asset_id, &init_fn, init_args);
 
         env.events().publish(
@@ -150,7 +183,9 @@ impl Metadata {
     /// Create metadata for the dao
     pub fn create(env: &Env, dao_id: Bytes, url: Bytes, hash: Bytes) -> Self {
         let meta = Metadata { url, hash };
-        env.storage().persistent().set(&DaoArtifact::Metadata(dao_id.clone()), &meta);
+        env.storage()
+            .persistent()
+            .set(&DaoArtifact::Metadata(dao_id.clone()), &meta);
         Dao::bump(env, dao_id);
         meta
     }
@@ -161,12 +196,17 @@ impl Metadata {
             panic_with_error!(env, CoreError::NoMetadata)
         }
         Dao::bump(env, dao_id.clone());
-        env.storage().persistent().get(&DaoArtifact::Metadata(dao_id.clone())).unwrap()
+        env.storage()
+            .persistent()
+            .get(&DaoArtifact::Metadata(dao_id.clone()))
+            .unwrap()
     }
 
     /// Checks if metadata for the dao_id exists
     pub fn exists(env: &Env, dao_id: &Bytes) -> bool {
         Dao::bump(env, dao_id.clone());
-        env.storage().persistent().has(&DaoArtifact::Metadata(dao_id.clone()))
+        env.storage()
+            .persistent()
+            .has(&DaoArtifact::Metadata(dao_id.clone()))
     }
 }

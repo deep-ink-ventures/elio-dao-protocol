@@ -104,6 +104,6 @@ curl -XPATCH -H "Config-Secret: ${CONFIG_SECRET}" -H "Content-type: application/
 fi
 
 printf "\nRPC_URL=$RPC_URL"
-printf "\nCORE_ADDRESS=$CORE_ADDRESS"
-printf "\nVOTES_ADDRESS=$VOTES_ADDRESS"
+printf "\nCORE_CONTRACT_ADDRESS=$CORE_ADDRESS"
+printf "\nVOTES_CONTRACT_ADDRESS=$VOTES_ADDRESS"
 printf "\nASSETS_WASM_HASH=$ASSETS_WASM_HASH\n"
